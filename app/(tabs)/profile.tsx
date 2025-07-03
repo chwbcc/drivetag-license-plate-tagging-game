@@ -265,6 +265,7 @@ export default function ProfileScreen() {
           </View>
           
           <ExperienceBar 
+            level={user.level}
             currentExp={expInfo.current}
             nextLevelExp={expInfo.next}
             progress={expInfo.progress}
