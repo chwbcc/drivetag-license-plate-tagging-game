@@ -27,8 +27,8 @@ import {
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
-import { ExperienceBar } from '@/components/ExperienceBar';
-import { colors } from '@/constants/colors';
+import ExperienceBar from '@/components/ExperienceBar';
+import colors from '@/constants/colors';
 
 export default function ProfileScreen() {
   const { user, logout, getExpForNextLevel } = useAuthStore();

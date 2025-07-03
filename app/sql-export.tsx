@@ -19,7 +19,7 @@ import {
   generateSQLSchema,
   exportDataToSQL,
 } from '@/utils/sql-export';
-import { colors } from '@/constants/colors';
+import colors from '@/constants/colors';
 
 export default function SQLExportScreen() {
   const [isExporting, setIsExporting] = useState(false);
