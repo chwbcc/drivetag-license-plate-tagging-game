@@ -261,12 +261,20 @@ export default function ProfileScreen() {
             }}>
               Level {user.level}
             </Text>
-            <Text style={{
-              fontSize: 16,
-              color: colors.textSecondary,
-            }}>
-              {expInfo.current} / {expInfo.next} EXP
-            </Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+              }}>
+                {expInfo.current} / {expInfo.next} EXP
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+              }}>
+                Total: {user.exp || 0} EXP
+              </Text>
+            </View>
           </View>
           
           <ExperienceBar 

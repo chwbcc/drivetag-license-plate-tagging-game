@@ -234,9 +234,10 @@ const useAuthStore = create<AuthStore>()(
         
         if (currentLevel >= EXP_LEVELS.length) {
           // Max level reached
+          const maxLevelExp = EXP_LEVELS[EXP_LEVELS.length - 1];
           return { 
-            current: currentExp, 
-            next: currentExp, 
+            current: currentExp - maxLevelExp, 
+            next: 0, 
             progress: 100 
           };
         }
@@ -245,11 +246,11 @@ const useAuthStore = create<AuthStore>()(
         const nextLevelExp = EXP_LEVELS[currentLevel];
         const expNeeded = nextLevelExp - currentLevelExp;
         const expProgress = currentExp - currentLevelExp;
-        const progress = Math.min(100, Math.round((expProgress / expNeeded) * 100));
+        const progress = Math.min(100, Math.max(0, Math.round((expProgress / expNeeded) * 100)));
         
         return {
-          current: currentExp,
-          next: nextLevelExp,
+          current: expProgress,
+          next: expNeeded,
           progress
         };
       },
