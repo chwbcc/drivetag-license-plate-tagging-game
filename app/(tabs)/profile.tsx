@@ -40,9 +40,14 @@ export default function ProfileScreen() {
   }
 
   const userBadges = getUserBadges(user.id);
-  const pelletsReceived = getPelletsByLicensePlate(user.licensePlate);
-  const negativePelletsReceived = getPelletsByLicensePlate(user.licensePlate, 'negative');
-  const positivePelletsReceived = getPelletsByLicensePlate(user.licensePlate, 'positive');
+  
+  const userLicensePlateWithState = user.state && !user.licensePlate.includes('-') 
+    ? `${user.state}-${user.licensePlate}` 
+    : user.licensePlate;
+  
+  const pelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState);
+  const negativePelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState, 'negative');
+  const positivePelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState, 'positive');
   const pelletsGiven = getPelletsCreatedByUser(user.id);
   const expInfo = getExpForNextLevel();
 
