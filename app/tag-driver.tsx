@@ -6,10 +6,13 @@ import {
   KeyboardAvoidingView, 
   Platform, 
   ScrollView,
-  Alert
+  Alert,
+  TouchableOpacity,
+  Modal,
+  FlatList
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Target, ThumbsUp, ThumbsDown } from 'lucide-react-native';
+import { Target, ThumbsUp, ChevronDown } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import Colors from '@/constants/colors';
 import Input from '@/components/Input';
@@ -19,6 +22,15 @@ import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
 
 // Experience points awarded for different actions
+const US_STATES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+  'DC'
+];
+
 const EXP_REWARDS = {
   TAG_DRIVER: 25,
   POSITIVE_TAG: 30,
@@ -55,6 +67,8 @@ export default function TagDriverScreen() {
   const pelletType = (params.type as 'negative' | 'positive') || 'negative';
   
   const [licensePlate, setLicensePlate] = useState('');
+  const [state, setState] = useState('');
+  const [showStatePicker, setShowStatePicker] = useState(false);
   const [reason, setReason] = useState('');
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +101,11 @@ export default function TagDriverScreen() {
   };
   
   const handleSubmit = () => {
+    if (!state) {
+      setError('Please select a state');
+      return;
+    }
+    
     if (!licensePlate) {
       setError('Please enter a license plate number');
       return;
@@ -102,7 +121,8 @@ export default function TagDriverScreen() {
       return;
     }
     
-    if (user?.licensePlate.toLowerCase() === licensePlate.toLowerCase()) {
+    const fullLicensePlate = `${state}-${licensePlate.toUpperCase()}`;
+    if (user?.licensePlate.toLowerCase() === fullLicensePlate.toLowerCase()) {
       setError("You can't tag your own vehicle");
       return;
     }
@@ -122,7 +142,7 @@ export default function TagDriverScreen() {
     // Create a new pellet
     const newPellet = {
       id: Date.now().toString(),
-      targetLicensePlate: licensePlate.toUpperCase(),
+      targetLicensePlate: fullLicensePlate,
       createdBy: user?.id || 'anonymous',
       createdAt: Date.now(),
       reason,
@@ -244,8 +264,21 @@ export default function TagDriverScreen() {
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>State *</Text>
+            <TouchableOpacity
+              style={styles.stateSelector}
+              onPress={() => setShowStatePicker(true)}
+            >
+              <Text style={[styles.stateSelectorText, !state && styles.placeholderText]}>
+                {state || 'Select State'}
+              </Text>
+              <ChevronDown size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          
           <Input
-            label="License Plate"
+            label="License Plate *"
             placeholder="Enter license plate number"
             value={licensePlate}
             onChangeText={(text) => setLicensePlate(text.toUpperCase())}
@@ -309,6 +342,49 @@ export default function TagDriverScreen() {
           />
         </View>
       </ScrollView>
+      
+      <Modal
+        visible={showStatePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowStatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select State</Text>
+              <TouchableOpacity onPress={() => setShowStatePicker(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={US_STATES}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.stateOption,
+                    state === item && styles.stateOptionSelected
+                  ]}
+                  onPress={() => {
+                    setState(item);
+                    setShowStatePicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.stateOptionText,
+                    state === item && styles.stateOptionTextSelected
+                  ]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              numColumns={5}
+              contentContainerStyle={styles.stateList}
+            />
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -445,4 +521,84 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
   },
   cancelButton: {},
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  stateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 16,
+  },
+  stateSelectorText: {
+    fontSize: 16,
+    color: Colors.text,
+  },
+  placeholderText: {
+    color: Colors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
+  },
+  modalClose: {
+    fontSize: 24,
+    color: Colors.textSecondary,
+  },
+  stateList: {
+    padding: 16,
+  },
+  stateOption: {
+    flex: 1,
+    margin: 4,
+    padding: 12,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    minWidth: 60,
+  },
+  stateOptionSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  stateOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  stateOptionTextSelected: {
+    color: '#FFFFFF',
+  },
 });
