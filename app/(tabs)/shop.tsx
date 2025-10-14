@@ -25,8 +25,13 @@ export default function ShopScreen() {
   });
   
   const myPellets = user ? pellets.filter(
-    pellet => pellet.targetLicensePlate.toLowerCase() === user.licensePlate.toLowerCase() &&
-              pellet.type === pelletType
+    pellet => {
+      const userLicensePlateWithState = user.state && !user.licensePlate.includes('-') 
+        ? `${user.state}-${user.licensePlate}` 
+        : user.licensePlate;
+      return pellet.targetLicensePlate.toLowerCase() === userLicensePlateWithState.toLowerCase() &&
+             pellet.type === pelletType;
+    }
   ) : [];
   
   const handlePurchase = async (item: PaymentItem) => {
@@ -56,15 +61,21 @@ export default function ShopScreen() {
                   return;
                 }
                 
-                // Remove the specified number of pellets from the user's record
                 const pelletsToRemove = Math.min(item.pelletCount, myPellets.length);
+                const removedPellets: string[] = [];
+                
                 for (let i = 0; i < pelletsToRemove; i++) {
                   if (myPellets[i]) {
                     removePellet(myPellets[i].id);
+                    removedPellets.push(myPellets[i].id);
                   }
                 }
                 
-                Alert.alert('Success', `You've erased ${pelletsToRemove} ${pelletType} pellets from your record!`);
+                console.log(`Removed ${removedPellets.length} ${pelletType} pellets:`, removedPellets);
+                Alert.alert(
+                  'Success', 
+                  `You've successfully erased ${removedPellets.length} ${pelletType} pellet${removedPellets.length !== 1 ? 's' : ''} from your record!`
+                );
               } else if (item.type === 'donation') {
                 Alert.alert('Thank You!', 'Your donation helps us keep the roads safer!');
               }

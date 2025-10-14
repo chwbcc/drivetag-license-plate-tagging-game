@@ -109,23 +109,31 @@ const useAuthStore = create<AuthStore>()(
       user: null,
       isLoading: false,
       error: null,
-      login: (user) => set({ 
-        user: {
-          ...user,
-          exp: user.exp || 0,
-          level: user.level || calculateLevel(user.exp || 0)
-        }, 
-        error: null 
-      }),
+      login: (user) => {
+        const existingUser = get().user;
+        if (existingUser && existingUser.email === user.email) {
+          return;
+        }
+        set({ 
+          user: {
+            ...user,
+            exp: user.exp || 0,
+            level: user.level || calculateLevel(user.exp || 0)
+          }, 
+          error: null 
+        });
+      },
       logout: () => set({ user: null, error: null }),
-      register: (user) => set({ 
-        user: {
-          ...user,
-          exp: 0,
-          level: 1
-        }, 
-        error: null 
-      }),
+      register: (user) => {
+        set({ 
+          user: {
+            ...user,
+            exp: user.exp || 0,
+            level: user.level || 1
+          }, 
+          error: null 
+        });
+      },
       updateUser: (updates) => {
         const currentUser = get().user;
         if (currentUser) {

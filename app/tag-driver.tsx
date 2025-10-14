@@ -122,7 +122,11 @@ export default function TagDriverScreen() {
     }
     
     const fullLicensePlate = `${state}-${licensePlate.toUpperCase()}`;
-    if (user?.licensePlate.toLowerCase() === fullLicensePlate.toLowerCase()) {
+    const userLicensePlateWithState = user?.state && !user.licensePlate.includes('-') 
+      ? `${user.state}-${user.licensePlate}` 
+      : user?.licensePlate;
+    
+    if (userLicensePlateWithState?.toLowerCase() === fullLicensePlate.toLowerCase()) {
       setError("You can't tag your own vehicle");
       return;
     }

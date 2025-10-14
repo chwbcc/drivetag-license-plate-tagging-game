@@ -13,7 +13,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const login = useAuthStore((state) => state.login);
+  const { login, user: existingUser } = useAuthStore();
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -24,25 +24,31 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError('');
     
-    // Simulate API call
     setTimeout(() => {
-      // For demo purposes, we'll just check if the email contains "@"
       if (!email.includes('@')) {
         setError('Invalid email format');
         setIsLoading(false);
         return;
       }
       
-      // Mock successful login
+      if (existingUser && existingUser.email === email) {
+        router.replace('/(tabs)');
+        setIsLoading(false);
+        return;
+      }
+      
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       login({
-        id: '1',
+        id: userId,
         email,
-        licensePlate: 'ABC123', // In a real app, this would come from the backend
-        pelletCount: 10, // New users get 10 free pellets
-        positivePelletCount: 5, // New users also get 5 positive pellets
-        badges: [], // Start with no badges
-        exp: 0, // Start with 0 experience
-        level: 1, // Start at level 1
+        licensePlate: 'ABC123',
+        state: 'CA',
+        pelletCount: 10,
+        positivePelletCount: 5,
+        badges: [],
+        exp: 0,
+        level: 1,
       });
       
       router.replace('/(tabs)');

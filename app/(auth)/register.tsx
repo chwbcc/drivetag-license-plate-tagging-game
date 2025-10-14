@@ -66,18 +66,19 @@ export default function RegisterScreen() {
         return;
       }
       
-      // Mock successful registration
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       register({
-        id: '1',
+        id: userId,
         email,
-        name,
+        name: name || undefined,
         licensePlate: licensePlate.toUpperCase(),
         state,
-        pelletCount: 10, // New users get 10 free pellets
-        positivePelletCount: 5, // New users also get 5 positive pellets
-        badges: [], // Start with no badges
-        exp: 0, // Start with 0 experience
-        level: 1, // Start at level 1
+        pelletCount: 10,
+        positivePelletCount: 5,
+        badges: [],
+        exp: 0,
+        level: 1,
       });
       
       router.replace('/(tabs)');
