@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,28 +6,23 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { 
   Edit, 
   LogOut, 
-  Trophy, 
   Target, 
   ThumbsUp, 
   Star,
   Database,
-  Settings,
   User,
-  Mail,
   Car,
-  MapPin,
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
 import ExperienceBar from '@/components/ExperienceBar';
+import CircularGauge from '@/components/CircularGauge';
 import colors from '@/constants/colors';
 
 export default function ProfileScreen() {
@@ -69,183 +64,342 @@ export default function ProfileScreen() {
     );
   };
 
-  const stats = [
-    {
-      icon: Target,
-      label: 'Pellets Given',
-      value: pelletsGiven.length,
-      color: colors.primary,
-    },
-    {
-      icon: ThumbsUp,
-      label: 'Positive Given',
-      value: pelletsGiven.filter(p => p.type === 'positive').length,
-      color: colors.success,
-    },
-    {
-      icon: Trophy,
-      label: 'Badges Earned',
-      value: userBadges.length,
-      color: colors.warning,
-    },
-    {
-      icon: Star,
-      label: 'Experience',
-      value: user.exp || 0,
-      color: colors.secondary,
-    },
-  ];
-
-  const pelletStats = [
-    {
-      label: 'Negative Received',
-      value: negativePelletsReceived.length,
-      color: colors.error,
-    },
-    {
-      label: 'Positive Received',
-      value: positivePelletsReceived.length,
-      color: colors.success,
-    },
-    {
-      label: 'Total Received',
-      value: pelletsReceived.length,
-      color: colors.textSecondary,
-    },
-  ];
+  const darkBg = '#1a1a24' as const;
+  const cardBg = '#24243a' as const;
+  const accentGreen = '#00ff9d' as const;
+  const accentRed = '#ff3366' as const;
+  const accentYellow = '#ffd700' as const;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: darkBg }}>
       <Stack.Screen
         options={{
           title: 'Profile',
+          headerStyle: {
+            backgroundColor: darkBg,
+          },
+          headerTintColor: '#ffffff',
           headerRight: () => (
             <TouchableOpacity
               onPress={() => router.push('/sql-export')}
               style={{ marginRight: 8 }}
             >
-              <Database size={24} color={colors.text} />
+              <Database size={24} color="#ffffff" />
             </TouchableOpacity>
           ),
         }}
       />
       
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
-        {/* Profile Header */}
+        {/* User Info Header */}
         <View style={{
-          backgroundColor: colors.surface,
-          borderRadius: 16,
-          padding: 24,
-          alignItems: 'center',
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 20,
           marginBottom: 24,
         }}>
           <View style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            backgroundColor: colors.primary + '20',
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 16,
+            justifyContent: 'space-between',
           }}>
-            {user.photo ? (
-              <Image 
-                source={{ uri: user.photo }} 
-                style={{ width: 80, height: 80, borderRadius: 40 }}
-              />
-            ) : (
-              <User size={40} color={colors.primary} />
-            )}
+            <View style={{ flex: 1 }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}>
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: colors.primary + '30',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}>
+                  {user.photo ? (
+                    <Image 
+                      source={{ uri: user.photo }} 
+                      style={{ width: 50, height: 50, borderRadius: 25 }}
+                    />
+                  ) : (
+                    <User size={24} color={accentGreen} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: 18,
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    marginBottom: 2,
+                  }}>
+                    {user.name || 'Anonymous Driver'}
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}>
+                    <Car size={12} color='#888' />
+                    <Text style={{
+                      fontSize: 12,
+                      color: '#888',
+                      marginLeft: 4,
+                    }}>
+                      {user.licensePlate}
+                    </Text>
+                    {user.state && (
+                      <Text style={{
+                        fontSize: 12,
+                        color: '#888',
+                        marginLeft: 4,
+                      }}>
+                        • {user.state}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+            
+            <TouchableOpacity
+              onPress={() => router.push('/edit-profile')}
+              style={{
+                backgroundColor: colors.primary + '30',
+                borderRadius: 8,
+                padding: 8,
+              }}
+            >
+              <Edit size={18} color={accentGreen} />
+            </TouchableOpacity>
           </View>
           
-          <Text style={{
-            fontSize: 24,
-            fontWeight: '700',
-            color: colors.text,
-            marginBottom: 4,
+          <View style={{
+            flexDirection: 'row',
+            marginTop: 16,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: '#333344',
           }}>
-            {user.name || 'Anonymous Driver'}
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: '700',
+                color: accentYellow,
+              }}>
+                {user.level}
+              </Text>
+              <Text style={{
+                fontSize: 11,
+                color: '#888',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginTop: 2,
+              }}>
+                Level
+              </Text>
+            </View>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: '700',
+                color: accentGreen,
+              }}>
+                {user.exp || 0}
+              </Text>
+              <Text style={{
+                fontSize: 11,
+                color: '#888',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginTop: 2,
+              }}>
+                EXP
+              </Text>
+            </View>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: '700',
+                color: colors.primary,
+              }}>
+                {userBadges.length}
+              </Text>
+              <Text style={{
+                fontSize: 11,
+                color: '#888',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginTop: 2,
+              }}>
+                Badges
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Main Gauges - Positive & Negative */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 24,
+          marginBottom: 24,
+        }}>
+          <Text style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#ffffff',
+            marginBottom: 24,
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: 1.5,
+          }}>
+            Driver Score
           </Text>
           
           <View style={{
             flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 8,
+            justifyContent: 'space-around',
+            marginBottom: 20,
           }}>
-            <Mail size={16} color={colors.textSecondary} />
-            <Text style={{
-              fontSize: 16,
-              color: colors.textSecondary,
-              marginLeft: 6,
-            }}>
-              {user.email}
-            </Text>
+            <CircularGauge
+              value={positivePelletsReceived.length}
+              maxValue={Math.max(positivePelletsReceived.length + 10, 50)}
+              size={140}
+              strokeWidth={12}
+              color={accentGreen}
+              label="Positive Tags"
+            />
+            
+            <CircularGauge
+              value={negativePelletsReceived.length}
+              maxValue={Math.max(negativePelletsReceived.length + 10, 50)}
+              size={140}
+              strokeWidth={12}
+              color={accentRed}
+              label="Negative Tags"
+            />
           </View>
-          
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 16,
-          }}>
-            <Car size={16} color={colors.textSecondary} />
-            <Text style={{
-              fontSize: 16,
-              color: colors.textSecondary,
-              marginLeft: 6,
-            }}>
-              {user.licensePlate}
-            </Text>
-            {user.state && (
-              <>
-                <MapPin size={14} color={colors.textSecondary} style={{ marginLeft: 8 }} />
-                <Text style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginLeft: 4,
-                }}>
-                  {user.state}
-                </Text>
-              </>
-            )}
-          </View>
-          
-          <TouchableOpacity
-            onPress={() => router.push('/edit-profile')}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: colors.primary,
-              borderRadius: 8,
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-            }}
-          >
-            <Edit size={16} color="white" />
-            <Text style={{
-              color: 'white',
-              fontSize: 14,
-              fontWeight: '600',
-              marginLeft: 6,
-            }}>
-              Edit Profile
-            </Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Experience Section */}
+        {/* Activity Stats */}
         <View style={{
-          backgroundColor: colors.surface,
-          borderRadius: 16,
+          backgroundColor: cardBg,
+          borderRadius: 20,
           padding: 20,
           marginBottom: 24,
         }}>
           <Text style={{
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: '600',
-            color: colors.text,
+            color: '#ffffff',
             marginBottom: 16,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
           }}>
-            Experience & Level
+            Activity
+          </Text>
+          
+          <View style={{ gap: 12 }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: darkBg,
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Target size={20} color={accentYellow} />
+                <Text style={{
+                  fontSize: 14,
+                  color: '#cccccc',
+                  marginLeft: 12,
+                }}>
+                  Pellets Given
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#ffffff',
+              }}>
+                {pelletsGiven.length}
+              </Text>
+            </View>
+            
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: darkBg,
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ThumbsUp size={20} color={accentGreen} />
+                <Text style={{
+                  fontSize: 14,
+                  color: '#cccccc',
+                  marginLeft: 12,
+                }}>
+                  Positive Given
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#ffffff',
+              }}>
+                {pelletsGiven.filter(p => p.type === 'positive').length}
+              </Text>
+            </View>
+            
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: darkBg,
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Star size={20} color={accentYellow} />
+                <Text style={{
+                  fontSize: 14,
+                  color: '#cccccc',
+                  marginLeft: 12,
+                }}>
+                  Total Received
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#ffffff',
+              }}>
+                {pelletsReceived.length}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Experience Progress */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 24,
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: '#ffffff',
+            marginBottom: 12,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}>
+            Level Progress
           </Text>
           
           <View style={{
@@ -255,26 +409,17 @@ export default function ProfileScreen() {
             marginBottom: 12,
           }}>
             <Text style={{
-              fontSize: 32,
-              fontWeight: '700',
-              color: colors.primary,
+              fontSize: 12,
+              color: '#888',
             }}>
               Level {user.level}
             </Text>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{
-                fontSize: 16,
-                color: colors.textSecondary,
-              }}>
-                {expInfo.current} / {expInfo.next} EXP
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.textSecondary,
-              }}>
-                Total: {user.exp || 0} EXP
-              </Text>
-            </View>
+            <Text style={{
+              fontSize: 12,
+              color: '#888',
+            }}>
+              {expInfo.current} / {expInfo.next} EXP
+            </Text>
           </View>
           
           <ExperienceBar 
@@ -285,137 +430,30 @@ export default function ProfileScreen() {
           />
           
           <Text style={{
-            fontSize: 14,
-            color: colors.textSecondary,
+            fontSize: 11,
+            color: '#666',
             textAlign: 'center',
             marginTop: 8,
           }}>
-            {expInfo.progress}% to next level
+            {expInfo.progress}% complete
           </Text>
-        </View>
-
-        {/* Stats Grid */}
-        <View style={{
-          backgroundColor: colors.surface,
-          borderRadius: 16,
-          padding: 20,
-          marginBottom: 24,
-        }}>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: '600',
-            color: colors.text,
-            marginBottom: 16,
-          }}>
-            Activity Stats
-          </Text>
-          
-          <View style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}>
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <View
-                  key={index}
-                  style={{
-                    backgroundColor: colors.background,
-                    borderRadius: 12,
-                    padding: 16,
-                    flex: 1,
-                    minWidth: '45%',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Icon size={24} color={stat.color} />
-                  <Text style={{
-                    fontSize: 24,
-                    fontWeight: '700',
-                    color: colors.text,
-                    marginTop: 8,
-                    marginBottom: 4,
-                  }}>
-                    {stat.value}
-                  </Text>
-                  <Text style={{
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    textAlign: 'center',
-                  }}>
-                    {stat.label}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Pellets Received */}
-        <View style={{
-          backgroundColor: colors.surface,
-          borderRadius: 16,
-          padding: 20,
-          marginBottom: 24,
-        }}>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: '600',
-            color: colors.text,
-            marginBottom: 16,
-          }}>
-            Pellets Received
-          </Text>
-          
-          <View style={{
-            flexDirection: 'row',
-            gap: 12,
-          }}>
-            {pelletStats.map((stat, index) => (
-              <View
-                key={index}
-                style={{
-                  backgroundColor: colors.background,
-                  borderRadius: 12,
-                  padding: 16,
-                  flex: 1,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{
-                  fontSize: 20,
-                  fontWeight: '700',
-                  color: stat.color,
-                  marginBottom: 4,
-                }}>
-                  {stat.value}
-                </Text>
-                <Text style={{
-                  fontSize: 12,
-                  color: colors.textSecondary,
-                  textAlign: 'center',
-                }}>
-                  {stat.label}
-                </Text>
-              </View>
-            ))}
-          </View>
         </View>
 
         {/* Recent Badges */}
         {userBadges.length > 0 && (
           <View style={{
-            backgroundColor: colors.surface,
-            borderRadius: 16,
+            backgroundColor: cardBg,
+            borderRadius: 20,
             padding: 20,
             marginBottom: 24,
           }}>
             <Text style={{
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: '600',
-              color: colors.text,
+              color: '#ffffff',
               marginBottom: 16,
+              textTransform: 'uppercase',
+              letterSpacing: 1,
             }}>
               Recent Badges
             </Text>
@@ -426,7 +464,7 @@ export default function ProfileScreen() {
                   <View
                     key={badge.id}
                     style={{
-                      backgroundColor: colors.background,
+                      backgroundColor: darkBg,
                       borderRadius: 12,
                       padding: 16,
                       alignItems: 'center',
@@ -439,7 +477,7 @@ export default function ProfileScreen() {
                     <Text style={{
                       fontSize: 12,
                       fontWeight: '600',
-                      color: colors.text,
+                      color: '#ffffff',
                       textAlign: 'center',
                     }}>
                       {badge.name}
@@ -457,11 +495,11 @@ export default function ProfileScreen() {
               }}
             >
               <Text style={{
-                color: colors.primary,
+                color: accentGreen,
                 fontSize: 14,
                 fontWeight: '600',
               }}>
-                View All Badges
+                View All Badges →
               </Text>
             </TouchableOpacity>
           </View>
@@ -474,15 +512,15 @@ export default function ProfileScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: colors.error,
+            backgroundColor: '#33334a',
             borderRadius: 12,
             padding: 16,
             marginBottom: 40,
           }}
         >
-          <LogOut size={20} color="white" />
+          <LogOut size={20} color={accentRed} />
           <Text style={{
-            color: 'white',
+            color: '#ffffff',
             fontSize: 16,
             fontWeight: '600',
             marginLeft: 8,
@@ -491,6 +529,6 @@ export default function ProfileScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
