@@ -68,7 +68,7 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoEmoji}>🎯</Text>
+            <Text style={styles.logoEmoji}>💥</Text>
           </View>
           <Text style={styles.title}>Stupid Pellets</Text>
           <Text style={styles.subtitle}>Tag bad drivers, praise good ones</Text>
