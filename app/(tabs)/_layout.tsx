@@ -26,7 +26,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -53,8 +53,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) => <User size={24} color={color} />,
+          title: "Tag Driver",
+          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
         }}
       />
     </Tabs>

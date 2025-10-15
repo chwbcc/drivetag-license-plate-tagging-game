@@ -1,315 +1,592 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp } from 'lucide-react-native';
-import Colors from '@/constants/colors';
-import PelletCard from '@/components/PelletCard';
-import Button from '@/components/Button';
-import usePelletStore from '@/store/pellet-store';
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Image,
+  FlatList,
+} from 'react-native';
+import { Stack, router } from 'expo-router';
+import { 
+  Edit, 
+  LogOut, 
+  Target, 
+  ThumbsUp, 
+  Star,
+  Database,
+  User,
+  Car,
+} from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
+import usePelletStore from '@/store/pellet-store';
+import useBadgeStore from '@/store/badge-store';
+import ExperienceBar from '@/components/ExperienceBar';
+import CircularGauge from '@/components/CircularGauge';
+import PelletCard from '@/components/PelletCard';
+import colors from '@/constants/colors';
 
 export default function HomeScreen() {
-  const { pellets } = usePelletStore();
-  const { user } = useAuthStore();
-  const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
+  const { user, logout, getExpForNextLevel } = useAuthStore();
+  const { getPelletsByLicensePlate, getPelletsCreatedByUser, pellets } = usePelletStore();
+  const { getUserBadges } = useBadgeStore();
+
+  if (!user) {
+    return null;
+  }
+
+  const userBadges = getUserBadges(user.id);
   
-  const recentPellets = [...pellets]
+  const userLicensePlateWithState = user.state && !user.licensePlate.includes('-') 
+    ? `${user.state}-${user.licensePlate}` 
+    : user.licensePlate;
+  
+  const pelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState);
+  const negativePelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState, 'negative');
+  const positivePelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState, 'positive');
+  const pelletsGiven = getPelletsCreatedByUser(user.id);
+  const expInfo = getExpForNextLevel();
+
+  const recentPellets = [...pelletsReceived]
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 10);
-  
-  const handleTagDriver = () => {
-    if (!user) {
-      Alert.alert('Error', 'You need to be logged in to tag a driver');
-      return;
-    }
-    
-    const pelletCount = pelletType === 'positive' 
-      ? (user.positivePelletCount || 0) 
-      : user.pelletCount;
-    
-    if (pelletCount <= 0) {
-      Alert.alert(
-        'No Pellets',
-        `You need ${pelletType} pellets to tag a driver. Visit the shop to purchase more.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Go to Shop', 
-            onPress: () => router.push('/(tabs)/shop')
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/(auth)');
           }
-        ]
-      );
-      return;
-    }
-    
-    router.push({
-      pathname: '/tag-driver',
-      params: { type: pelletType }
-    });
+        },
+      ]
+    );
   };
 
+  const darkBg = '#1a1a24' as const;
+  const cardBg = '#24243a' as const;
+  const accentGreen = '#00ff9d' as const;
+  const accentRed = '#ff3366' as const;
+  const accentYellow = '#ffd700' as const;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, Driver</Text>
-          <Text style={styles.licensePlate}>{user?.licensePlate || 'No License Plate'}</Text>
-        </View>
-        
-        <View style={styles.pelletCountContainer}>
-          <View style={styles.pelletCount}>
-            <Text style={styles.pelletCountLabel}>Negative:</Text>
-            <Text style={styles.pelletCountValue}>{user?.pelletCount || 0}</Text>
-          </View>
-          <View style={styles.pelletCount}>
-            <Text style={styles.pelletCountLabel}>Positive:</Text>
-            <Text style={[styles.pelletCountValue, styles.positivePelletCount]}>
-              {user?.positivePelletCount || 0}
-            </Text>
-          </View>
-        </View>
-      </View>
+    <View style={{ flex: 1, backgroundColor: darkBg }}>
+      <Stack.Screen
+        options={{
+          title: 'Driver Score',
+          headerStyle: {
+            backgroundColor: darkBg,
+          },
+          headerTintColor: '#ffffff',
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push('/sql-export')}
+              style={{ marginRight: 8 }}
+            >
+              <Database size={24} color="#ffffff" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       
-      <View style={styles.tagButtonContainer}>
-        <View style={styles.tagTypeSelector}>
-          <TouchableOpacity 
-            style={[
-              styles.tagTypeButton, 
-              pelletType === 'negative' && styles.tagTypeButtonActive
-            ]}
-            onPress={() => setPelletType('negative')}
-          >
-            <Target 
-              size={16} 
-              color={pelletType === 'negative' ? Colors.primary : Colors.textSecondary} 
-              style={styles.tagTypeIcon}
-            />
-            <Text style={[
-              styles.tagTypeText,
-              pelletType === 'negative' && styles.tagTypeTextActive
-            ]}>Negative Tag</Text>
-          </TouchableOpacity>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
+        {/* User Info Header */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 24,
+        }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <View style={{ flex: 1 }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}>
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: colors.primary + '30',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}>
+                  {user.photo ? (
+                    <Image 
+                      source={{ uri: user.photo }} 
+                      style={{ width: 50, height: 50, borderRadius: 25 }}
+                    />
+                  ) : (
+                    <User size={24} color={accentGreen} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: 18,
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    marginBottom: 2,
+                  }}>
+                    {user.name || 'Anonymous Driver'}
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}>
+                    <Car size={12} color='#888' />
+                    <Text style={{
+                      fontSize: 12,
+                      color: '#888',
+                      marginLeft: 4,
+                    }}>
+                      {user.licensePlate}
+                    </Text>
+                    {user.state && (
+                      <Text style={{
+                        fontSize: 12,
+                        color: '#888',
+                        marginLeft: 4,
+                      }}>
+                        • {user.state}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+            
+            <TouchableOpacity
+              onPress={() => router.push('/edit-profile')}
+              style={{
+                backgroundColor: colors.primary + '30',
+                borderRadius: 8,
+                padding: 8,
+              }}
+            >
+              <Edit size={18} color={accentGreen} />
+            </TouchableOpacity>
+          </View>
           
-          <TouchableOpacity 
-            style={[
-              styles.tagTypeButton, 
-              pelletType === 'positive' && styles.tagTypeButtonActive,
-              pelletType === 'positive' && styles.positiveTagTypeButtonActive
-            ]}
-            onPress={() => setPelletType('positive')}
-          >
-            <ThumbsUp 
-              size={16} 
-              color={pelletType === 'positive' ? Colors.success : Colors.textSecondary} 
-              style={styles.tagTypeIcon}
-            />
-            <Text style={[
-              styles.tagTypeText,
-              pelletType === 'positive' && styles.positiveTagTypeTextActive
-            ]}>Positive Tag</Text>
-          </TouchableOpacity>
+          <View style={{
+            flexDirection: 'row',
+            marginTop: 16,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: '#333344',
+          }}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: '700',
+                color: accentYellow,
+              }}>
+                {user.level}
+              </Text>
+              <Text style={{
+                fontSize: 11,
+                color: '#888',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginTop: 2,
+              }}>
+                Level
+              </Text>
+            </View>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: '700',
+                color: accentGreen,
+              }}>
+                {user.exp || 0}
+              </Text>
+              <Text style={{
+                fontSize: 11,
+                color: '#888',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginTop: 2,
+              }}>
+                EXP
+              </Text>
+            </View>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: '700',
+                color: colors.primary,
+              }}>
+                {userBadges.length}
+              </Text>
+              <Text style={{
+                fontSize: 11,
+                color: '#888',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginTop: 2,
+              }}>
+                Badges
+              </Text>
+            </View>
+          </View>
         </View>
-        
-        <Button
-          title={`Tag a Driver (${pelletType === 'positive' ? 'Positive' : 'Negative'})`}
-          onPress={handleTagDriver}
-          style={[
-            styles.tagButton,
-            pelletType === 'positive' && styles.positiveTagButton
-          ]}
-          textStyle={styles.tagButtonText}
-        />
-      </View>
-      
-      <View style={styles.recentContainer}>
-        <Text style={styles.sectionTitle}>Recent Tags</Text>
-        
-        {recentPellets.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateEmoji}>💥</Text>
-            <Text style={styles.emptyStateText}>No pellets yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Start tagging drivers to see them here
+
+        {/* Main Gauges - Positive & Negative */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 24,
+          marginBottom: 24,
+        }}>
+          <Text style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#ffffff',
+            marginBottom: 24,
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: 1.5,
+          }}>
+            Driver Score
+          </Text>
+          
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            marginBottom: 20,
+          }}>
+            <CircularGauge
+              value={positivePelletsReceived.length}
+              maxValue={Math.max(positivePelletsReceived.length + 10, 50)}
+              size={140}
+              strokeWidth={12}
+              color={accentGreen}
+              label="Positive Tags"
+            />
+            
+            <CircularGauge
+              value={negativePelletsReceived.length}
+              maxValue={Math.max(negativePelletsReceived.length + 10, 50)}
+              size={140}
+              strokeWidth={12}
+              color={accentRed}
+              label="Negative Tags"
+            />
+          </View>
+        </View>
+
+        {/* Activity Stats */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 24,
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: '#ffffff',
+            marginBottom: 16,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}>
+            Activity
+          </Text>
+          
+          <View style={{ gap: 12 }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: darkBg,
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Target size={20} color={accentYellow} />
+                <Text style={{
+                  fontSize: 14,
+                  color: '#cccccc',
+                  marginLeft: 12,
+                }}>
+                  Pellets Given
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#ffffff',
+              }}>
+                {pelletsGiven.length}
+              </Text>
+            </View>
+            
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: darkBg,
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ThumbsUp size={20} color={accentGreen} />
+                <Text style={{
+                  fontSize: 14,
+                  color: '#cccccc',
+                  marginLeft: 12,
+                }}>
+                  Positive Given
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#ffffff',
+              }}>
+                {pelletsGiven.filter(p => p.type === 'positive').length}
+              </Text>
+            </View>
+            
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: darkBg,
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Star size={20} color={accentYellow} />
+                <Text style={{
+                  fontSize: 14,
+                  color: '#cccccc',
+                  marginLeft: 12,
+                }}>
+                  Total Received
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#ffffff',
+              }}>
+                {pelletsReceived.length}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Experience Progress */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 24,
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: '#ffffff',
+            marginBottom: 12,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}>
+            Level Progress
+          </Text>
+          
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 12,
+          }}>
+            <Text style={{
+              fontSize: 12,
+              color: '#888',
+            }}>
+              Level {user.level}
+            </Text>
+            <Text style={{
+              fontSize: 12,
+              color: '#888',
+            }}>
+              {expInfo.current} / {expInfo.next} EXP
             </Text>
           </View>
-        ) : (
-          <FlatList
-            data={recentPellets}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <PelletCard pellet={item} />}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
+          
+          <ExperienceBar 
+            level={user.level}
+            currentExp={expInfo.current}
+            nextLevelExp={expInfo.next}
+            progress={expInfo.progress}
           />
+          
+          <Text style={{
+            fontSize: 11,
+            color: '#666',
+            textAlign: 'center',
+            marginTop: 8,
+          }}>
+            {expInfo.progress}% complete
+          </Text>
+        </View>
+
+        {/* Recent Tags Section */}
+        <View style={{
+          backgroundColor: cardBg,
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 24,
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: '#ffffff',
+            marginBottom: 16,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}>
+            Recent Tags
+          </Text>
+          
+          {recentPellets.length === 0 ? (
+            <View style={{
+              paddingVertical: 40,
+              alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: 48 }}>💥</Text>
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '600',
+                color: '#ffffff',
+                marginTop: 16,
+              }}>
+                No tags received yet
+              </Text>
+              <Text style={{
+                fontSize: 14,
+                color: '#888',
+                textAlign: 'center',
+                marginTop: 8,
+              }}>
+                Your driving record is clean!
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {recentPellets.map((item) => (
+                <View key={item.id} style={{ marginBottom: 8 }}>
+                  <PelletCard pellet={item} />
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Recent Badges */}
+        {userBadges.length > 0 && (
+          <View style={{
+            backgroundColor: cardBg,
+            borderRadius: 20,
+            padding: 20,
+            marginBottom: 24,
+          }}>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#ffffff',
+              marginBottom: 16,
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+            }}>
+              Recent Badges
+            </Text>
+            
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                {userBadges.slice(0, 5).map((badge) => (
+                  <View
+                    key={badge.id}
+                    style={{
+                      backgroundColor: darkBg,
+                      borderRadius: 12,
+                      padding: 16,
+                      alignItems: 'center',
+                      width: 100,
+                    }}
+                  >
+                    <Text style={{ fontSize: 24, marginBottom: 8 }}>
+                      {badge.icon}
+                    </Text>
+                    <Text style={{
+                      fontSize: 12,
+                      fontWeight: '600',
+                      color: '#ffffff',
+                      textAlign: 'center',
+                    }}>
+                      {badge.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+            
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/badges')}
+              style={{
+                marginTop: 12,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{
+                color: accentGreen,
+                fontSize: 14,
+                fontWeight: '600',
+              }}>
+                View All Badges →
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
-      </View>
-      
-      <TouchableOpacity 
-        style={[
-          styles.floatingButton,
-          pelletType === 'positive' && styles.positiveFloatingButton
-        ]}
-        onPress={handleTagDriver}
-      >
-        {pelletType === 'positive' ? (
-          <ThumbsUp size={24} color="#fff" />
-        ) : (
-          <Plus size={24} color="#fff" />
-        )}
-      </TouchableOpacity>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#33334a',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 40,
+          }}
+        >
+          <LogOut size={20} color={accentRed} />
+          <Text style={{
+            color: '#ffffff',
+            fontSize: 16,
+            fontWeight: '600',
+            marginLeft: 8,
+          }}>
+            Logout
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  licensePlate: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  pelletCountContainer: {
-    backgroundColor: Colors.card,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  pelletCount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  pelletCountLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginRight: 4,
-  },
-  pelletCountValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.primary,
-  },
-  positivePelletCount: {
-    color: Colors.success,
-  },
-  tagButtonContainer: {
-    marginBottom: 24,
-  },
-  tagTypeSelector: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  tagTypeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginHorizontal: 4,
-  },
-  tagTypeButtonActive: {
-    backgroundColor: Colors.primary + '10',
-    borderColor: Colors.primary,
-  },
-  positiveTagTypeButtonActive: {
-    backgroundColor: Colors.success + '10',
-    borderColor: Colors.success,
-  },
-  tagTypeIcon: {
-    marginRight: 6,
-  },
-  tagTypeText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  tagTypeTextActive: {
-    color: Colors.primary,
-    fontWeight: '500',
-  },
-  positiveTagTypeTextActive: {
-    color: Colors.success,
-    fontWeight: '500',
-  },
-  tagButton: {
-    backgroundColor: Colors.primary,
-  },
-  positiveTagButton: {
-    backgroundColor: Colors.success,
-  },
-  tagButtonText: {
-    color: '#fff',
-  },
-  recentContainer: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  listContent: {
-    paddingBottom: 80,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  emptyStateEmoji: {
-    fontSize: 48,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    maxWidth: '80%',
-  },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  positiveFloatingButton: {
-    backgroundColor: Colors.success,
-  },
-});
