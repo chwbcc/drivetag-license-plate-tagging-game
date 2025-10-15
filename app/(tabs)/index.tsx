@@ -126,7 +126,7 @@ export default function HomeScreen() {
         
         {recentPellets.length === 0 ? (
           <View style={styles.emptyState}>
-            <Target size={48} color={Colors.textSecondary} />
+            <Text style={styles.emptyStateEmoji}>💥</Text>
             <Text style={styles.emptyStateText}>No pellets yet</Text>
             <Text style={styles.emptyStateSubtext}>
               Start tagging drivers to see them here
@@ -276,6 +276,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 60,
+  },
+  emptyStateEmoji: {
+    fontSize: 48,
   },
   emptyStateText: {
     fontSize: 18,
