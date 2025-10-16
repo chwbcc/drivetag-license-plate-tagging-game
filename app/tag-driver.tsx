@@ -253,8 +253,7 @@ export default function TagDriverScreen() {
             styles.pelletInfoText,
             isPositive && styles.positivePelletInfoText
           ]}>
-            This will use 1 {isPositive ? 'positive' : 'negative'} pellet. 
-            You have {isPositive ? user?.positivePelletCount || 0 : user?.pelletCount || 0} pellets remaining.
+            {`This will use 1 ${isPositive ? 'positive' : 'negative'} pellet. You have ${isPositive ? user?.positivePelletCount || 0 : user?.pelletCount || 0} pellets remaining.`}
           </Text>
         </View>
         
