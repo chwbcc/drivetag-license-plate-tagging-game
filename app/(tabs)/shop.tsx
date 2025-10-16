@@ -117,7 +117,7 @@ export default function ShopScreen() {
         <Text style={styles.itemDescription}>{item.description}</Text>
         
         <View style={styles.itemFooter}>
-          <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.itemPrice}>{`${item.price.toFixed(2)}`}</Text>
           <Button 
             title="Buy" 
             variant="primary" 

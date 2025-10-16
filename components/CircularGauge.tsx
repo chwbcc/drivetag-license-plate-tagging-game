@@ -91,7 +91,7 @@ export default function CircularGauge({
       </View>
       
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.maxValue}>max {maxValue}</Text>
+      <Text style={styles.maxValue}>{`max ${maxValue}`}</Text>
     </View>
   );
 }
