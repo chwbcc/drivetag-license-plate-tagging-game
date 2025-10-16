@@ -125,7 +125,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#0F172A',
   },
   scrollContent: {
     flexGrow: 1,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.secondary,
+    backgroundColor: '#F97316',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -151,19 +151,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: '#94A3B8',
     textAlign: 'center',
   },
   form: {
     width: '100%',
   },
   errorText: {
-    color: Colors.error,
+    color: '#EF4444',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: '#94A3B8',
     marginBottom: 12,
   },
   registerButton: {
@@ -185,14 +185,14 @@ const styles = StyleSheet.create({
   freeInfo: {
     marginTop: 32,
     padding: 16,
-    backgroundColor: Colors.success + '15', // 15% opacity
+    backgroundColor: '#10B98120',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.success + '30', // 30% opacity
+    borderColor: '#10B98140',
   },
   freeInfoText: {
     fontSize: 14,
-    color: Colors.success,
+    color: '#10B981',
     textAlign: 'center',
     fontWeight: '500',
   },
