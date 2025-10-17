@@ -18,6 +18,8 @@ import {
   Database,
   User,
   Car,
+  Moon,
+  Sun,
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
@@ -26,11 +28,14 @@ import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
 import PelletCard from '@/components/PelletCard';
 import colors from '@/constants/colors';
+import { useTheme } from '@/store/theme-store';
+import { darkMode } from '@/constants/styles';
 
 export default function HomeScreen() {
   const { user, logout, getExpForNextLevel } = useAuthStore();
   const { getPelletsByLicensePlate, getPelletsCreatedByUser, pellets } = usePelletStore();
   const { getUserBadges } = useBadgeStore();
+  const { isDark, toggleTheme } = useTheme();
 
   if (!user) {
     return null;
@@ -70,28 +75,36 @@ export default function HomeScreen() {
     );
   };
 
-  const darkBg = '#1a1a24' as const;
-  const cardBg = '#24243a' as const;
+  const bgColor = isDark ? '#1a1a24' : colors.background;
+  const cardColor = isDark ? '#24243a' : colors.card;
+  const textColor = isDark ? '#ffffff' : colors.text;
+  const textSecondary = isDark ? '#888' : colors.textSecondary;
   const accentGreen = '#00ff9d' as const;
   const accentRed = '#ff3366' as const;
   const accentYellow = '#ffd700' as const;
 
   return (
-    <View style={{ flex: 1, backgroundColor: darkBg }}>
+    <View style={{ flex: 1, backgroundColor: bgColor }}>
       <Stack.Screen
         options={{
           title: 'Driver Score',
           headerStyle: {
-            backgroundColor: darkBg,
+            backgroundColor: bgColor,
           },
-          headerTintColor: '#ffffff',
+          headerTintColor: textColor,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/sql-export')}
-              style={{ marginRight: 8 }}
-            >
-              <Database size={24} color="#ffffff" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 12, marginRight: 8 }}>
+              <TouchableOpacity onPress={toggleTheme}>
+                {isDark ? (
+                  <Sun size={24} color={textColor} />
+                ) : (
+                  <Moon size={24} color={textColor} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/sql-export')}>
+                <Database size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -99,7 +112,7 @@ export default function HomeScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
         {/* User Info Header */}
         <View style={{
-          backgroundColor: cardBg,
+          backgroundColor: cardColor,
           borderRadius: 20,
           padding: 20,
           marginBottom: 24,
@@ -137,7 +150,7 @@ export default function HomeScreen() {
                   <Text style={{
                     fontSize: 18,
                     fontWeight: '700',
-                    color: '#ffffff',
+                    color: textColor,
                     marginBottom: 2,
                   }}>
                     {user.name || 'Anonymous Driver'}
@@ -149,7 +162,7 @@ export default function HomeScreen() {
                     <Car size={12} color='#888' />
                     <Text style={{
                       fontSize: 12,
-                      color: '#888',
+                      color: textSecondary,
                       marginLeft: 4,
                     }}>
                       {user.licensePlate}
@@ -197,7 +210,7 @@ export default function HomeScreen() {
               </Text>
               <Text style={{
                 fontSize: 11,
-                color: '#888',
+                color: textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
                 marginTop: 2,
@@ -215,7 +228,7 @@ export default function HomeScreen() {
               </Text>
               <Text style={{
                 fontSize: 11,
-                color: '#888',
+                color: textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
                 marginTop: 2,
@@ -233,7 +246,7 @@ export default function HomeScreen() {
               </Text>
               <Text style={{
                 fontSize: 11,
-                color: '#888',
+                color: textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
                 marginTop: 2,
@@ -246,7 +259,7 @@ export default function HomeScreen() {
 
         {/* Main Gauges - Positive & Negative */}
         <View style={{
-          backgroundColor: cardBg,
+          backgroundColor: cardColor,
           borderRadius: 20,
           padding: 24,
           marginBottom: 24,
@@ -254,7 +267,7 @@ export default function HomeScreen() {
           <Text style={{
             fontSize: 16,
             fontWeight: '600',
-            color: '#ffffff',
+            color: textColor,
             marginBottom: 24,
             textAlign: 'center',
             textTransform: 'uppercase',
@@ -290,7 +303,7 @@ export default function HomeScreen() {
 
         {/* Activity Stats */}
         <View style={{
-          backgroundColor: cardBg,
+          backgroundColor: cardColor,
           borderRadius: 20,
           padding: 20,
           marginBottom: 24,
@@ -298,7 +311,7 @@ export default function HomeScreen() {
           <Text style={{
             fontSize: 14,
             fontWeight: '600',
-            color: '#ffffff',
+            color: textColor,
             marginBottom: 16,
             textTransform: 'uppercase',
             letterSpacing: 1,
@@ -311,7 +324,7 @@ export default function HomeScreen() {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: darkBg,
+              backgroundColor: bgColor,
               borderRadius: 12,
               padding: 16,
             }}>
@@ -328,7 +341,7 @@ export default function HomeScreen() {
               <Text style={{
                 fontSize: 18,
                 fontWeight: '700',
-                color: '#ffffff',
+                color: textColor,
               }}>
                 {pelletsGiven.length}
               </Text>
@@ -338,7 +351,7 @@ export default function HomeScreen() {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: darkBg,
+              backgroundColor: bgColor,
               borderRadius: 12,
               padding: 16,
             }}>
@@ -355,7 +368,7 @@ export default function HomeScreen() {
               <Text style={{
                 fontSize: 18,
                 fontWeight: '700',
-                color: '#ffffff',
+                color: textColor,
               }}>
                 {pelletsGiven.filter(p => p.type === 'positive').length}
               </Text>
@@ -365,7 +378,7 @@ export default function HomeScreen() {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: darkBg,
+              backgroundColor: bgColor,
               borderRadius: 12,
               padding: 16,
             }}>
@@ -382,7 +395,7 @@ export default function HomeScreen() {
               <Text style={{
                 fontSize: 18,
                 fontWeight: '700',
-                color: '#ffffff',
+                color: textColor,
               }}>
                 {pelletsReceived.length}
               </Text>
@@ -392,7 +405,7 @@ export default function HomeScreen() {
 
         {/* Experience Progress */}
         <View style={{
-          backgroundColor: cardBg,
+          backgroundColor: cardColor,
           borderRadius: 20,
           padding: 20,
           marginBottom: 24,
@@ -400,7 +413,7 @@ export default function HomeScreen() {
           <Text style={{
             fontSize: 14,
             fontWeight: '600',
-            color: '#ffffff',
+            color: textColor,
             marginBottom: 12,
             textTransform: 'uppercase',
             letterSpacing: 1,
@@ -447,7 +460,7 @@ export default function HomeScreen() {
 
         {/* Recent Tags Section */}
         <View style={{
-          backgroundColor: cardBg,
+          backgroundColor: cardColor,
           borderRadius: 20,
           padding: 20,
           marginBottom: 24,
@@ -455,7 +468,7 @@ export default function HomeScreen() {
           <Text style={{
             fontSize: 14,
             fontWeight: '600',
-            color: '#ffffff',
+            color: textColor,
             marginBottom: 16,
             textTransform: 'uppercase',
             letterSpacing: 1,
@@ -472,7 +485,7 @@ export default function HomeScreen() {
               <Text style={{
                 fontSize: 16,
                 fontWeight: '600',
-                color: '#ffffff',
+                color: textColor,
                 marginTop: 16,
               }}>
                 No tags received yet
@@ -500,7 +513,7 @@ export default function HomeScreen() {
         {/* Recent Badges */}
         {userBadges.length > 0 && (
           <View style={{
-            backgroundColor: cardBg,
+            backgroundColor: cardColor,
             borderRadius: 20,
             padding: 20,
             marginBottom: 24,
@@ -522,7 +535,7 @@ export default function HomeScreen() {
                   <View
                     key={badge.id}
                     style={{
-                      backgroundColor: darkBg,
+                      backgroundColor: bgColor,
                       borderRadius: 12,
                       padding: 16,
                       alignItems: 'center',
@@ -535,7 +548,7 @@ export default function HomeScreen() {
                     <Text style={{
                       fontSize: 12,
                       fontWeight: '600',
-                      color: '#ffffff',
+                      color: textColor,
                       textAlign: 'center',
                     }}>
                       {badge.name}
@@ -578,7 +591,7 @@ export default function HomeScreen() {
         >
           <LogOut size={20} color={accentRed} />
           <Text style={{
-            color: '#ffffff',
+            color: textColor,
             fontSize: 16,
             fontWeight: '600',
             marginLeft: 8,

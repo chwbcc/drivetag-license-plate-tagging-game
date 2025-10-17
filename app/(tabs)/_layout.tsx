@@ -4,6 +4,8 @@ import { Home, User, Trophy, ShoppingCart, Award, Target } from 'lucide-react-na
 import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
+import { useTheme } from '@/store/theme-store';
+import { darkMode } from '@/constants/styles';
 
 function CenterTabButton({ onPress }: { onPress: () => void }) {
   return (
@@ -21,22 +23,23 @@ function CenterTabButton({ onPress }: { onPress: () => void }) {
 
 export default function TabLayout() {
   const router = useRouter();
+  const { isDark } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarInactiveTintColor: isDark ? darkMode.textSecondary : Colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: Colors.card,
-          borderTopColor: Colors.border,
+          backgroundColor: isDark ? darkMode.card : Colors.card,
+          borderTopColor: isDark ? darkMode.border : Colors.border,
           height: Platform.OS === 'ios' ? 88 : 70,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
         },
         headerStyle: {
-          backgroundColor: Colors.background,
+          backgroundColor: isDark ? darkMode.background : Colors.background,
         },
-        headerTintColor: Colors.text,
+        headerTintColor: isDark ? darkMode.text : Colors.text,
         headerTitleStyle: {
           fontWeight: '600',
         },

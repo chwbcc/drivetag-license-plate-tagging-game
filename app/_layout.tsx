@@ -5,6 +5,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import Colors from "@/constants/colors";
+import { ThemeProvider, useTheme } from "@/store/theme-store";
+import { darkMode } from "@/constants/styles";
 
 export const unstable_settings = {
   initialRouteName: "(auth)",
@@ -36,44 +38,48 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <StatusBar style="dark" />
+    <ThemeProvider>
       <RootLayoutNav />
-    </>
+    </ThemeProvider>
   );
 }
 
 function RootLayoutNav() {
+  const { isDark } = useTheme();
+  
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: Colors.background,
-        },
-        headerTintColor: Colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-        contentStyle: {
-          backgroundColor: Colors.background,
-        },
-      }}
-    >
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen 
-        name="tag-driver" 
-        options={{ 
-          title: "Tag a Driver",
-          presentation: "modal",
-        }} 
-      />
-      <Stack.Screen 
-        name="edit-profile" 
-        options={{ 
-          title: "Edit Profile",
-        }} 
-      />
-    </Stack>
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: isDark ? darkMode.background : Colors.background,
+          },
+          headerTintColor: isDark ? darkMode.text : Colors.text,
+          headerTitleStyle: {
+            fontWeight: '600',
+          },
+          contentStyle: {
+            backgroundColor: isDark ? darkMode.background : Colors.background,
+          },
+        }}
+      >
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="tag-driver" 
+          options={{ 
+            title: "Tag a Driver",
+            presentation: "modal",
+          }} 
+        />
+        <Stack.Screen 
+          name="edit-profile" 
+          options={{ 
+            title: "Edit Profile",
+          }} 
+        />
+      </Stack>
+    </>
   );
 }
