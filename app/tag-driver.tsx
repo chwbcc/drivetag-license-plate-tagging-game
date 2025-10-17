@@ -12,7 +12,7 @@ import {
   FlatList
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Target, ThumbsUp, ChevronDown } from 'lucide-react-native';
+import { Target, ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import Colors from '@/constants/colors';
 import Input from '@/components/Input';
@@ -64,12 +64,14 @@ const POSITIVE_REASONS = [
 
 export default function TagDriverScreen() {
   const params = useLocalSearchParams();
-  const pelletType = (params.type as 'negative' | 'positive') || 'negative';
+  const initialPelletType = (params.type as 'negative' | 'positive') || 'negative';
   
+  const [pelletType, setPelletType] = useState<'negative' | 'positive'>(initialPelletType);
   const [licensePlate, setLicensePlate] = useState('');
   const [state, setState] = useState('');
   const [showStatePicker, setShowStatePicker] = useState(false);
   const [reason, setReason] = useState('');
+  const [showReasonPicker, setShowReasonPicker] = useState(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -232,17 +234,53 @@ export default function TagDriverScreen() {
             {isPositive ? (
               <ThumbsUp size={32} color={Colors.success} />
             ) : (
-              <Target size={32} color={Colors.primary} />
+              <ThumbsDown size={32} color={Colors.error} />
             )}
           </View>
-          <Text style={styles.title}>
-            {isPositive ? 'Praise a Driver' : 'Tag a Driver'}
-          </Text>
+          <Text style={styles.title}>Tag a Driver</Text>
           <Text style={styles.subtitle}>
-            {isPositive 
-              ? 'Recognize courteous and safe driving' 
-              : 'Report unsafe or inconsiderate driving'}
+            Report driver behavior - positive or negative
           </Text>
+        </View>
+        
+        <View style={styles.feedbackTypeContainer}>
+          <TouchableOpacity
+            style={[
+              styles.feedbackTypeButton,
+              !isPositive && styles.feedbackTypeButtonActive,
+            ]}
+            onPress={() => {
+              setPelletType('negative');
+              setReason('');
+            }}
+          >
+            <ThumbsDown size={20} color={!isPositive ? '#FFFFFF' : Colors.error} />
+            <Text style={[
+              styles.feedbackTypeText,
+              !isPositive && styles.feedbackTypeTextActive,
+            ]}>
+              Negative
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.feedbackTypeButton,
+              isPositive && styles.feedbackTypeButtonActive,
+              isPositive && styles.positiveFeedbackTypeButton,
+            ]}
+            onPress={() => {
+              setPelletType('positive');
+              setReason('');
+            }}
+          >
+            <ThumbsUp size={20} color={isPositive ? '#FFFFFF' : Colors.success} />
+            <Text style={[
+              styles.feedbackTypeText,
+              isPositive && styles.feedbackTypeTextActive,
+            ]}>
+              Positive
+            </Text>
+          </TouchableOpacity>
         </View>
         
         <View style={[
@@ -255,13 +293,6 @@ export default function TagDriverScreen() {
           ]}>
             {`This will use 1 ${isPositive ? 'positive' : 'negative'} pellet. You have ${isPositive ? user?.positivePelletCount || 0 : user?.pelletCount || 0} pellets remaining.`}
           </Text>
-        </View>
-        
-        <View style={styles.expInfo}>
-          <Text style={styles.expInfoTitle}>Experience Rewards:</Text>
-          <Text style={styles.expInfoText}>• Base: +{isPositive ? EXP_REWARDS.POSITIVE_TAG : EXP_REWARDS.TAG_DRIVER} EXP</Text>
-          <Text style={styles.expInfoText}>• Location Bonus: +{EXP_REWARDS.LOCATION_BONUS} EXP</Text>
-          <Text style={styles.expInfoText}>• Detailed Reason: +{EXP_REWARDS.DETAILED_REASON_BONUS} EXP</Text>
         </View>
         
         <View style={styles.form}>
@@ -288,42 +319,23 @@ export default function TagDriverScreen() {
             autoCapitalize="characters"
           />
           
-          <Input
-            label="Reason"
-            placeholder={`Why are you ${isPositive ? 'praising' : 'tagging'} this driver?`}
-            value={reason}
-            onChangeText={setReason}
-            multiline
-            numberOfLines={4}
-            style={styles.reasonInput}
-          />
-          
-          <View style={styles.reasonSuggestions}>
-            <Text style={styles.suggestionsTitle}>Suggested reasons:</Text>
-            <View style={styles.suggestionsContainer}>
-              {reasons.map((item) => (
-                <Button
-                  key={item}
-                  title={item}
-                  variant="outline"
-                  onPress={() => setReason(item)}
-                  style={[
-                    styles.suggestionButton,
-                    isPositive && styles.positiveSuggestionButton
-                  ]}
-                  textStyle={[
-                    styles.suggestionText,
-                    isPositive && styles.positiveSuggestionText
-                  ]}
-                />
-              ))}
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Reason *</Text>
+            <TouchableOpacity
+              style={styles.reasonSelector}
+              onPress={() => setShowReasonPicker(true)}
+            >
+              <Text style={[styles.reasonSelectorText, !reason && styles.placeholderText]}>
+                {reason || `Select ${isPositive ? 'positive' : 'negative'} feedback`}
+              </Text>
+              <ChevronDown size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
           </View>
           
-          <View style={styles.locationInfo}>
-            <Text style={styles.locationText}>
-              {location ? '📍 Location will be recorded (+5 EXP)' : '📍 Location not available'}
-            </Text>
+          <View style={styles.expInfo}>
+            <Text style={styles.expInfoTitle}>Experience Rewards:</Text>
+            <Text style={styles.expInfoText}>• Base: +{isPositive ? EXP_REWARDS.POSITIVE_TAG : EXP_REWARDS.TAG_DRIVER} EXP</Text>
+            <Text style={styles.expInfoText}>• Location Bonus: +{EXP_REWARDS.LOCATION_BONUS} EXP {location ? '✓' : '✗'}</Text>
           </View>
           
           <Button
@@ -385,6 +397,49 @@ export default function TagDriverScreen() {
               numColumns={5}
               contentContainerStyle={styles.stateList}
             />
+          </View>
+        </View>
+      </Modal>
+      
+      <Modal
+        visible={showReasonPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowReasonPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Select {isPositive ? 'Positive' : 'Negative'} Feedback
+              </Text>
+              <TouchableOpacity onPress={() => setShowReasonPicker(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={styles.reasonList}>
+              {reasons.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.reasonOption,
+                    reason === item && styles.reasonOptionSelected,
+                    reason === item && isPositive && styles.reasonOptionSelectedPositive,
+                  ]}
+                  onPress={() => {
+                    setReason(item);
+                    setShowReasonPicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.reasonOptionText,
+                    reason === item && styles.reasonOptionTextSelected
+                  ]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -451,6 +506,39 @@ const styles = StyleSheet.create({
   positivePelletInfoText: {
     color: Colors.success,
   },
+  feedbackTypeContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  feedbackTypeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 2,
+    borderColor: Colors.error,
+  },
+  positiveFeedbackTypeButton: {
+    borderColor: Colors.success,
+  },
+  feedbackTypeButtonActive: {
+    backgroundColor: Colors.error,
+    borderColor: Colors.error,
+  },
+  feedbackTypeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.error,
+  },
+  feedbackTypeTextActive: {
+    color: '#FFFFFF',
+  },
   expInfo: {
     backgroundColor: Colors.secondary + '15',
     borderRadius: 8,
@@ -478,44 +566,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  reasonInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  reasonSuggestions: {
-    marginBottom: 24,
-  },
-  suggestionsTitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  suggestionsContainer: {
+  reasonSelector: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  suggestionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-  positiveSuggestionButton: {
-    borderColor: Colors.success,
-  },
-  suggestionText: {
-    fontSize: 12,
-  },
-  positiveSuggestionText: {
-    color: Colors.success,
-  },
-  locationInfo: {
-    marginBottom: 24,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 16,
+    minHeight: 56,
   },
-  locationText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+  reasonSelectorText: {
+    fontSize: 16,
+    color: Colors.text,
+    flex: 1,
+    marginRight: 8,
   },
   submitButton: {
     marginBottom: 12,
@@ -603,5 +669,32 @@ const styles = StyleSheet.create({
   },
   stateOptionTextSelected: {
     color: '#FFFFFF',
+  },
+  reasonList: {
+    padding: 16,
+  },
+  reasonOption: {
+    padding: 16,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 8,
+  },
+  reasonOptionSelected: {
+    backgroundColor: Colors.error,
+    borderColor: Colors.error,
+  },
+  reasonOptionSelectedPositive: {
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
+  },
+  reasonOptionText: {
+    fontSize: 16,
+    color: Colors.text,
+  },
+  reasonOptionTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
