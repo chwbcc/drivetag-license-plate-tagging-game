@@ -583,10 +583,12 @@ export default function HomeScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#33334a',
+            backgroundColor: isDark ? '#2a2a3e' : colors.card,
             borderRadius: 12,
             padding: 16,
             marginBottom: 40,
+            borderWidth: 1,
+            borderColor: isDark ? '#3a3a4f' : colors.border,
           }}
         >
           <LogOut size={20} color={accentRed} />
