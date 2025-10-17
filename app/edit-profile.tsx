@@ -8,15 +8,18 @@ import {
   ScrollView,
   Alert,
   Image,
-  TouchableOpacity
+  TouchableOpacity,
+  Switch
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { Camera, Save, X } from 'lucide-react-native';
+import { Camera, Save, X, Moon, Sun } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
+import { useTheme } from '@/store/theme-store';
+import { darkMode } from '@/constants/styles';
 
 // List of US states for dropdown
 const US_STATES = [
@@ -29,6 +32,7 @@ const US_STATES = [
 
 export default function EditProfileScreen() {
   const { user, updateUser, changeLicensePlate } = useAuthStore();
+  const { isDark, toggleTheme } = useTheme();
   
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -104,6 +108,12 @@ export default function EditProfileScreen() {
     setPhoto('');
   };
 
+  const bgColor = isDark ? darkMode.background : Colors.background;
+  const cardColor = isDark ? darkMode.card : Colors.card;
+  const textColor = isDark ? darkMode.text : Colors.text;
+  const textSecondary = isDark ? darkMode.textSecondary : Colors.textSecondary;
+  const borderColor = isDark ? darkMode.border : Colors.border;
+
   return (
     <>
       <Stack.Screen 
@@ -118,7 +128,7 @@ export default function EditProfileScreen() {
       />
       
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: bgColor }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 40}
       >
@@ -126,6 +136,33 @@ export default function EditProfileScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={[styles.settingsSection, { backgroundColor: cardColor, borderColor }]}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.settingIconContainer, { backgroundColor: isDark ? '#3a3a4f' : Colors.primary + '20' }]}>
+                  {isDark ? (
+                    <Moon size={20} color={Colors.primary} />
+                  ) : (
+                    <Sun size={20} color={Colors.primary} />
+                  )}
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, { color: textColor }]}>Dark Mode</Text>
+                  <Text style={[styles.settingSubtitle, { color: textSecondary }]}>
+                    {isDark ? 'Dark theme enabled' : 'Light theme enabled'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#767577', true: Colors.primary + '60' }}
+                thumbColor={isDark ? Colors.primary : '#f4f3f4'}
+                ios_backgroundColor="#767577"
+              />
+            </View>
+          </View>
+
           <View style={styles.photoContainer}>
             {photo ? (
               <View style={styles.photoWrapper}>
@@ -135,8 +172,8 @@ export default function EditProfileScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoPlaceholderText}>
+              <View style={[styles.photoPlaceholder, { backgroundColor: Colors.primary }]}>
+                <Text style={[styles.photoPlaceholderText, { color: '#fff' }]}>
                   {name ? name.charAt(0).toUpperCase() : 
                    email ? email.charAt(0).toUpperCase() : '?'}
                 </Text>
@@ -152,7 +189,7 @@ export default function EditProfileScreen() {
             />
           </View>
           
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text> : null}
           
           <View style={styles.form}>
             <Input
@@ -172,16 +209,16 @@ export default function EditProfileScreen() {
             />
             
             <View style={styles.currentPlateContainer}>
-              <Text style={styles.currentPlateLabel}>Current License Plate:</Text>
-              <Text style={styles.currentPlateValue}>
+              <Text style={[styles.currentPlateLabel, { color: textSecondary }]}>Current License Plate:</Text>
+              <Text style={[styles.currentPlateValue, { color: textColor }]}>
                 {user?.licensePlate || 'N/A'} {user?.state ? `(${user.state})` : ''}
               </Text>
             </View>
             
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: borderColor }]} />
             
-            <Text style={styles.sectionTitle}>Update License Plate</Text>
-            <Text style={styles.sectionSubtitle}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>Update License Plate</Text>
+            <Text style={[styles.sectionSubtitle, { color: textSecondary }]}>
               You can update your license plate information here
             </Text>
             
@@ -211,10 +248,44 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollContent: {
     padding: 16,
+  },
+  settingsSection: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  settingTextContainer: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  settingSubtitle: {
+    fontSize: 13,
   },
   saveButton: {
     padding: 8,
@@ -249,24 +320,21 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   photoPlaceholderText: {
     fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: 'bold' as const,
   },
   photoButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   errorText: {
-    color: Colors.error,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: 'center' as const,
   },
   form: {
     width: '100%',
@@ -279,28 +347,23 @@ const styles = StyleSheet.create({
   },
   currentPlateLabel: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginRight: 4,
   },
   currentPlateValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
+    fontWeight: '600' as const,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
     marginVertical: 24,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
+    fontWeight: '600' as const,
     marginBottom: 8,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginBottom: 16,
   }
 });
