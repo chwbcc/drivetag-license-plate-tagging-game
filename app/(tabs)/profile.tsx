@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp } from 'lucide-react-native';
+import { Plus, Target, ThumbsUp, Moon, Sun } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
+import { useTheme } from '@/store/theme-store';
+import { darkMode } from '@/constants/styles';
 
 export default function ProfileScreen() {
   const { user } = useAuthStore();
+  const { isDark, toggleTheme } = useTheme();
   const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
   
   const handleTagDriver = () => {
@@ -41,21 +44,54 @@ export default function ProfileScreen() {
     });
   };
 
+  const bgColor = isDark ? darkMode.background : Colors.background;
+  const cardColor = isDark ? darkMode.card : Colors.card;
+  const textColor = isDark ? darkMode.text : Colors.text;
+  const textSecondary = isDark ? darkMode.textSecondary : Colors.textSecondary;
+  const borderColor = isDark ? darkMode.border : Colors.border;
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
+      <View style={[styles.settingsSection, { backgroundColor: cardColor, borderColor }]}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingLeft}>
+            <View style={[styles.settingIconContainer, { backgroundColor: isDark ? '#3a3a4f' : Colors.primary + '20' }]}>
+              {isDark ? (
+                <Moon size={20} color={Colors.primary} />
+              ) : (
+                <Sun size={20} color={Colors.primary} />
+              )}
+            </View>
+            <View style={styles.settingTextContainer}>
+              <Text style={[styles.settingTitle, { color: textColor }]}>Dark Mode</Text>
+              <Text style={[styles.settingSubtitle, { color: textSecondary }]}>
+                {isDark ? 'Dark theme enabled' : 'Light theme enabled'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: Colors.primary + '60' }}
+            thumbColor={isDark ? Colors.primary : '#f4f3f4'}
+            ios_backgroundColor="#767577"
+          />
+        </View>
+      </View>
+
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Tag a Driver</Text>
-          <Text style={styles.licensePlate}>{user?.licensePlate || 'No License Plate'}</Text>
+          <Text style={[styles.greeting, { color: textColor }]}>Tag a Driver</Text>
+          <Text style={[styles.licensePlate, { color: textSecondary }]}>{user?.licensePlate || 'No License Plate'}</Text>
         </View>
         
-        <View style={styles.pelletCountContainer}>
+        <View style={[styles.pelletCountContainer, { backgroundColor: cardColor, borderColor }]}>
           <View style={styles.pelletCount}>
-            <Text style={styles.pelletCountLabel}>Negative:</Text>
+            <Text style={[styles.pelletCountLabel, { color: textSecondary }]}>Negative:</Text>
             <Text style={styles.pelletCountValue}>{user?.pelletCount || 0}</Text>
           </View>
           <View style={styles.pelletCount}>
-            <Text style={styles.pelletCountLabel}>Positive:</Text>
+            <Text style={[styles.pelletCountLabel, { color: textSecondary }]}>Positive:</Text>
             <Text style={[styles.pelletCountValue, styles.positivePelletCount]}>
               {user?.positivePelletCount || 0}
             </Text>
@@ -67,7 +103,8 @@ export default function ProfileScreen() {
         <View style={styles.tagTypeSelector}>
           <TouchableOpacity 
             style={[
-              styles.tagTypeButton, 
+              styles.tagTypeButton,
+              { backgroundColor: cardColor, borderColor },
               pelletType === 'negative' && styles.tagTypeButtonActive
             ]}
             onPress={() => setPelletType('negative')}
@@ -79,13 +116,15 @@ export default function ProfileScreen() {
             />
             <Text style={[
               styles.tagTypeText,
+              { color: textSecondary },
               pelletType === 'negative' && styles.tagTypeTextActive
             ]}>Negative Tag</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[
-              styles.tagTypeButton, 
+              styles.tagTypeButton,
+              { backgroundColor: cardColor, borderColor },
               pelletType === 'positive' && styles.tagTypeButtonActive,
               pelletType === 'positive' && styles.positiveTagTypeButtonActive
             ]}
@@ -98,6 +137,7 @@ export default function ProfileScreen() {
             />
             <Text style={[
               styles.tagTypeText,
+              { color: textSecondary },
               pelletType === 'positive' && styles.positiveTagTypeTextActive
             ]}>Positive Tag</Text>
           </TouchableOpacity>
@@ -116,8 +156,8 @@ export default function ProfileScreen() {
       
       <View style={styles.emptyState}>
         <Text style={styles.emptyStateEmoji}>💥</Text>
-        <Text style={styles.emptyStateText}>Tag Drivers</Text>
-        <Text style={styles.emptyStateSubtext}>
+        <Text style={[styles.emptyStateText, { color: textColor }]}>Tag Drivers</Text>
+        <Text style={[styles.emptyStateSubtext, { color: textSecondary }]}>
           Report bad drivers or give kudos to good ones
         </Text>
       </View>
@@ -135,15 +175,49 @@ export default function ProfileScreen() {
           <Plus size={24} color="#fff" />
         )}
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
     padding: 16,
+  },
+  settingsSection: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  settingTextContainer: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  settingSubtitle: {
+    fontSize: 13,
   },
   header: {
     flexDirection: 'row',
@@ -154,20 +228,16 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.text,
     marginBottom: 4,
   },
   licensePlate: {
     fontSize: 16,
-    color: Colors.textSecondary,
   },
   pelletCountContainer: {
-    backgroundColor: Colors.card,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   pelletCount: {
     flexDirection: 'row',
@@ -176,7 +246,6 @@ const styles = StyleSheet.create({
   },
   pelletCountLabel: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginRight: 4,
   },
   pelletCountValue: {
@@ -203,7 +272,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginHorizontal: 4,
   },
   tagTypeButtonActive: {
@@ -219,7 +287,6 @@ const styles = StyleSheet.create({
   },
   tagTypeText: {
     fontSize: 14,
-    color: Colors.textSecondary,
   },
   tagTypeTextActive: {
     color: Colors.primary,
@@ -250,12 +317,10 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text,
     marginTop: 16,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: Colors.textSecondary,
     textAlign: 'center',
     marginTop: 8,
     maxWidth: '80%',
