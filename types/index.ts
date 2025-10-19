@@ -10,6 +10,7 @@ export interface User {
   badges: string[]; // IDs of badges earned by the user
   exp: number; // Experience points earned by the user
   level: number; // User level based on experience
+  isAdmin?: boolean; // Admin access flag
 }
 
 export interface Pellet {

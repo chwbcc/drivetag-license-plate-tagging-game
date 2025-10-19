@@ -114,7 +114,8 @@ const useAuthStore = create<AuthStore>()(
           user: {
             ...user,
             exp: user.exp || 0,
-            level: user.level || calculateLevel(user.exp || 0)
+            level: user.level || calculateLevel(user.exp || 0),
+            isAdmin: user.email === 'chwbcc@gmail.com' ? true : user.isAdmin
           }, 
           error: null 
         });
@@ -125,7 +126,8 @@ const useAuthStore = create<AuthStore>()(
           user: {
             ...user,
             exp: user.exp || 0,
-            level: user.level || 1
+            level: user.level || 1,
+            isAdmin: user.email === 'chwbcc@gmail.com' ? true : user.isAdmin
           }, 
           error: null 
         });

@@ -80,9 +80,19 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.header}>
-        <View>
+        <View style={styles.userInfoSection}>
           <Text style={[styles.greeting, { color: textColor }]}>Tag a Driver</Text>
           <Text style={[styles.licensePlate, { color: textSecondary }]}>{user?.licensePlate || 'No License Plate'}</Text>
+          
+          {user?.isAdmin && (
+            <TouchableOpacity
+              style={[styles.adminLinkButton, { backgroundColor: cardColor, borderColor }]}
+              onPress={() => router.push('/admin')}
+            >
+              <Shield size={16} color={Colors.primary} style={styles.adminLinkIcon} />
+              <Text style={[styles.adminLinkText, { color: Colors.primary }]}>Admin Panel</Text>
+            </TouchableOpacity>
+          )}
         </View>
         
         <View style={[styles.pelletCountContainer, { backgroundColor: cardColor, borderColor }]}>
@@ -154,19 +164,6 @@ export default function ProfileScreen() {
         />
       </View>
       
-      <TouchableOpacity
-        style={[styles.adminButton, { backgroundColor: cardColor, borderColor }]}
-        onPress={() => router.push('/admin')}
-      >
-        <View style={[styles.adminIconContainer, { backgroundColor: isDark ? '#3a3a4f' : Colors.primary + '20' }]}>
-          <Shield size={20} color={Colors.primary} />
-        </View>
-        <View style={styles.adminTextContainer}>
-          <Text style={[styles.adminTitle, { color: textColor }]}>Admin Panel</Text>
-          <Text style={[styles.adminSubtitle, { color: textSecondary }]}>View all registered users</Text>
-        </View>
-      </TouchableOpacity>
-
       <View style={styles.emptyState}>
         <Text style={styles.emptyStateEmoji}>💥</Text>
         <Text style={[styles.emptyStateText, { color: textColor }]}>Tag Drivers</Text>
@@ -235,8 +232,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 24,
+  },
+  userInfoSection: {
+    flex: 1,
   },
   greeting: {
     fontSize: 24,
@@ -245,6 +245,24 @@ const styles = StyleSheet.create({
   },
   licensePlate: {
     fontSize: 16,
+    marginBottom: 8,
+  },
+  adminLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  adminLinkIcon: {
+    marginRight: 4,
+  },
+  adminLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   pelletCountContainer: {
     paddingHorizontal: 12,
@@ -356,32 +374,5 @@ const styles = StyleSheet.create({
   },
   positiveFloatingButton: {
     backgroundColor: Colors.success,
-  },
-  adminButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-  },
-  adminIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  adminTextContainer: {
-    flex: 1,
-  },
-  adminTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  adminSubtitle: {
-    fontSize: 13,
   },
 });
