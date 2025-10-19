@@ -79,19 +79,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[styles.adminButton, { backgroundColor: cardColor, borderColor }]}
-        onPress={() => router.push('/admin')}
-      >
-        <View style={[styles.adminIconContainer, { backgroundColor: isDark ? '#3a3a4f' : Colors.primary + '20' }]}>
-          <Shield size={20} color={Colors.primary} />
-        </View>
-        <View style={styles.adminTextContainer}>
-          <Text style={[styles.adminTitle, { color: textColor }]}>Admin Panel</Text>
-          <Text style={[styles.adminSubtitle, { color: textSecondary }]}>View all registered users</Text>
-        </View>
-      </TouchableOpacity>
-
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: textColor }]}>Tag a Driver</Text>
@@ -167,6 +154,19 @@ export default function ProfileScreen() {
         />
       </View>
       
+      <TouchableOpacity
+        style={[styles.adminButton, { backgroundColor: cardColor, borderColor }]}
+        onPress={() => router.push('/admin')}
+      >
+        <View style={[styles.adminIconContainer, { backgroundColor: isDark ? '#3a3a4f' : Colors.primary + '20' }]}>
+          <Shield size={20} color={Colors.primary} />
+        </View>
+        <View style={styles.adminTextContainer}>
+          <Text style={[styles.adminTitle, { color: textColor }]}>Admin Panel</Text>
+          <Text style={[styles.adminSubtitle, { color: textSecondary }]}>View all registered users</Text>
+        </View>
+      </TouchableOpacity>
+
       <View style={styles.emptyState}>
         <Text style={styles.emptyStateEmoji}>💥</Text>
         <Text style={[styles.emptyStateText, { color: textColor }]}>Tag Drivers</Text>
