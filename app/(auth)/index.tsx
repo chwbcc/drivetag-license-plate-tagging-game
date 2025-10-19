@@ -37,21 +37,7 @@ export default function LoginScreen() {
         return;
       }
       
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      login({
-        id: userId,
-        email,
-        licensePlate: 'ABC123',
-        state: 'CA',
-        pelletCount: 10,
-        positivePelletCount: 5,
-        badges: [],
-        exp: 0,
-        level: 1,
-      });
-      
-      router.replace('/(tabs)');
+      setError('Account not found. Please register first.');
       setIsLoading(false);
     }, 1000);
   };

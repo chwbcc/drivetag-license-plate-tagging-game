@@ -1,12 +1,13 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import Colors from "@/constants/colors";
 import { ThemeProvider, useTheme } from "@/store/theme-store";
 import { darkMode } from "@/constants/styles";
+import useAuthStore from "@/store/auth-store";
 
 export const unstable_settings = {
   initialRouteName: "(auth)",
@@ -46,6 +47,19 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { isDark } = useTheme();
+  const segments = useSegments();
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!user && !inAuthGroup) {
+      router.replace('/(auth)');
+    } else if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, segments]);
   
   return (
     <>

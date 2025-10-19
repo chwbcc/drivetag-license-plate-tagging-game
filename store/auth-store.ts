@@ -110,10 +110,6 @@ const useAuthStore = create<AuthStore>()(
       isLoading: false,
       error: null,
       login: (user) => {
-        const existingUser = get().user;
-        if (existingUser && existingUser.email === user.email) {
-          return;
-        }
         set({ 
           user: {
             ...user,
