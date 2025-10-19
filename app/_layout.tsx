@@ -93,6 +93,12 @@ function RootLayoutNav() {
             title: "Edit Profile",
           }} 
         />
+        <Stack.Screen 
+          name="admin" 
+          options={{ 
+            title: "Admin Dashboard",
+          }} 
+        />
       </Stack>
     </>
   );
