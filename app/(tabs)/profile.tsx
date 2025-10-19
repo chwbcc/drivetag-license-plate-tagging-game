@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp, Moon, Sun } from 'lucide-react-native';
+import { Plus, Target, ThumbsUp, Moon, Sun, Shield } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
@@ -78,6 +78,19 @@ export default function ProfileScreen() {
           />
         </View>
       </View>
+
+      <TouchableOpacity
+        style={[styles.adminButton, { backgroundColor: cardColor, borderColor }]}
+        onPress={() => router.push('/admin')}
+      >
+        <View style={[styles.adminIconContainer, { backgroundColor: isDark ? '#3a3a4f' : Colors.primary + '20' }]}>
+          <Shield size={20} color={Colors.primary} />
+        </View>
+        <View style={styles.adminTextContainer}>
+          <Text style={[styles.adminTitle, { color: textColor }]}>Admin Panel</Text>
+          <Text style={[styles.adminSubtitle, { color: textSecondary }]}>View all registered users</Text>
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.header}>
         <View>
@@ -343,5 +356,32 @@ const styles = StyleSheet.create({
   },
   positiveFloatingButton: {
     backgroundColor: Colors.success,
+  },
+  adminButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  adminIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  adminTextContainer: {
+    flex: 1,
+  },
+  adminTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  adminSubtitle: {
+    fontSize: 13,
   },
 });
