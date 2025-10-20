@@ -173,7 +173,7 @@ export default function HomeScreen() {
                         color: '#888',
                         marginLeft: 4,
                       }}>
-                        • {user.state}
+                        {"• "}{user.state}
                       </Text>
                     )}
                   </View>
