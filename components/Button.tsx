@@ -60,7 +60,7 @@ export default function Button({
         />
       ) : (
         <View style={styles.contentContainer}>
-          {icon}
+          {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
           <Text style={textStyles}>{title}</Text>
         </View>
       )}
@@ -95,6 +95,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconContainer: {
+    marginRight: 8,
   },
   text: {
     fontSize: 16,

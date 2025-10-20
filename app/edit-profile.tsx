@@ -185,7 +185,7 @@ export default function EditProfileScreen() {
               variant="outline"
               onPress={pickImage}
               style={styles.photoButton}
-              icon={<View style={{ marginRight: 8 }}><Camera size={16} color={Colors.primary} /></View>}
+              icon={<Camera size={16} color={Colors.primary} />}
             />
           </View>
           
