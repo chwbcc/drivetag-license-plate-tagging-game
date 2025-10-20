@@ -32,7 +32,7 @@ export default function LoginScreen() {
       }
       
       if (existingUser && existingUser.email === email) {
-        router.replace('/(tabs)');
+        login(existingUser);
         setIsLoading(false);
         return;
       }

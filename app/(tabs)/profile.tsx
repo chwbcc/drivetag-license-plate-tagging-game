@@ -109,11 +109,12 @@ export default function ProfileScreen() {
             ]}
             onPress={() => setPelletType('negative')}
           >
-            <Target 
-              size={16} 
-              color={pelletType === 'negative' ? Colors.primary : Colors.textSecondary} 
-              style={styles.tagTypeIcon}
-            />
+            <View style={styles.tagTypeIcon}>
+              <Target 
+                size={16} 
+                color={pelletType === 'negative' ? Colors.primary : Colors.textSecondary} 
+              />
+            </View>
             <Text style={[
               styles.tagTypeText,
               { color: textSecondary },
@@ -130,11 +131,12 @@ export default function ProfileScreen() {
             ]}
             onPress={() => setPelletType('positive')}
           >
-            <ThumbsUp 
-              size={16} 
-              color={pelletType === 'positive' ? Colors.success : Colors.textSecondary} 
-              style={styles.tagTypeIcon}
-            />
+            <View style={styles.tagTypeIcon}>
+              <ThumbsUp 
+                size={16} 
+                color={pelletType === 'positive' ? Colors.success : Colors.textSecondary} 
+              />
+            </View>
             <Text style={[
               styles.tagTypeText,
               { color: textSecondary },
