@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp, Moon, Sun, Shield } from 'lucide-react-native';
+import { Plus, Target, ThumbsUp, Moon, Sun } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
@@ -80,19 +80,9 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.header}>
-        <View style={styles.userInfoSection}>
+        <View>
           <Text style={[styles.greeting, { color: textColor }]}>Tag a Driver</Text>
           <Text style={[styles.licensePlate, { color: textSecondary }]}>{user?.licensePlate || 'No License Plate'}</Text>
-          
-          {user?.isAdmin && (
-            <TouchableOpacity
-              style={[styles.adminLinkButton, { backgroundColor: cardColor, borderColor }]}
-              onPress={() => router.push('/admin')}
-            >
-              <Shield size={16} color={Colors.primary} />
-              <Text style={[styles.adminLinkText, { color: Colors.primary }]}>Admin Panel</Text>
-            </TouchableOpacity>
-          )}
         </View>
         
         <View style={[styles.pelletCountContainer, { backgroundColor: cardColor, borderColor }]}>
@@ -232,11 +222,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 24,
-  },
-  userInfoSection: {
-    flex: 1,
   },
   greeting: {
     fontSize: 24,
@@ -245,22 +232,6 @@ const styles = StyleSheet.create({
   },
   licensePlate: {
     fontSize: 16,
-    marginBottom: 8,
-  },
-  adminLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  adminLinkText: {
-    marginLeft: 4,
-    fontSize: 13,
-    fontWeight: '600',
   },
   pelletCountContainer: {
     paddingHorizontal: 12,

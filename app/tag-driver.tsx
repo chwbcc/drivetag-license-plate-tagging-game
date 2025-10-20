@@ -205,7 +205,7 @@ export default function TagDriverScreen() {
         [
           {
             text: 'OK',
-            onPress: () => router.push('/(tabs)/profile'),
+            onPress: () => router.back(),
           },
         ]
       );

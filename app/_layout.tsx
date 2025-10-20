@@ -55,15 +55,11 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!user && !inAuthGroup) {
-      setTimeout(() => {
-        router.replace('/(auth)');
-      }, 1);
+      router.replace('/(auth)');
     } else if (user && inAuthGroup) {
-      setTimeout(() => {
-        router.replace('/(tabs)');
-      }, 1);
+      router.replace('/(tabs)');
     }
-  }, [user, segments, router]);
+  }, [user, segments]);
   
   return (
     <>
@@ -95,12 +91,6 @@ function RootLayoutNav() {
           name="edit-profile" 
           options={{ 
             title: "Edit Profile",
-          }} 
-        />
-        <Stack.Screen 
-          name="admin" 
-          options={{ 
-            title: "Admin Dashboard",
           }} 
         />
       </Stack>
