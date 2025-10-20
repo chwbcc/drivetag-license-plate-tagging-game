@@ -1,6 +1,6 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
-import { Stack, useSegments, useRouter } from "expo-router";
+import { Stack, useSegments, useRouter, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -49,9 +49,14 @@ function RootLayoutNav() {
   const { isDark } = useTheme();
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
+    if (!navigationState?.key) {
+      return;
+    }
+
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!user && !inAuthGroup) {
@@ -59,7 +64,7 @@ function RootLayoutNav() {
     } else if (user && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [user, segments]);
+  }, [user, segments, navigationState?.key]);
   
   return (
     <>
