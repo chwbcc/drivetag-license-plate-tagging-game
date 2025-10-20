@@ -89,7 +89,7 @@ export default function ProfileScreen() {
               style={[styles.adminLinkButton, { backgroundColor: cardColor, borderColor }]}
               onPress={() => router.push('/admin')}
             >
-              <Shield size={16} color={Colors.primary} style={styles.adminLinkIcon} />
+              <Shield size={16} color={Colors.primary} />
               <Text style={[styles.adminLinkText, { color: Colors.primary }]}>Admin Panel</Text>
             </TouchableOpacity>
           )}
@@ -257,10 +257,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  adminLinkIcon: {
-    marginRight: 4,
-  },
   adminLinkText: {
+    marginLeft: 4,
     fontSize: 13,
     fontWeight: '600',
   },
