@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView, FlatList } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp, Moon, Sun, Award, Lock } from 'lucide-react-native';
+import { Plus, Target, ThumbsUp, Moon, Sun, Award } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import BadgeCard from '@/components/BadgeCard';
@@ -29,7 +29,7 @@ export default function ProfileScreen() {
         );
       }
     }
-  }, [user]);
+  }, [user, checkAndAwardBadges]);
   
   const handleTagDriver = () => {
     if (!user) {
@@ -69,7 +69,6 @@ export default function ProfileScreen() {
   const borderColor = isDark ? darkMode.border : Colors.border;
   
   const userBadges = user ? getUserBadges(user.id) : [];
-  const unlockedBadgeIds = userBadges.map(badge => badge.id);
   
   const handleBadgePress = (badge: any) => {
     Alert.alert(
@@ -80,33 +79,15 @@ export default function ProfileScreen() {
   };
   
   const renderBadge = ({ item }: { item: any }) => {
-    const isUnlocked = unlockedBadgeIds.includes(item.id);
     const isNew = newBadges.includes(item.id);
     
-    if (isUnlocked) {
-      return (
-        <View style={isNew ? styles.newBadgeContainer : undefined}>
-          {isNew && <View style={styles.newBadgeIndicator} />}
-          <BadgeCard 
-            badge={item} 
-            onPress={() => handleBadgePress(item)}
-          />
-        </View>
-      );
-    }
-    
     return (
-      <View style={styles.lockedBadgeContainer}>
+      <View style={isNew ? styles.newBadgeContainer : undefined}>
+        {isNew && <View style={styles.newBadgeIndicator} />}
         <BadgeCard 
-          badge={{
-            ...item,
-            icon: '🔒',
-          }} 
+          badge={item} 
           onPress={() => handleBadgePress(item)}
         />
-        <View style={styles.lockedOverlay}>
-          <Lock size={24} color="#fff" />
-        </View>
       </View>
     );
   };
@@ -239,22 +220,12 @@ export default function ProfileScreen() {
             data={userBadges}
             keyExtractor={(item) => item.id}
             renderItem={renderBadge}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.badgeList}
+            numColumns={3}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+            contentContainerStyle={styles.allBadgesList}
           />
         )}
-        
-        <Text style={[styles.allBadgesTitle, { color: textColor }]}>All Badges</Text>
-        <FlatList
-          data={badges}
-          keyExtractor={(item) => item.id}
-          renderItem={renderBadge}
-          numColumns={3}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={false}
-          contentContainerStyle={styles.allBadgesList}
-        />
       </View>
       
       <View style={styles.emptyState}>
