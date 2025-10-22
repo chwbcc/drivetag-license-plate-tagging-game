@@ -6,6 +6,7 @@ import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import Colors from "@/constants/colors";
 import { ThemeProvider, useTheme } from "@/store/theme-store";
+import { LicensePlateGameProvider } from "@/store/license-plate-game-store";
 import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
 
@@ -40,7 +41,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <RootLayoutNav />
+      <LicensePlateGameProvider>
+        <RootLayoutNav />
+      </LicensePlateGameProvider>
     </ThemeProvider>
   );
 }

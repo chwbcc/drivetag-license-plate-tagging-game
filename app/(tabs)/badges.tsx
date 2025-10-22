@@ -1,117 +1,146 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { Award, Lock } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { MapPin, Trophy, RotateCcw } from 'lucide-react-native';
+import { Stack } from 'expo-router';
 import Colors from '@/constants/colors';
-import BadgeCard from '@/components/BadgeCard';
-import useAuthStore from '@/store/auth-store';
-import useBadgeStore from '@/store/badge-store';
+import { useLicensePlateGame } from '@/store/license-plate-game-store';
+import { useTheme } from '@/store/theme-store';
+import { darkMode } from '@/constants/styles';
 
 export default function BadgesScreen() {
-  const { user } = useAuthStore();
-  const { badges, getUserBadges, checkAndAwardBadges } = useBadgeStore();
-  const [newBadges, setNewBadges] = useState<string[]>([]);
-  
-  useEffect(() => {
-    if (user) {
-      // Check for new badges when the screen loads
-      const awarded = checkAndAwardBadges(user.id);
-      if (awarded.length > 0) {
-        setNewBadges(awarded);
-        
-        // Show alert for new badges
-        Alert.alert(
-          'New Badges Earned!',
-          `Congratulations! You've earned ${awarded.length} new badge${awarded.length > 1 ? 's' : ''}.`,
-          [{ text: 'View', onPress: () => setNewBadges([]) }]
-        );
-      }
+  const { isDark } = useTheme();
+  const {
+    states,
+    spottedPlates,
+    spotPlate,
+    unspotPlate,
+    resetGame,
+    isPlateSpotted,
+    getSpottedCount,
+    getProgress,
+    totalStates,
+  } = useLicensePlateGame();
+
+  const handlePlateToggle = (stateCode: string) => {
+    if (isPlateSpotted(stateCode)) {
+      unspotPlate(stateCode);
+    } else {
+      spotPlate(stateCode);
     }
-  }, [user]);
-  
-  const userBadges = user ? getUserBadges(user.id) : [];
-  const unlockedBadgeIds = userBadges.map(badge => badge.id);
-  
-  const handleBadgePress = (badge: any) => {
-    Alert.alert(
-      badge.name,
-      badge.description,
-      [{ text: 'OK' }]
-    );
   };
-  
-  const renderBadge = ({ item }: { item: any }) => {
-    const isUnlocked = unlockedBadgeIds.includes(item.id);
-    const isNew = newBadges.includes(item.id);
-    
-    if (isUnlocked) {
-      return (
-        <View style={isNew ? styles.newBadgeContainer : undefined}>
-          {isNew && <View style={styles.newBadgeIndicator} />}
-          <BadgeCard 
-            badge={item} 
-            onPress={() => handleBadgePress(item)}
-          />
-        </View>
-      );
-    }
-    
-    return (
-      <View style={styles.lockedBadgeContainer}>
-        <BadgeCard 
-          badge={{
-            ...item,
-            icon: '🔒',
-          }} 
-          onPress={() => handleBadgePress(item)}
-        />
-        <View style={styles.lockedOverlay}>
-          <Lock size={24} color="#fff" />
-        </View>
-      </View>
+
+  const handleResetGame = () => {
+    Alert.alert(
+      'Reset Game',
+      'Are you sure you want to reset all spotted plates? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Reset', 
+          style: 'destructive',
+          onPress: resetGame
+        }
+      ]
     );
   };
 
+  const bgColor = isDark ? darkMode.background : Colors.background;
+  const cardColor = isDark ? darkMode.card : Colors.card;
+  const textColor = isDark ? darkMode.text : Colors.text;
+  const textSecondary = isDark ? darkMode.textSecondary : Colors.textSecondary;
+  const borderColor = isDark ? darkMode.border : Colors.border;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Badges</Text>
-        <View style={styles.badgeCountContainer}>
-          <Text style={styles.badgeCountLabel}>Unlocked:</Text>
-          <Text style={styles.badgeCount}>{userBadges.length} / {badges.length}</Text>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
+      <Stack.Screen
+        options={{
+          title: "Let's Play",
+          headerStyle: {
+            backgroundColor: bgColor,
+          },
+          headerTintColor: textColor,
+        }}
+      />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: textColor }]}>License Plate Spotter</Text>
+          <TouchableOpacity onPress={handleResetGame} style={[styles.resetButton, { backgroundColor: cardColor, borderColor }]}>
+            <RotateCcw size={18} color={Colors.primary} />
+          </TouchableOpacity>
         </View>
-      </View>
-      
-      {userBadges.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Award size={48} color={Colors.textSecondary} />
-          <Text style={styles.emptyStateText}>No badges yet</Text>
-          <Text style={styles.emptyStateSubtext}>
-            Tag drivers and drive responsibly to earn badges
+
+        <View style={[styles.statsCard, { backgroundColor: cardColor }]}>
+          <View style={styles.statItem}>
+            <MapPin size={24} color={Colors.primary} />
+            <Text style={[styles.statValue, { color: textColor }]}>{getSpottedCount()}</Text>
+            <Text style={[styles.statLabel, { color: textSecondary }]}>States Spotted</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Trophy size={24} color={Colors.success} />
+            <Text style={[styles.statValue, { color: textColor }]}>{getProgress().toFixed(0)}%</Text>
+            <Text style={[styles.statLabel, { color: textSecondary }]}>Completed</Text>
+          </View>
+        </View>
+
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBarBackground}>
+            <View style={[styles.progressBarFill, { width: `${getProgress()}%` }]} />
+          </View>
+          <Text style={[styles.progressText, { color: textSecondary }]}>
+            {getSpottedCount()} of {totalStates} states
           </Text>
         </View>
-      ) : (
-        <>
-          <Text style={styles.sectionTitle}>Unlocked Badges</Text>
-          <FlatList
-            data={userBadges}
-            keyExtractor={(item) => item.id}
-            renderItem={renderBadge}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.badgeList}
-          />
-        </>
-      )}
-      
-      <Text style={styles.sectionTitle}>Available Badges</Text>
-      <FlatList
-        data={badges}
-        keyExtractor={(item) => item.id}
-        renderItem={renderBadge}
-        numColumns={3}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.allBadgesList}
-      />
+
+        <Text style={[styles.sectionTitle, { color: textColor }]}>State License Plates</Text>
+        <Text style={[styles.sectionSubtitle, { color: textSecondary }]}>
+          Tap a state when you spot its license plate while driving
+        </Text>
+        <View style={styles.statesGrid}>
+          {states.map((state) => {
+            const isSpotted = isPlateSpotted(state.code);
+            const spotData = spottedPlates[state.code];
+            
+            return (
+              <TouchableOpacity
+                key={state.code}
+                style={[
+                  styles.stateCard,
+                  { backgroundColor: cardColor, borderColor },
+                  isSpotted && styles.stateCardSpotted,
+                ]}
+                onPress={() => handlePlateToggle(state.code)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.stateCardContent}>
+                  <Text style={[
+                    styles.stateCode,
+                    { color: isSpotted ? '#fff' : textColor }
+                  ]}>
+                    {state.code}
+                  </Text>
+                  <Text style={[
+                    styles.stateName,
+                    { color: isSpotted ? '#fff' : textSecondary }
+                  ]} numberOfLines={1}>
+                    {state.name}
+                  </Text>
+                  {isSpotted && spotData && (
+                    <View style={styles.checkmarkContainer}>
+                      <Text style={styles.checkmark}>✓</Text>
+                      {spotData.count > 1 && (
+                        <View style={styles.countBadge}>
+                          <Text style={styles.countText}>{spotData.count}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -119,19 +148,142 @@ export default function BadgesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    padding: 16,
+  },
+  scrollContent: {
+    padding: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.text,
+    fontSize: 28,
+    fontWeight: 'bold' as const,
+    flex: 1,
+  },
+  resetButton: {
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#e0e0e0',
+    marginHorizontal: 16,
+  },
+  statValue: {
+    fontSize: 32,
+    fontWeight: 'bold' as const,
+    marginTop: 8,
+  },
+  statLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  progressBarContainer: {
+    marginBottom: 24,
+  },
+  progressBarBackground: {
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: Colors.success,
+    borderRadius: 6,
+  },
+  progressText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  statesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 40,
+  },
+  stateCard: {
+    width: '31%',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 2,
+    minHeight: 80,
+  },
+  stateCardSpotted: {
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
+  },
+  stateCardContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stateCode: {
+    fontSize: 20,
+    fontWeight: 'bold' as const,
+    marginBottom: 4,
+  },
+  stateName: {
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmark: {
+    fontSize: 16,
+    color: Colors.success,
+    fontWeight: 'bold' as const,
+  },
+  countBadge: {
+    position: 'absolute',
+    bottom: -8,
+    right: -8,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  countText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold' as const,
   },
   badgeCountContainer: {
     flexDirection: 'row',
@@ -150,15 +302,8 @@ const styles = StyleSheet.create({
   },
   badgeCount: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     color: Colors.primary,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 16,
-    marginTop: 16,
   },
   badgeList: {
     paddingBottom: 16,
@@ -175,7 +320,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.text,
     marginTop: 16,
   },
