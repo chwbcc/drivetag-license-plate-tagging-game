@@ -1,17 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView, FlatList } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp, Moon, Sun } from 'lucide-react-native';
+import { Plus, Target, ThumbsUp, Moon, Sun, Award, Lock } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
+import BadgeCard from '@/components/BadgeCard';
 import useAuthStore from '@/store/auth-store';
+import useBadgeStore from '@/store/badge-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 
 export default function ProfileScreen() {
   const { user } = useAuthStore();
   const { isDark, toggleTheme } = useTheme();
+  const { badges, getUserBadges, checkAndAwardBadges } = useBadgeStore();
   const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
+  const [newBadges, setNewBadges] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (user) {
+      const awarded = checkAndAwardBadges(user.id);
+      if (awarded.length > 0) {
+        setNewBadges(awarded);
+        Alert.alert(
+          'New Badges Earned!',
+          `Congratulations! You've earned ${awarded.length} new badge${awarded.length > 1 ? 's' : ''}.`,
+          [{ text: 'View', onPress: () => setNewBadges([]) }]
+        );
+      }
+    }
+  }, [user]);
   
   const handleTagDriver = () => {
     if (!user) {
@@ -49,6 +67,49 @@ export default function ProfileScreen() {
   const textColor = isDark ? darkMode.text : Colors.text;
   const textSecondary = isDark ? darkMode.textSecondary : Colors.textSecondary;
   const borderColor = isDark ? darkMode.border : Colors.border;
+  
+  const userBadges = user ? getUserBadges(user.id) : [];
+  const unlockedBadgeIds = userBadges.map(badge => badge.id);
+  
+  const handleBadgePress = (badge: any) => {
+    Alert.alert(
+      badge.name,
+      badge.description,
+      [{ text: 'OK' }]
+    );
+  };
+  
+  const renderBadge = ({ item }: { item: any }) => {
+    const isUnlocked = unlockedBadgeIds.includes(item.id);
+    const isNew = newBadges.includes(item.id);
+    
+    if (isUnlocked) {
+      return (
+        <View style={isNew ? styles.newBadgeContainer : undefined}>
+          {isNew && <View style={styles.newBadgeIndicator} />}
+          <BadgeCard 
+            badge={item} 
+            onPress={() => handleBadgePress(item)}
+          />
+        </View>
+      );
+    }
+    
+    return (
+      <View style={styles.lockedBadgeContainer}>
+        <BadgeCard 
+          badge={{
+            ...item,
+            icon: '🔒',
+          }} 
+          onPress={() => handleBadgePress(item)}
+        />
+        <View style={styles.lockedOverlay}>
+          <Lock size={24} color="#fff" />
+        </View>
+      </View>
+    );
+  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
@@ -153,6 +214,46 @@ export default function ProfileScreen() {
             pelletType === 'positive' && styles.positiveTagButton
           ]}
           textStyle={styles.tagButtonText}
+        />
+      </View>
+      
+      <View style={[styles.badgesSection, { backgroundColor: cardColor, borderColor }]}>
+        <View style={styles.badgesHeader}>
+          <Text style={[styles.badgesSectionTitle, { color: textColor }]}>Your Badges</Text>
+          <View style={[styles.badgeCountContainer, { backgroundColor: isDark ? darkMode.background : Colors.background }]}>
+            <Text style={[styles.badgeCountLabel, { color: textSecondary }]}>Unlocked:</Text>
+            <Text style={[styles.badgeCount, { color: Colors.primary }]}>{userBadges.length} / {badges.length}</Text>
+          </View>
+        </View>
+        
+        {userBadges.length === 0 ? (
+          <View style={styles.emptyBadgeState}>
+            <Award size={32} color={textSecondary} />
+            <Text style={[styles.emptyBadgeText, { color: textSecondary }]}>No badges yet</Text>
+            <Text style={[styles.emptyBadgeSubtext, { color: textSecondary }]}>
+              Tag drivers to earn badges
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={userBadges}
+            keyExtractor={(item) => item.id}
+            renderItem={renderBadge}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.badgeList}
+          />
+        )}
+        
+        <Text style={[styles.allBadgesTitle, { color: textColor }]}>All Badges</Text>
+        <FlatList
+          data={badges}
+          keyExtractor={(item) => item.id}
+          renderItem={renderBadge}
+          numColumns={3}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+          contentContainerStyle={styles.allBadgesList}
         />
       </View>
       
@@ -345,5 +446,90 @@ const styles = StyleSheet.create({
   },
   positiveFloatingButton: {
     backgroundColor: Colors.success,
+  },
+  badgesSection: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+  },
+  badgesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  badgesSectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  badgeCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  badgeCountLabel: {
+    fontSize: 13,
+    marginRight: 4,
+  },
+  badgeCount: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  emptyBadgeState: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  emptyBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  emptyBadgeSubtext: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  badgeList: {
+    paddingBottom: 16,
+  },
+  allBadgesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  allBadgesList: {
+    paddingBottom: 8,
+    alignItems: 'center',
+  },
+  lockedBadgeContainer: {
+    position: 'relative',
+  },
+  lockedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  newBadgeContainer: {
+    position: 'relative',
+  },
+  newBadgeIndicator: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.secondary,
+    zIndex: 1,
   },
 });
