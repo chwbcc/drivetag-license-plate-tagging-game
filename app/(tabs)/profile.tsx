@@ -202,8 +202,8 @@ export default function ProfileScreen() {
         <View style={styles.badgesHeader}>
           <Text style={[styles.badgesSectionTitle, { color: textColor }]}>Your Badges</Text>
           <View style={[styles.badgeCountContainer, { backgroundColor: isDark ? darkMode.background : Colors.background }]}>
-            <Text style={[styles.badgeCountLabel, { color: textSecondary }]}>Unlocked: </Text>
-            <Text style={[styles.badgeCount, { color: Colors.primary }]}>{userBadges.length} / {badges.length}</Text>
+            <Text style={[styles.badgeCountLabel, { color: textSecondary }]}>Unlocked:</Text>
+            <Text style={[styles.badgeCount, { color: Colors.primary }]}> {userBadges.length} / {badges.length}</Text>
           </View>
         </View>
         
