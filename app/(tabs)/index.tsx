@@ -458,58 +458,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Recent Tags Section */}
-        <View style={{
-          backgroundColor: cardColor,
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 24,
-        }}>
-          <Text style={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: textColor,
-            marginBottom: 16,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          }}>
-            Recent Tags
-          </Text>
-          
-          {recentPellets.length === 0 ? (
-            <View style={{
-              paddingVertical: 40,
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 48 }}>💥</Text>
-              <Text style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: textColor,
-                marginTop: 16,
-              }}>
-                No tags received yet
-              </Text>
-              <Text style={{
-                fontSize: 14,
-                color: '#888',
-                textAlign: 'center',
-                marginTop: 8,
-              }}>
-                Your driving record is clean!
-              </Text>
-            </View>
-          ) : (
-            <View>
-              {recentPellets.map((item) => (
-                <View key={item.id} style={{ marginBottom: 8 }}>
-                  <PelletCard pellet={item} />
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-
         {/* Recent Badges */}
         {userBadges.length > 0 && (
           <View style={{
