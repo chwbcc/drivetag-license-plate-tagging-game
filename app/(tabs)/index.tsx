@@ -500,22 +500,6 @@ export default function HomeScreen() {
                 ))}
               </View>
             </ScrollView>
-            
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/badges')}
-              style={{
-                marginTop: 6,
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{
-                color: accentGreen,
-                fontSize: 11,
-                fontWeight: '600',
-              }}>
-                View All Badges →
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
 
