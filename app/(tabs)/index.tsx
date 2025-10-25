@@ -109,13 +109,12 @@ export default function HomeScreen() {
         }}
       />
       
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
-        {/* User Info Header */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
         <View style={{
           backgroundColor: cardColor,
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 24,
+          borderRadius: 14,
+          padding: 12,
+          marginBottom: 10,
         }}>
           <View style={{
             flexDirection: 'row',
@@ -126,29 +125,29 @@ export default function HomeScreen() {
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 8,
+                marginBottom: 6,
               }}>
                 <View style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: 25,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
                   backgroundColor: colors.primary + '30',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginRight: 12,
+                  marginRight: 10,
                 }}>
                   {user.photo ? (
                     <Image 
                       source={{ uri: user.photo }} 
-                      style={{ width: 50, height: 50, borderRadius: 25 }}
+                      style={{ width: 36, height: 36, borderRadius: 18 }}
                     />
                   ) : (
-                    <User size={24} color={accentGreen} />
+                    <User size={18} color={accentGreen} />
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: '700',
                     color: textColor,
                     marginBottom: 2,
@@ -159,9 +158,9 @@ export default function HomeScreen() {
                     flexDirection: 'row',
                     alignItems: 'center',
                   }}>
-                    <Car size={12} color='#888' />
+                    <Car size={11} color='#888' />
                     <Text style={{
-                      fontSize: 12,
+                      fontSize: 11,
                       color: textSecondary,
                       marginLeft: 4,
                     }}>
@@ -169,7 +168,7 @@ export default function HomeScreen() {
                     </Text>
                     {user.state && (
                       <Text style={{
-                        fontSize: 12,
+                        fontSize: 11,
                         color: '#888',
                         marginLeft: 4,
                       }}>
@@ -186,30 +185,30 @@ export default function HomeScreen() {
               style={{
                 backgroundColor: colors.primary + '30',
                 borderRadius: 8,
-                padding: 8,
+                padding: 7,
               }}
             >
-              <Edit size={18} color={accentGreen} />
+              <Edit size={16} color={accentGreen} />
             </TouchableOpacity>
           </View>
           
           <View style={{
             flexDirection: 'row',
-            marginTop: 16,
-            paddingTop: 16,
+            marginTop: 10,
+            paddingTop: 10,
             borderTopWidth: 1,
             borderTopColor: '#333344',
           }}>
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: '700',
                 color: accentYellow,
               }}>
                 {user.level}
               </Text>
               <Text style={{
-                fontSize: 11,
+                fontSize: 10,
                 color: textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
@@ -220,14 +219,14 @@ export default function HomeScreen() {
             </View>
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: '700',
                 color: accentGreen,
               }}>
                 {user.exp || 0}
               </Text>
               <Text style={{
-                fontSize: 11,
+                fontSize: 10,
                 color: textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
@@ -238,14 +237,14 @@ export default function HomeScreen() {
             </View>
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: '700',
                 color: colors.primary,
               }}>
                 {userBadges.length}
               </Text>
               <Text style={{
-                fontSize: 11,
+                fontSize: 10,
                 color: textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
@@ -257,18 +256,17 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Experience Progress */}
         <View style={{
           backgroundColor: cardColor,
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
+          borderRadius: 12,
+          padding: 10,
+          marginBottom: 8,
         }}>
           <Text style={{
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: '600',
             color: textColor,
-            marginBottom: 10,
+            marginBottom: 6,
             textTransform: 'uppercase',
             letterSpacing: 1,
           }}>
@@ -279,16 +277,16 @@ export default function HomeScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 8,
+            marginBottom: 6,
           }}>
             <Text style={{
-              fontSize: 11,
+              fontSize: 10,
               color: '#888',
             }}>
               Level {user.level}
             </Text>
             <Text style={{
-              fontSize: 11,
+              fontSize: 10,
               color: '#888',
             }}>
               {expInfo.current} / {expInfo.next} EXP
@@ -303,27 +301,26 @@ export default function HomeScreen() {
           />
           
           <Text style={{
-            fontSize: 10,
+            fontSize: 9,
             color: '#666',
             textAlign: 'center',
-            marginTop: 6,
+            marginTop: 4,
           }}>
             {expInfo.progress}% complete
           </Text>
         </View>
 
-        {/* Main Gauges - Positive & Negative */}
         <View style={{
           backgroundColor: cardColor,
-          borderRadius: 20,
-          padding: 24,
-          marginBottom: 24,
+          borderRadius: 14,
+          padding: 14,
+          marginBottom: 10,
         }}>
           <Text style={{
-            fontSize: 16,
+            fontSize: 13,
             fontWeight: '600',
             color: textColor,
-            marginBottom: 24,
+            marginBottom: 12,
             textAlign: 'center',
             textTransform: 'uppercase',
             letterSpacing: 1.5,
@@ -334,13 +331,13 @@ export default function HomeScreen() {
           <View style={{
             flexDirection: 'row',
             justifyContent: 'space-around',
-            marginBottom: 20,
+            marginBottom: 8,
           }}>
             <CircularGauge
               value={positivePelletsReceived.length}
               maxValue={Math.max(positivePelletsReceived.length + 10, 50)}
-              size={140}
-              strokeWidth={12}
+              size={100}
+              strokeWidth={10}
               color={accentGreen}
               label="Positive Tags"
             />
@@ -348,53 +345,52 @@ export default function HomeScreen() {
             <CircularGauge
               value={negativePelletsReceived.length}
               maxValue={Math.max(negativePelletsReceived.length + 10, 50)}
-              size={140}
-              strokeWidth={12}
+              size={100}
+              strokeWidth={10}
               color={accentRed}
               label="Negative Tags"
             />
           </View>
         </View>
 
-        {/* Activity Stats */}
         <View style={{
           backgroundColor: cardColor,
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 24,
+          borderRadius: 14,
+          padding: 12,
+          marginBottom: 10,
         }}>
           <Text style={{
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: '600',
             color: textColor,
-            marginBottom: 16,
+            marginBottom: 8,
             textTransform: 'uppercase',
             letterSpacing: 1,
           }}>
             Activity
           </Text>
           
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: 6 }}>
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
               backgroundColor: bgColor,
-              borderRadius: 12,
-              padding: 16,
+              borderRadius: 10,
+              padding: 10,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Target size={20} color={accentYellow} />
+                <Target size={18} color={accentYellow} />
                 <Text style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: '#cccccc',
-                  marginLeft: 12,
+                  marginLeft: 10,
                 }}>
                   Pellets Given
                 </Text>
               </View>
               <Text style={{
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: '700',
                 color: textColor,
               }}>
@@ -407,21 +403,21 @@ export default function HomeScreen() {
               alignItems: 'center',
               justifyContent: 'space-between',
               backgroundColor: bgColor,
-              borderRadius: 12,
-              padding: 16,
+              borderRadius: 10,
+              padding: 10,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ThumbsUp size={20} color={accentGreen} />
+                <ThumbsUp size={18} color={accentGreen} />
                 <Text style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: '#cccccc',
-                  marginLeft: 12,
+                  marginLeft: 10,
                 }}>
                   Positive Given
                 </Text>
               </View>
               <Text style={{
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: '700',
                 color: textColor,
               }}>
@@ -434,21 +430,21 @@ export default function HomeScreen() {
               alignItems: 'center',
               justifyContent: 'space-between',
               backgroundColor: bgColor,
-              borderRadius: 12,
-              padding: 16,
+              borderRadius: 10,
+              padding: 10,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Star size={20} color={accentYellow} />
+                <Star size={18} color={accentYellow} />
                 <Text style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: '#cccccc',
-                  marginLeft: 12,
+                  marginLeft: 10,
                 }}>
                   Total Received
                 </Text>
               </View>
               <Text style={{
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: '700',
                 color: textColor,
               }}>
@@ -458,19 +454,18 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Recent Badges */}
         {userBadges.length > 0 && (
           <View style={{
             backgroundColor: cardColor,
-            borderRadius: 20,
-            padding: 20,
-            marginBottom: 24,
+            borderRadius: 14,
+            padding: 12,
+            marginBottom: 10,
           }}>
             <Text style={{
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: '600',
               color: '#ffffff',
-              marginBottom: 16,
+              marginBottom: 8,
               textTransform: 'uppercase',
               letterSpacing: 1,
             }}>
@@ -478,23 +473,23 @@ export default function HomeScreen() {
             </Text>
             
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
                 {userBadges.slice(0, 5).map((badge) => (
                   <View
                     key={badge.id}
                     style={{
                       backgroundColor: bgColor,
-                      borderRadius: 12,
-                      padding: 16,
+                      borderRadius: 10,
+                      padding: 10,
                       alignItems: 'center',
-                      width: 100,
+                      width: 70,
                     }}
                   >
-                    <Text style={{ fontSize: 24, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 18, marginBottom: 4 }}>
                       {badge.icon}
                     </Text>
                     <Text style={{
-                      fontSize: 12,
+                      fontSize: 9,
                       fontWeight: '600',
                       color: textColor,
                       textAlign: 'center',
@@ -509,13 +504,13 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/badges')}
               style={{
-                marginTop: 12,
+                marginTop: 6,
                 alignItems: 'center',
               }}
             >
               <Text style={{
                 color: accentGreen,
-                fontSize: 14,
+                fontSize: 11,
                 fontWeight: '600',
               }}>
                 View All Badges →
@@ -524,7 +519,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Logout Button */}
         <TouchableOpacity
           onPress={handleLogout}
           style={{
@@ -532,17 +526,17 @@ export default function HomeScreen() {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: isDark ? '#2a2a3e' : colors.card,
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 40,
+            borderRadius: 10,
+            padding: 10,
+            marginBottom: 20,
             borderWidth: 1,
             borderColor: isDark ? '#3a3a4f' : colors.border,
           }}
         >
-          <LogOut size={20} color={accentRed} />
+          <LogOut size={18} color={accentRed} />
           <Text style={{
             color: textColor,
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: '600',
             marginLeft: 8,
           }}>
