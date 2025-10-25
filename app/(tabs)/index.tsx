@@ -257,6 +257,61 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Experience Progress */}
+        <View style={{
+          backgroundColor: cardColor,
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 16,
+        }}>
+          <Text style={{
+            fontSize: 12,
+            fontWeight: '600',
+            color: textColor,
+            marginBottom: 10,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}>
+            Level Progress
+          </Text>
+          
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+          }}>
+            <Text style={{
+              fontSize: 11,
+              color: '#888',
+            }}>
+              Level {user.level}
+            </Text>
+            <Text style={{
+              fontSize: 11,
+              color: '#888',
+            }}>
+              {expInfo.current} / {expInfo.next} EXP
+            </Text>
+          </View>
+          
+          <ExperienceBar 
+            level={user.level}
+            currentExp={expInfo.current}
+            nextLevelExp={expInfo.next}
+            progress={expInfo.progress}
+          />
+          
+          <Text style={{
+            fontSize: 10,
+            color: '#666',
+            textAlign: 'center',
+            marginTop: 6,
+          }}>
+            {expInfo.progress}% complete
+          </Text>
+        </View>
+
         {/* Main Gauges - Positive & Negative */}
         <View style={{
           backgroundColor: cardColor,
@@ -401,61 +456,6 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Experience Progress */}
-        <View style={{
-          backgroundColor: cardColor,
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 24,
-        }}>
-          <Text style={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: textColor,
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          }}>
-            Level Progress
-          </Text>
-          
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12,
-          }}>
-            <Text style={{
-              fontSize: 12,
-              color: '#888',
-            }}>
-              Level {user.level}
-            </Text>
-            <Text style={{
-              fontSize: 12,
-              color: '#888',
-            }}>
-              {expInfo.current} / {expInfo.next} EXP
-            </Text>
-          </View>
-          
-          <ExperienceBar 
-            level={user.level}
-            currentExp={expInfo.current}
-            nextLevelExp={expInfo.next}
-            progress={expInfo.progress}
-          />
-          
-          <Text style={{
-            fontSize: 11,
-            color: '#666',
-            textAlign: 'center',
-            marginTop: 8,
-          }}>
-            {expInfo.progress}% complete
-          </Text>
         </View>
 
         {/* Recent Badges */}
