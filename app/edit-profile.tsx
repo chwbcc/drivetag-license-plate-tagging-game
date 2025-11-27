@@ -211,7 +211,7 @@ export default function EditProfileScreen() {
             <View style={styles.currentPlateContainer}>
               <Text style={[styles.currentPlateLabel, { color: textSecondary }]}>Current License Plate:</Text>
               <Text style={[styles.currentPlateValue, { color: textColor }]}>
-                {user?.licensePlate || 'N/A'} {user?.state ? `(${user.state})` : ''}
+                {user?.licensePlate || 'N/A'}{user?.state ? ` (${user.state})` : ''}
               </Text>
             </View>
             

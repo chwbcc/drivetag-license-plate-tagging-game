@@ -108,6 +108,7 @@ function RootLayoutNav() {
           name="edit-profile" 
           options={{ 
             title: "Edit Profile",
+            headerBackTitle: "Back",
           }} 
         />
       </Stack>
