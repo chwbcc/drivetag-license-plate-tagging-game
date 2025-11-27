@@ -1,11 +1,12 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, User, Trophy, ShoppingCart, Play, Target } from 'lucide-react-native';
+import { User, Trophy, ShoppingCart, Play, Target, Shield } from 'lucide-react-native';
 import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
+import useAuthStore from '@/store/auth-store';
 
 function CenterTabButton({ onPress }: { onPress: () => void }) {
   return (
@@ -24,6 +25,7 @@ function CenterTabButton({ onPress }: { onPress: () => void }) {
 export default function TabLayout() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const user = useAuthStore((state) => state.user);
 
   return (
     <Tabs
@@ -43,6 +45,19 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerRight: user?.adminRole ? () => (
+          <TouchableOpacity
+            onPress={() => router.push('/admin')}
+            style={{
+              marginRight: 16,
+              backgroundColor: '#FFD700' + '20',
+              borderRadius: 8,
+              padding: 8,
+            }}
+          >
+            <Shield size={22} color="#FFD700" />
+          </TouchableOpacity>
+        ) : undefined,
       }}
     >
       <Tabs.Screen
