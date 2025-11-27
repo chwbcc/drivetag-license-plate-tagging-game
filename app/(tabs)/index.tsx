@@ -15,7 +15,6 @@ import {
   Target, 
   ThumbsUp, 
   Star,
-  Database,
   User,
   Car,
   Moon,
@@ -100,9 +99,6 @@ export default function HomeScreen() {
                 ) : (
                   <Moon size={24} color={textColor} />
                 )}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/sql-export')}>
-                <Database size={24} color={textColor} />
               </TouchableOpacity>
             </View>
           ),
