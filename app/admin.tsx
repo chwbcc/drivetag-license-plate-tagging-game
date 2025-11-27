@@ -11,7 +11,8 @@ export default function AdminAreaScreen() {
   const { user } = useAuthStore();
   const { isDark } = useTheme();
   const registeredUsers = useAuthStore(state => state.registeredUsers);
-  const allUsers = useAuthStore(state => state.getAllUsers());
+  const getAllUsers = useAuthStore(state => state.getAllUsers);
+  const allUsers = React.useMemo(() => getAllUsers(), [getAllUsers]);
   
   const bgColor = isDark ? darkMode.background : Colors.background;
   const cardColor = isDark ? darkMode.card : Colors.card;
