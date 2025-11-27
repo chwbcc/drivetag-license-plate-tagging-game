@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView, FlatList } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Target, ThumbsUp, Moon, Sun, Award } from 'lucide-react-native';
+import { Plus, Target, ThumbsUp, Moon, Sun, Award, ShieldCheck } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import BadgeCard from '@/components/BadgeCard';
@@ -9,6 +9,7 @@ import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
+import { trpc } from '@/lib/trpc';
 
 export default function ProfileScreen() {
   const { user } = useAuthStore();
@@ -16,6 +17,11 @@ export default function ProfileScreen() {
   const { badges, getUserBadges, checkAndAwardBadges } = useBadgeStore();
   const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
   const [newBadges, setNewBadges] = useState<string[]>([]);
+  
+  const adminCheckQuery = trpc.admin.checkAdmin.useQuery(
+    { email: user?.email || '' },
+    { enabled: !!user?.email }
+  );
   
   useEffect(() => {
     if (user) {
@@ -94,6 +100,27 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
+      {adminCheckQuery.data?.isAdmin && (
+        <TouchableOpacity
+          onPress={() => router.push('/admin')}
+          style={[styles.settingsSection, { backgroundColor: cardColor, borderColor, marginBottom: 12 }]}
+        >
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIconContainer, { backgroundColor: Colors.secondary + '20' }]}>
+                <ShieldCheck size={20} color={Colors.secondary} />
+              </View>
+              <View style={styles.settingTextContainer}>
+                <Text style={[styles.settingTitle, { color: textColor }]}>Admin Area</Text>
+                <Text style={[styles.settingSubtitle, { color: textSecondary }]}>
+                  Manage users and database
+                </Text>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
+      
       <View style={[styles.settingsSection, { backgroundColor: cardColor, borderColor }]}>
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
