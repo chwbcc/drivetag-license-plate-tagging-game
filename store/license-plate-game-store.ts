@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
+import useAuthStore from './auth-store';
 
 interface PlateSpotting {
   state: string;
   spottedAt: number;
   count: number;
+  userId: string;
 }
 
 const US_STATES = [
@@ -62,38 +64,55 @@ const US_STATES = [
   { code: 'DC', name: 'District of Columbia' },
 ];
 
-const STORAGE_KEY = '@license_plate_spottings';
+const STORAGE_KEY = '@license_plate_spottings_v2';
 
 export const [LicensePlateGameProvider, useLicensePlateGame] = createContextHook(() => {
+  const { user } = useAuthStore();
   const [spottedPlates, setSpottedPlates] = useState<Record<string, PlateSpotting>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadSpottings();
-  }, []);
-
-  const loadSpottings = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setSpottedPlates(JSON.parse(stored));
+    const load = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Failed to load license plate spottings:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      
+      try {
+        const userKey = `${STORAGE_KEY}_${user.id}`;
+        const stored = await AsyncStorage.getItem(userKey);
+        if (stored) {
+          setSpottedPlates(JSON.parse(stored));
+        } else {
+          setSpottedPlates({});
+        }
+      } catch (error) {
+        console.error('Failed to load license plate spottings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    load();
+  }, [user?.id]);
 
-  const saveSpottings = async (spottings: Record<string, PlateSpotting>) => {
+  const saveSpottings = useCallback(async (spottings: Record<string, PlateSpotting>) => {
+    if (!user) return;
+    
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(spottings));
+      const userKey = `${STORAGE_KEY}_${user.id}`;
+      await AsyncStorage.setItem(userKey, JSON.stringify(spottings));
     } catch (error) {
       console.error('Failed to save license plate spottings:', error);
     }
-  };
+  }, [user]);
 
   const spotPlate = useCallback((stateCode: string) => {
+    if (!user) {
+      console.warn('Cannot spot plate without logged in user');
+      return;
+    }
+    
     const now = Date.now();
     setSpottedPlates((prev) => {
       const existing = prev[stateCode];
@@ -103,12 +122,13 @@ export const [LicensePlateGameProvider, useLicensePlateGame] = createContextHook
           state: stateCode,
           spottedAt: now,
           count: existing ? existing.count + 1 : 1,
+          userId: user.id,
         },
       };
       saveSpottings(updated);
       return updated;
     });
-  }, []);
+  }, [user, saveSpottings]);
 
   const unspotPlate = useCallback((stateCode: string) => {
     setSpottedPlates((prev) => {
@@ -117,16 +137,19 @@ export const [LicensePlateGameProvider, useLicensePlateGame] = createContextHook
       saveSpottings(updated);
       return updated;
     });
-  }, []);
+  }, [saveSpottings]);
 
   const resetGame = useCallback(async () => {
+    if (!user) return;
+    
     setSpottedPlates({});
     try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
+      const userKey = `${STORAGE_KEY}_${user.id}`;
+      await AsyncStorage.removeItem(userKey);
     } catch (error) {
       console.error('Failed to reset game:', error);
     }
-  }, []);
+  }, [user]);
 
   const isPlateSpotted = useCallback((stateCode: string) => {
     return stateCode in spottedPlates;
@@ -137,7 +160,8 @@ export const [LicensePlateGameProvider, useLicensePlateGame] = createContextHook
   }, [spottedPlates]);
 
   const getProgress = useCallback(() => {
-    return (getSpottedCount() / US_STATES.length) * 100;
+    const count = Object.keys(spottedPlates).length;
+    return (count / US_STATES.length) * 100;
   }, [spottedPlates]);
 
   return {
