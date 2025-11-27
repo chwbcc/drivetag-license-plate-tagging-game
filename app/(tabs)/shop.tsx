@@ -8,13 +8,17 @@ import usePaymentStore from '@/store/payment-store';
 import usePelletStore from '@/store/pellet-store';
 import { PaymentItem } from '@/types';
 import { trpc } from '@/lib/trpc';
+import { useTheme } from '@/store/theme-store';
 
 export default function ShopScreen() {
+  const { theme } = useTheme();
   const { user, addPellets } = useAuthStore();
   const { items, processPurchase, isLoading } = usePaymentStore();
   const { pellets, removePellet } = usePelletStore();
   const [activeTab, setActiveTab] = useState<'purchase' | 'erase' | 'donation'>('purchase');
   const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
+  
+  const styles = getStyles(theme);
   
   // Filter items by type and pellet type
   const filteredItems = items.filter(item => {
@@ -146,7 +150,7 @@ export default function ShopScreen() {
           <Text style={[
             styles.tabText,
             activeTab === 'purchase' && styles.activeTabText
-          ]}>Buy Pellets</Text>
+          ]}>Buy</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -160,7 +164,7 @@ export default function ShopScreen() {
           <Text style={[
             styles.tabText,
             activeTab === 'erase' && styles.activeTabText
-          ]}>Erase Pellets</Text>
+          ]}>Erase</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -227,10 +231,19 @@ export default function ShopScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: 'light' | 'dark') => {
+  const colors = {
+    background: theme === 'dark' ? '#111827' : '#F9FAFB',
+    card: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+    text: theme === 'dark' ? '#F9FAFB' : '#1F2937',
+    textSecondary: theme === 'dark' ? '#9CA3AF' : '#6B7280',
+    border: theme === 'dark' ? '#374151' : '#E5E7EB',
+  };
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     padding: 10,
   },
   header: {
@@ -242,15 +255,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: colors.text,
   },
   pelletCountContainer: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   pelletCount: {
     flexDirection: 'row',
@@ -259,7 +272,7 @@ const styles = StyleSheet.create({
   },
   pelletCountLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginRight: 4,
   },
   pelletCountValue: {
@@ -273,11 +286,11 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
     marginBottom: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   tab: {
     flex: 1,
@@ -293,7 +306,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   activeTabText: {
     color: Colors.primary,
@@ -312,8 +325,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
     gap: 8,
   },
   activePelletTypeButton: {
@@ -326,7 +339,7 @@ const styles = StyleSheet.create({
   },
   pelletTypeText: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   activePelletTypeText: {
     color: Colors.primary,
@@ -340,12 +353,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   itemCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   positiveItemCard: {
     borderColor: Colors.success + '30',
@@ -374,11 +387,11 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
   },
   itemDescription: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   itemFooter: {
@@ -389,7 +402,7 @@ const styles = StyleSheet.create({
   itemPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: colors.text,
   },
   buyButton: {
     paddingVertical: 6,
@@ -401,4 +414,5 @@ const styles = StyleSheet.create({
   buyButtonText: {
     fontSize: 14,
   },
-});
+  });
+};

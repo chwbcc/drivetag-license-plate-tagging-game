@@ -5,6 +5,7 @@ import Colors from '@/constants/colors';
 import usePelletStore from '@/store/pellet-store';
 import useAuthStore from '@/store/auth-store';
 import { hashLicensePlate, calculateStatistics } from '@/utils/hash';
+import { useTheme } from '@/store/theme-store';
 
 type LeaderboardItem = {
   licensePlate: string;
@@ -20,18 +21,21 @@ type ExpLeaderboardItem = {
 };
 
 export default function LeaderboardScreen() {
+  const { theme } = useTheme();
   const { pellets } = usePelletStore();
   const { getAllUsers } = useAuthStore();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [pelletType, setPelletType] = useState<'negative' | 'positive' | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'pellets' | 'experience'>('pellets');
   
-  // Filter pellets by type
+  const styles = getStyles(theme);
+  const iconColor = theme === 'dark' ? '#9CA3AF' : Colors.textSecondary;
+  const textColor = theme === 'dark' ? '#F9FAFB' : Colors.text;
+  
   const filteredPellets = pelletType === 'all' 
     ? pellets 
     : pellets.filter(pellet => pellet.type === pelletType);
   
-  // Group pellets by license plate
   const leaderboardData: LeaderboardItem[] = React.useMemo(() => {
     const plateMap = new Map<string, number>();
     
@@ -47,7 +51,6 @@ export default function LeaderboardScreen() {
     }));
   }, [filteredPellets]);
   
-  // Get experience leaderboard data
   const expLeaderboardData: ExpLeaderboardItem[] = React.useMemo(() => {
     const users = getAllUsers();
     return users.map(user => ({
@@ -58,7 +61,6 @@ export default function LeaderboardScreen() {
     }));
   }, [getAllUsers]);
   
-  // Sort the data
   const sortedPelletData = [...leaderboardData].sort((a, b) => {
     return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
   });
@@ -67,7 +69,6 @@ export default function LeaderboardScreen() {
     return sortOrder === 'desc' ? b.exp - a.exp : a.exp - b.exp;
   });
   
-  // Calculate statistics
   const statistics = calculateStatistics(pellets);
   
   const toggleSortOrder = () => {
@@ -125,9 +126,9 @@ export default function LeaderboardScreen() {
         <Text style={styles.title}>Leaderboard</Text>
         <TouchableOpacity onPress={toggleSortOrder} style={styles.sortButton}>
           {sortOrder === 'desc' ? (
-            <ArrowDown size={20} color={Colors.text} />
+            <ArrowDown size={20} color={textColor} />
           ) : (
-            <ArrowUp size={20} color={Colors.text} />
+            <ArrowUp size={20} color={textColor} />
           )}
         </TouchableOpacity>
       </View>
@@ -135,7 +136,7 @@ export default function LeaderboardScreen() {
       {statistics && (
         <View style={styles.statsContainer}>
           <View style={styles.statsHeader}>
-            <BarChart size={20} color={Colors.text} />
+            <BarChart size={20} color={textColor} />
             <Text style={styles.statsTitle}>Aggregate Statistics</Text>
           </View>
           
@@ -212,7 +213,7 @@ export default function LeaderboardScreen() {
           ]}
           onPress={() => setActiveTab('pellets')}
         >
-          <Trophy size={16} color={activeTab === 'pellets' ? Colors.primary : Colors.textSecondary} />
+          <Trophy size={16} color={activeTab === 'pellets' ? Colors.primary : iconColor} />
           <Text style={[
             styles.tabText,
             activeTab === 'pellets' && styles.activeTabText
@@ -226,7 +227,7 @@ export default function LeaderboardScreen() {
           ]}
           onPress={() => setActiveTab('experience')}
         >
-          <Award size={16} color={activeTab === 'experience' ? Colors.primary : Colors.textSecondary} />
+          <Award size={16} color={activeTab === 'experience' ? Colors.primary : iconColor} />
           <Text style={[
             styles.tabText,
             activeTab === 'experience' && styles.activeTabText
@@ -244,7 +245,7 @@ export default function LeaderboardScreen() {
               ]}
               onPress={() => setPelletType('all')}
             >
-              <Trophy size={16} color={pelletType === 'all' ? Colors.primary : Colors.textSecondary} />
+              <Trophy size={16} color={pelletType === 'all' ? Colors.primary : iconColor} />
               <Text style={[
                 styles.filterText,
                 pelletType === 'all' && styles.activeFilterText
@@ -258,7 +259,7 @@ export default function LeaderboardScreen() {
               ]}
               onPress={() => setPelletType('negative')}
             >
-              <ThumbsDown size={16} color={pelletType === 'negative' ? Colors.primary : Colors.textSecondary} />
+              <ThumbsDown size={16} color={pelletType === 'negative' ? Colors.primary : iconColor} />
               <Text style={[
                 styles.filterText,
                 pelletType === 'negative' && styles.activeFilterText
@@ -272,7 +273,7 @@ export default function LeaderboardScreen() {
               ]}
               onPress={() => setPelletType('positive')}
             >
-              <ThumbsUp size={16} color={pelletType === 'positive' ? Colors.success : Colors.textSecondary} />
+              <ThumbsUp size={16} color={pelletType === 'positive' ? Colors.success : iconColor} />
               <Text style={[
                 styles.filterText,
                 pelletType === 'positive' && styles.positiveFilterText
@@ -287,7 +288,7 @@ export default function LeaderboardScreen() {
           
           {sortedPelletData.length === 0 ? (
             <View style={styles.emptyState}>
-              <Trophy size={48} color={Colors.textSecondary} />
+              <Trophy size={48} color={iconColor} />
               <Text style={styles.emptyStateText}>No data yet</Text>
               <Text style={styles.emptyStateSubtext}>
                 Start tagging drivers to see the leaderboard
@@ -315,7 +316,7 @@ export default function LeaderboardScreen() {
           
           {sortedExpData.length === 0 ? (
             <View style={styles.emptyState}>
-              <Award size={48} color={Colors.textSecondary} />
+              <Award size={48} color={iconColor} />
               <Text style={styles.emptyStateText}>No data yet</Text>
               <Text style={styles.emptyStateSubtext}>
                 Start reporting drivers to earn experience
@@ -339,10 +340,19 @@ export default function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: 'light' | 'dark') => {
+  const colors = {
+    background: theme === 'dark' ? '#111827' : '#F9FAFB',
+    card: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+    text: theme === 'dark' ? '#F9FAFB' : '#1F2937',
+    textSecondary: theme === 'dark' ? '#9CA3AF' : '#6B7280',
+    border: theme === 'dark' ? '#374151' : '#E5E7EB',
+  };
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     padding: 10,
   },
   header: {
@@ -354,22 +364,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: colors.text,
   },
   sortButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   statsContainer: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 12,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   statsHeader: {
     flexDirection: 'row',
@@ -379,7 +389,7 @@ const styles = StyleSheet.create({
   statsTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginLeft: 8,
   },
   statsRow: {
@@ -389,21 +399,21 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderRadius: 8,
     padding: 10,
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: colors.text,
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   trendContainer: {
@@ -413,7 +423,7 @@ const styles = StyleSheet.create({
   trendText: {
     fontSize: 12,
     marginLeft: 4,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   positiveTrend: {
     color: Colors.success,
@@ -422,16 +432,16 @@ const styles = StyleSheet.create({
     color: Colors.error,
   },
   topReasonsContainer: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   topReasonsTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
   },
   reasonItem: {
@@ -442,14 +452,14 @@ const styles = StyleSheet.create({
   reasonRank: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: colors.text,
     marginRight: 8,
     width: 16,
   },
   reasonText: {
     flex: 1,
     fontSize: 12,
-    color: Colors.text,
+    color: colors.text,
   },
   reasonCount: {
     fontSize: 12,
@@ -460,11 +470,11 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
     marginBottom: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   tab: {
     flex: 1,
@@ -476,11 +486,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeTab: {
-    backgroundColor: Colors.primary + '20', // 20% opacity
+    backgroundColor: Colors.primary + '20',
   },
   tabText: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   activeTabText: {
     color: Colors.primary,
@@ -489,11 +499,11 @@ const styles = StyleSheet.create({
   filterContainer: {
     flexDirection: 'row',
     marginBottom: 12,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   filterButton: {
     flex: 1,
@@ -505,14 +515,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeFilterButton: {
-    backgroundColor: Colors.primary + '20', // 20% opacity
+    backgroundColor: Colors.primary + '20',
   },
   positiveFilterButton: {
-    backgroundColor: Colors.success + '20', // 20% opacity
+    backgroundColor: Colors.success + '20',
   },
   filterText: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   activeFilterText: {
     color: Colors.primary,
@@ -525,12 +535,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 3,
   },
   sectionSubtitle: {
     fontSize: 11,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   listContent: {
@@ -539,12 +549,12 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   rankContainer: {
     width: 32,
@@ -578,11 +588,11 @@ const styles = StyleSheet.create({
   licensePlate: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
   },
   levelText: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   countContainer: {
@@ -591,7 +601,7 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: colors.text,
   },
   positiveCountText: {
     color: Colors.success,
@@ -603,7 +613,7 @@ const styles = StyleSheet.create({
   },
   countLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   emptyState: {
     alignItems: 'center',
@@ -612,12 +622,12 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginTop: 16,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 8,
     maxWidth: '80%',
@@ -625,4 +635,5 @@ const styles = StyleSheet.create({
   footer: {
     height: 40,
   },
-});
+  });
+};
