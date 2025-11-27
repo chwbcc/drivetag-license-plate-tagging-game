@@ -2,13 +2,15 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
 import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import Colors from "@/constants/colors";
 import { ThemeProvider, useTheme } from "@/store/theme-store";
 import { LicensePlateGameProvider } from "@/store/license-plate-game-store";
 import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 export const unstable_settings = {
   initialRouteName: "(auth)",
@@ -18,6 +20,7 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [queryClient] = useState(() => new QueryClient());
   const [loaded, error] = useFonts({
     ...FontAwesome.font,
   });
@@ -40,11 +43,15 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <LicensePlateGameProvider>
-        <RootLayoutNav />
-      </LicensePlateGameProvider>
-    </ThemeProvider>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <LicensePlateGameProvider>
+            <RootLayoutNav />
+          </LicensePlateGameProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }
 
