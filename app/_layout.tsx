@@ -110,13 +110,6 @@ function RootLayoutNav() {
             title: "Edit Profile",
           }} 
         />
-        <Stack.Screen 
-          name="admin" 
-          options={{ 
-            title: "Admin Area",
-            headerShown: false,
-          }} 
-        />
       </Stack>
     </>
   );
