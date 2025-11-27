@@ -119,6 +119,7 @@ export default function EditProfileScreen() {
       <Stack.Screen 
         options={{ 
           title: 'Edit Profile',
+          headerBackTitle: 'Back',
           headerRight: () => (
             <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
               <Save size={20} color={Colors.primary} />
