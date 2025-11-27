@@ -1,18 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Shield, Users, Target, Activity, Settings, ChevronRight, AlertCircle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
+import { trpc } from '@/lib/trpc';
 
 export default function AdminAreaScreen() {
   const { user } = useAuthStore();
   const { isDark } = useTheme();
-  const registeredUsers = useAuthStore(state => state.registeredUsers);
-  const getAllUsers = useAuthStore(state => state.getAllUsers);
-  const allUsers = React.useMemo(() => getAllUsers(), [getAllUsers]);
+  
+  const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
+    enabled: !!user?.adminRole,
+    refetchOnMount: true,
+  });
+  
+  const pelletsQuery = trpc.admin.getAllPellets.useQuery(undefined, {
+    enabled: !!user?.adminRole,
+    refetchOnMount: true,
+  });
   
   const bgColor = isDark ? darkMode.background : Colors.background;
   const cardColor = isDark ? darkMode.card : Colors.card;
@@ -129,13 +137,25 @@ export default function AdminAreaScreen() {
         
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-            <Text style={[styles.statValue, { color: Colors.primary }]}>{registeredUsers.length}</Text>
-            <Text style={[styles.statLabel, { color: textSecondary }]}>Registered Users</Text>
+            {usersQuery.isLoading ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Text style={[styles.statValue, { color: Colors.primary }]}>
+                {usersQuery.data?.count || 0}
+              </Text>
+            )}
+            <Text style={[styles.statLabel, { color: textSecondary }]}>Total Users</Text>
           </View>
           
           <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-            <Text style={[styles.statValue, { color: Colors.success }]}>{allUsers.length}</Text>
-            <Text style={[styles.statLabel, { color: textSecondary }]}>Total Users</Text>
+            {pelletsQuery.isLoading ? (
+              <ActivityIndicator size="small" color={Colors.success} />
+            ) : (
+              <Text style={[styles.statValue, { color: Colors.success }]}>
+                {pelletsQuery.data?.count || 0}
+              </Text>
+            )}
+            <Text style={[styles.statLabel, { color: textSecondary }]}>Total Pellets</Text>
           </View>
         </View>
         
@@ -184,42 +204,50 @@ export default function AdminAreaScreen() {
         <View style={[styles.infoBox, { backgroundColor: cardColor, borderColor }]}>
           <AlertCircle size={20} color={Colors.primary} />
           <Text style={[styles.infoText, { color: textSecondary }]}>
-            This is a demo admin interface. In production, these features would connect to your backend database 
-            to manage real user data, reports, and system settings.
+            Admin area connected to backend database. All user actions are tracked and stored.
           </Text>
         </View>
         
         <View style={styles.userListSection}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>Recent Users</Text>
-          {registeredUsers.length > 0 ? (
+          {usersQuery.isLoading ? (
+            <View style={[styles.emptyState, { backgroundColor: cardColor, borderColor }]}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={[styles.emptyStateText, { color: textSecondary }]}>Loading users...</Text>
+            </View>
+          ) : usersQuery.data && usersQuery.data.users.length > 0 ? (
             <View style={[styles.userListCard, { backgroundColor: cardColor, borderColor }]}>
-              {registeredUsers.slice(0, 5).map((u, index) => (
-                <View key={u.id} style={styles.userItem}>
-                  <View style={styles.userInfo}>
-                    <View style={[styles.userAvatar, { backgroundColor: Colors.primary + '20' }]}>
-                      <Text style={[styles.userAvatarText, { color: Colors.primary }]}>
-                        {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
-                      </Text>
+              {usersQuery.data.users.slice(0, 5).map((u) => {
+                const userRoleColor = u.adminRole === 'super_admin' ? '#FFD700' : u.adminRole === 'admin' ? '#FF6B6B' : u.adminRole === 'moderator' ? '#4ECDC4' : Colors.primary;
+                
+                return (
+                  <View key={u.id} style={styles.userItem}>
+                    <View style={styles.userInfo}>
+                      <View style={[styles.userAvatar, { backgroundColor: Colors.primary + '20' }]}>
+                        <Text style={[styles.userAvatarText, { color: Colors.primary }]}>
+                          {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={styles.userDetails}>
+                        <Text style={[styles.userName, { color: textColor }]}>{u.name || 'No name'}</Text>
+                        <Text style={[styles.userEmail, { color: textSecondary }]}>{u.email}</Text>
+                      </View>
                     </View>
-                    <View style={styles.userDetails}>
-                      <Text style={[styles.userName, { color: textColor }]}>{u.name || 'No name'}</Text>
-                      <Text style={[styles.userEmail, { color: textSecondary }]}>{u.email}</Text>
-                    </View>
+                    {u.adminRole && (
+                      <View style={[styles.miniRoleBadge, { backgroundColor: userRoleColor + '20', borderColor: userRoleColor }]}>
+                        <Text style={[styles.miniRoleText, { color: userRoleColor }]}>
+                          {u.adminRole.replace('_', ' ')}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                  {u.adminRole && (
-                    <View style={[styles.miniRoleBadge, { backgroundColor: roleColor + '20', borderColor: roleColor }]}>
-                      <Text style={[styles.miniRoleText, { color: roleColor }]}>
-                        {u.adminRole.replace('_', ' ')}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              ))}
+                );
+              })}
             </View>
           ) : (
             <View style={[styles.emptyState, { backgroundColor: cardColor, borderColor }]}>
               <Users size={32} color={textSecondary} />
-              <Text style={[styles.emptyStateText, { color: textSecondary }]}>No registered users yet</Text>
+              <Text style={[styles.emptyStateText, { color: textSecondary }]}>No users found</Text>
             </View>
           )}
         </View>

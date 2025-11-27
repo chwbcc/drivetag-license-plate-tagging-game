@@ -1,13 +1,24 @@
 import { adminProcedure } from "../../../create-context";
-import { Pellet } from "@/types";
+import { getAllPellets } from "@/backend/services/pellet-service";
+import { initDatabase } from "@/backend/database";
 
 export const getAllPelletsRoute = adminProcedure.query(async ({ ctx }) => {
-  console.log('Admin accessing all pellets:', ctx.userEmail);
+  console.log('[Admin] Getting all pellets. Admin:', ctx.userEmail);
   
-  return {
-    message: "This is a mock endpoint. In production, this would query the database for all pellets.",
-    pellets: [] as Pellet[],
-  };
+  try {
+    await initDatabase();
+    const pellets = await getAllPellets();
+    
+    console.log(`[Admin] Found ${pellets.length} pellets`);
+    
+    return {
+      pellets,
+      count: pellets.length,
+    };
+  } catch (error) {
+    console.error('[Admin] Error getting all pellets:', error);
+    throw new Error('Failed to get pellets');
+  }
 });
 
 export default getAllPelletsRoute;

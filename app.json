@@ -26,6 +26,17 @@
         "UIBackgroundModes": [
           "location"
         ]
+      },
+      "entitlements": {
+        "com": {
+          "apple": {
+            "security": {
+              "application-groups": [
+                "group.com.myapp"
+              ]
+            }
+          }
+        }
       }
     },
     "android": {
@@ -68,6 +79,22 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isIosBackgroundLocationEnabled": true,
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": true,
+          "useSQLCipher": true,
+          "android": {
+            "enableFTS": false,
+            "useSQLCipher": false
+          },
+          "ios": {
+            "customBuildFlags": [
+              "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
+            ]
+          }
         }
       ]
     ],

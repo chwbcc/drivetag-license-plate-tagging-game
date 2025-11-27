@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
+import { trpcClient } from '@/lib/trpc';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -11,9 +12,9 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login, findUserByEmail } = useAuthStore();
+  const { login } = useAuthStore();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -22,7 +23,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError('');
     
-    setTimeout(() => {
+    try {
       console.log('[Login] Attempting login for:', email);
       
       if (!email.includes('@')) {
@@ -31,27 +32,25 @@ export default function LoginScreen() {
         return;
       }
       
-      const existingUser = findUserByEmail(email);
-      console.log('[Login] User found:', existingUser ? 'Yes' : 'No');
+      const result = await trpcClient.auth.login.mutate({
+        email,
+        password,
+      });
       
-      if (existingUser) {
-        if (existingUser.password && existingUser.password !== password) {
-          console.log('[Login] Password mismatch');
-          setError('Incorrect password');
-          setIsLoading(false);
-          return;
-        }
-        console.log('[Login] Login successful, user adminRole:', existingUser.adminRole);
-        login(existingUser);
-        setIsLoading(false);
+      if (result.success && result.user) {
+        console.log('[Login] Login successful, user adminRole:', result.user.adminRole);
+        login(result.user);
         router.replace('/(tabs)');
-        return;
+      } else {
+        console.log('[Login] Login failed:', result.message);
+        setError(result.message);
       }
-      
-      console.log('[Login] User not found');
-      setError('Account not found. Please register first.');
+    } catch (error) {
+      console.error('[Login] Error during login:', error);
+      setError('An error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

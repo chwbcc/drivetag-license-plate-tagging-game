@@ -20,6 +20,7 @@ import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
+import { trpcClient } from '@/lib/trpc';
 
 // Experience points awarded for different actions
 const US_STATES = [
@@ -102,7 +103,7 @@ export default function TagDriverScreen() {
     return plate.length >= 3 && plate.length <= 8;
   };
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!state) {
       setError('Please select a state');
       return;
@@ -163,8 +164,27 @@ export default function TagDriverScreen() {
     const success = removePellets(1, pelletType);
     
     if (success) {
-      // Add the pellet to the store
+      try {
+        // Add the pellet to backend database
+        await trpcClient.pellet.addPellet.mutate(newPellet);
+        console.log('[TagDriver] Pellet saved to backend database');
+      } catch (error) {
+        console.error('[TagDriver] Failed to save pellet to backend:', error);
+      }
+      
+      // Add the pellet to the local store as well
       addPellet(newPellet);
+      
+      // Sync user data with backend
+      try {
+        await trpcClient.auth.syncUser.mutate({
+          pelletCount: user!.pelletCount - (pelletType === 'negative' ? 1 : 0),
+          positivePelletCount: user!.positivePelletCount - (pelletType === 'positive' ? 1 : 0),
+        });
+        console.log('[TagDriver] User data synced to backend');
+      } catch (error) {
+        console.error('[TagDriver] Failed to sync user data:', error);
+      }
       
       // Calculate and award experience points
       let expGained = isPositive ? EXP_REWARDS.POSITIVE_TAG : EXP_REWARDS.TAG_DRIVER;

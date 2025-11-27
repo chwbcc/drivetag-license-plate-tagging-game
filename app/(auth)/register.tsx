@@ -6,6 +6,7 @@ import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
+import { trpcClient } from '@/lib/trpc';
 
 // List of US states for dropdown
 const US_STATES = [
@@ -33,7 +34,7 @@ export default function RegisterScreen() {
     return plate.length >= 3 && plate.length <= 8;
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!email || !password || !confirmPassword || !licensePlate) {
       setError('Please fill in all required fields');
       return;
@@ -57,7 +58,7 @@ export default function RegisterScreen() {
     setIsLoading(true);
     setError('');
     
-    setTimeout(() => {
+    try {
       console.log('[Register] Attempting registration for:', email);
       
       if (!email.includes('@')) {
@@ -68,27 +69,41 @@ export default function RegisterScreen() {
       
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      const newUser = {
+      const result = await trpcClient.auth.register.mutate({
         id: userId,
         email,
         password,
         name: name || undefined,
         licensePlate: licensePlate.toUpperCase(),
         state,
-        pelletCount: 10,
-        positivePelletCount: 5,
-        badges: [],
-        exp: 0,
-        level: 1,
-      };
+      });
       
-      console.log('[Register] Registering user:', newUser.id, newUser.email);
-      register(newUser);
-      
-      console.log('[Register] Registration successful, navigating to tabs');
+      if (result.success && result.user) {
+        console.log('[Register] Registration successful, logging in user');
+        
+        const userWithPellets = {
+          ...result.user,
+          pelletCount: 10,
+          positivePelletCount: 5,
+        };
+        
+        await trpcClient.auth.syncUser.mutate({
+          pelletCount: 10,
+          positivePelletCount: 5,
+        });
+        
+        register(userWithPellets);
+        router.replace('/(tabs)');
+      } else {
+        console.log('[Register] Registration failed:', result.message);
+        setError(result.message);
+      }
+    } catch (error) {
+      console.error('[Register] Error during registration:', error);
+      setError('An error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-      router.replace('/(tabs)');
-    }, 1000);
+    }
   };
 
   return (
