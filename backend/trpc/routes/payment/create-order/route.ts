@@ -9,12 +9,23 @@ async function getAccessToken() {
   const clientId = process.env.EXPO_PUBLIC_PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
   
+  console.log('PayPal Configuration Check:');
+  console.log('- Client ID exists:', !!clientId);
+  console.log('- Client ID (first 10 chars):', clientId?.substring(0, 10));
+  console.log('- Client Secret exists:', !!clientSecret);
+  console.log('- PayPal Mode:', process.env.EXPO_PUBLIC_PAYPAL_MODE || 'sandbox (default)');
+  console.log('- API URL:', PAYPAL_API);
+  
   if (!clientId || !clientSecret) {
-    throw new Error('PayPal credentials not configured');
+    console.error('Missing PayPal credentials!');
+    console.error('EXPO_PUBLIC_PAYPAL_CLIENT_ID:', clientId ? 'SET' : 'NOT SET');
+    console.error('PAYPAL_CLIENT_SECRET:', clientSecret ? 'SET' : 'NOT SET');
+    throw new Error('PayPal credentials not configured. Please check your environment variables.');
   }
 
   const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   
+  console.log('Requesting PayPal access token...');
   const response = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -25,6 +36,13 @@ async function getAccessToken() {
   });
 
   const data = await response.json();
+  
+  if (!response.ok) {
+    console.error('PayPal token request failed:', response.status, data);
+    throw new Error(`Failed to get PayPal access token: ${data.error_description || data.error || 'Unknown error'}`);
+  }
+  
+  console.log('PayPal access token obtained successfully');
   return data.access_token;
 }
 
