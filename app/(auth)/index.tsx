@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { LogIn } from 'lucide-react-native';
-import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
@@ -13,7 +11,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login, user: existingUser } = useAuthStore();
+  const { login, findUserByEmail } = useAuthStore();
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -25,23 +23,32 @@ export default function LoginScreen() {
     setError('');
     
     setTimeout(() => {
+      console.log('[Login] Attempting login for:', email);
+      
       if (!email.includes('@')) {
         setError('Invalid email format');
         setIsLoading(false);
         return;
       }
       
-      if (existingUser && existingUser.email === email) {
+      const existingUser = findUserByEmail(email);
+      console.log('[Login] User found:', existingUser ? 'Yes' : 'No');
+      
+      if (existingUser) {
         if (existingUser.password && existingUser.password !== password) {
+          console.log('[Login] Password mismatch');
           setError('Incorrect password');
           setIsLoading(false);
           return;
         }
+        console.log('[Login] Login successful, navigating to tabs');
         login(existingUser);
         setIsLoading(false);
+        router.replace('/(tabs)');
         return;
       }
       
+      console.log('[Login] User not found');
       setError('Account not found. Please register first.');
       setIsLoading(false);
     }, 1000);
@@ -93,7 +100,7 @@ export default function LoginScreen() {
           />
           
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account?</Text>
+            <Text style={styles.footerText}>Don&apos;t have an account?</Text>
             <Button
               title="Register"
               variant="outline"

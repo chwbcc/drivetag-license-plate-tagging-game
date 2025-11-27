@@ -57,9 +57,9 @@ export default function RegisterScreen() {
     setIsLoading(true);
     setError('');
     
-    // Simulate API call
     setTimeout(() => {
-      // For demo purposes, we'll just check if the email contains "@"
+      console.log('[Register] Attempting registration for:', email);
+      
       if (!email.includes('@')) {
         setError('Invalid email format');
         setIsLoading(false);
@@ -68,7 +68,7 @@ export default function RegisterScreen() {
       
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      register({
+      const newUser = {
         id: userId,
         email,
         password,
@@ -80,10 +80,14 @@ export default function RegisterScreen() {
         badges: [],
         exp: 0,
         level: 1,
-      });
+      };
       
-      router.replace('/(tabs)');
+      console.log('[Register] Registering user:', newUser.id, newUser.email);
+      register(newUser);
+      
+      console.log('[Register] Registration successful, navigating to tabs');
       setIsLoading(false);
+      router.replace('/(tabs)');
     }, 1000);
   };
 

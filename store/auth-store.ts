@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
 
-// Experience required for each level
 const EXP_LEVELS = [
   0,      // Level 1
   100,    // Level 2
@@ -22,7 +21,6 @@ const EXP_LEVELS = [
   75000,  // Level 15
 ];
 
-// Calculate level based on experience
 const calculateLevel = (exp: number): number => {
   let level = 1;
   for (let i = 1; i < EXP_LEVELS.length; i++) {
@@ -36,25 +34,26 @@ const calculateLevel = (exp: number): number => {
 };
 
 type AuthStore = AuthState & {
+  registeredUsers: User[];
   login: (user: User) => void;
   logout: () => void;
   register: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
   changeLicensePlate: (newPlate: string, state?: string) => void;
-  changePassword: (currentPassword: string, newPassword: string) => boolean; // Returns true if password was changed
+  changePassword: (currentPassword: string, newPassword: string) => boolean;
   addPellets: (count: number, type?: 'negative' | 'positive') => void;
-  removePellets: (count: number, type?: 'negative' | 'positive') => boolean; // Returns false if not enough pellets
+  removePellets: (count: number, type?: 'negative' | 'positive') => boolean;
   addBadge: (badgeId: string) => void;
-  addExp: (amount: number) => boolean; // Return true if leveled up
+  addExp: (amount: number) => boolean;
   getExpForNextLevel: () => { current: number, next: number, progress: number };
   getAllUsers: () => User[];
+  findUserByEmail: (email: string) => User | undefined;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
 };
 
-// Mock users for leaderboard
 const MOCK_USERS: User[] = [
   {
     id: '2',
@@ -110,6 +109,7 @@ const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      registeredUsers: [],
       isLoading: false,
       error: null,
       _hasHydrated: false,
@@ -130,31 +130,70 @@ const useAuthStore = create<AuthStore>()(
       },
       logout: () => set({ user: null, error: null }),
       register: (user) => {
-        set({ 
-          user: {
-            ...user,
-            exp: user.exp || 0,
-            level: user.level || 1
-          }, 
-          error: null 
-        });
+        const newUser = {
+          ...user,
+          exp: user.exp || 0,
+          level: user.level || 1
+        };
+        
+        const registeredUsers = get().registeredUsers;
+        const existingUserIndex = registeredUsers.findIndex(u => u.email === newUser.email);
+        
+        if (existingUserIndex >= 0) {
+          registeredUsers[existingUserIndex] = newUser;
+          set({ 
+            registeredUsers: [...registeredUsers],
+            user: newUser, 
+            error: null 
+          });
+        } else {
+          set({ 
+            registeredUsers: [...registeredUsers, newUser],
+            user: newUser, 
+            error: null 
+          });
+        }
       },
       updateUser: (updates) => {
         const currentUser = get().user;
         if (currentUser) {
-          set({ user: { ...currentUser, ...updates } });
+          const updatedUser = { ...currentUser, ...updates };
+          
+          const registeredUsers = get().registeredUsers;
+          const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+          
+          if (userIndex >= 0) {
+            registeredUsers[userIndex] = updatedUser;
+            set({ 
+              user: updatedUser,
+              registeredUsers: [...registeredUsers]
+            });
+          } else {
+            set({ user: updatedUser });
+          }
         }
       },
       changeLicensePlate: (newPlate, state) => {
         const currentUser = get().user;
         if (currentUser) {
-          set({ 
-            user: { 
-              ...currentUser, 
-              licensePlate: newPlate,
-              state: state || currentUser.state
-            } 
-          });
+          const updatedUser = { 
+            ...currentUser, 
+            licensePlate: newPlate,
+            state: state || currentUser.state
+          };
+          
+          const registeredUsers = get().registeredUsers;
+          const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+          
+          if (userIndex >= 0) {
+            registeredUsers[userIndex] = updatedUser;
+            set({ 
+              user: updatedUser,
+              registeredUsers: [...registeredUsers]
+            });
+          } else {
+            set({ user: updatedUser });
+          }
         }
       },
       changePassword: (currentPassword, newPassword) => {
@@ -165,59 +204,93 @@ const useAuthStore = create<AuthStore>()(
           return false;
         }
         
-        set({ 
-          user: { 
-            ...currentUser, 
-            password: newPassword
-          } 
-        });
+        const updatedUser = { 
+          ...currentUser, 
+          password: newPassword
+        };
+        
+        const registeredUsers = get().registeredUsers;
+        const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+        
+        if (userIndex >= 0) {
+          registeredUsers[userIndex] = updatedUser;
+          set({ 
+            user: updatedUser,
+            registeredUsers: [...registeredUsers]
+          });
+        } else {
+          set({ user: updatedUser });
+        }
         return true;
       },
       addPellets: (count, type = 'negative') => {
         const currentUser = get().user;
         if (currentUser) {
+          let updatedUser;
           if (type === 'positive') {
+            updatedUser = { 
+              ...currentUser, 
+              positivePelletCount: (currentUser.positivePelletCount || 0) + count 
+            };
+          } else {
+            updatedUser = { 
+              ...currentUser, 
+              pelletCount: currentUser.pelletCount + count 
+            };
+          }
+          
+          const registeredUsers = get().registeredUsers;
+          const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+          
+          if (userIndex >= 0) {
+            registeredUsers[userIndex] = updatedUser;
             set({ 
-              user: { 
-                ...currentUser, 
-                positivePelletCount: (currentUser.positivePelletCount || 0) + count 
-              } 
+              user: updatedUser,
+              registeredUsers: [...registeredUsers]
             });
           } else {
-            set({ 
-              user: { 
-                ...currentUser, 
-                pelletCount: currentUser.pelletCount + count 
-              } 
-            });
+            set({ user: updatedUser });
           }
         }
       },
       removePellets: (count, type = 'negative') => {
         const currentUser = get().user;
         if (currentUser) {
+          let updatedUser;
           if (type === 'positive') {
             const currentCount = currentUser.positivePelletCount || 0;
             if (currentCount >= count) {
-              set({ 
-                user: { 
-                  ...currentUser, 
-                  positivePelletCount: currentCount - count 
-                } 
-              });
-              return true;
+              updatedUser = { 
+                ...currentUser, 
+                positivePelletCount: currentCount - count 
+              };
+            } else {
+              return false;
             }
           } else {
             if (currentUser.pelletCount >= count) {
-              set({ 
-                user: { 
-                  ...currentUser, 
-                  pelletCount: currentUser.pelletCount - count 
-                } 
-              });
-              return true;
+              updatedUser = { 
+                ...currentUser, 
+                pelletCount: currentUser.pelletCount - count 
+              };
+            } else {
+              return false;
             }
           }
+          
+          const registeredUsers = get().registeredUsers;
+          const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+          
+          if (userIndex >= 0) {
+            registeredUsers[userIndex] = updatedUser;
+            set({ 
+              user: updatedUser,
+              registeredUsers: [...registeredUsers]
+            });
+          } else {
+            set({ user: updatedUser });
+          }
+          return true;
         }
         return false;
       },
@@ -226,12 +299,23 @@ const useAuthStore = create<AuthStore>()(
         if (currentUser) {
           const badges = currentUser.badges || [];
           if (!badges.includes(badgeId)) {
-            set({
-              user: {
-                ...currentUser,
-                badges: [...badges, badgeId]
-              }
-            });
+            const updatedUser = {
+              ...currentUser,
+              badges: [...badges, badgeId]
+            };
+            
+            const registeredUsers = get().registeredUsers;
+            const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+            
+            if (userIndex >= 0) {
+              registeredUsers[userIndex] = updatedUser;
+              set({ 
+                user: updatedUser,
+                registeredUsers: [...registeredUsers]
+              });
+            } else {
+              set({ user: updatedUser });
+            }
           }
         }
       },
@@ -242,13 +326,24 @@ const useAuthStore = create<AuthStore>()(
           const newLevel = calculateLevel(newExp);
           const leveledUp = newLevel > (currentUser.level || 1);
           
-          set({
-            user: {
-              ...currentUser,
-              exp: newExp,
-              level: newLevel
-            }
-          });
+          const updatedUser = {
+            ...currentUser,
+            exp: newExp,
+            level: newLevel
+          };
+          
+          const registeredUsers = get().registeredUsers;
+          const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+          
+          if (userIndex >= 0) {
+            registeredUsers[userIndex] = updatedUser;
+            set({ 
+              user: updatedUser,
+              registeredUsers: [...registeredUsers]
+            });
+          } else {
+            set({ user: updatedUser });
+          }
           
           return leveledUp;
         }
@@ -262,7 +357,6 @@ const useAuthStore = create<AuthStore>()(
         const currentLevel = currentUser.level || 1;
         
         if (currentLevel >= EXP_LEVELS.length) {
-          // Max level reached
           const maxLevelExp = EXP_LEVELS[EXP_LEVELS.length - 1];
           return { 
             current: currentExp - maxLevelExp, 
@@ -287,8 +381,11 @@ const useAuthStore = create<AuthStore>()(
         const currentUser = get().user;
         if (!currentUser) return MOCK_USERS;
         
-        // Return mock users plus the current user
         return [currentUser, ...MOCK_USERS];
+      },
+      findUserByEmail: (email) => {
+        const registeredUsers = get().registeredUsers;
+        return registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
       },
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
