@@ -32,6 +32,11 @@ export default function LoginScreen() {
       }
       
       if (existingUser && existingUser.email === email) {
+        if (existingUser.password && existingUser.password !== password) {
+          setError('Incorrect password');
+          setIsLoading(false);
+          return;
+        }
         login(existingUser);
         setIsLoading(false);
         return;

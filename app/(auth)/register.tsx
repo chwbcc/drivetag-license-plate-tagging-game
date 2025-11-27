@@ -71,6 +71,7 @@ export default function RegisterScreen() {
       register({
         id: userId,
         email,
+        password,
         name: name || undefined,
         licensePlate: licensePlate.toUpperCase(),
         state,

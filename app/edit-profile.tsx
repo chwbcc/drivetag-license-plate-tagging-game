@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -31,7 +31,7 @@ const US_STATES = [
 ];
 
 export default function EditProfileScreen() {
-  const { user, updateUser, changeLicensePlate } = useAuthStore();
+  const { user, updateUser, changeLicensePlate, changePassword } = useAuthStore();
   const { isDark, toggleTheme } = useTheme();
   
   const [name, setName] = useState(user?.name || '');
@@ -40,6 +40,10 @@ export default function EditProfileScreen() {
   const [newLicensePlate, setNewLicensePlate] = useState('');
   const [state, setState] = useState(user?.state || '');
   const [error, setError] = useState('');
+  
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   
   const validateLicensePlate = (plate: string) => {
     // This is a simple validation - in a real app, you'd want to validate based on your region's format
@@ -106,6 +110,34 @@ export default function EditProfileScreen() {
   
   const removePhoto = () => {
     setPhoto('');
+  };
+  
+  const handlePasswordChange = () => {
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      Alert.alert('Error', 'Please fill in all password fields');
+      return;
+    }
+    
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert('Error', 'New passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+    
+    const success = changePassword(currentPassword, newPassword);
+    
+    if (success) {
+      Alert.alert('Success', 'Password changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } else {
+      Alert.alert('Error', 'Current password is incorrect');
+    }
   };
 
   const bgColor = isDark ? darkMode.background : Colors.background;
@@ -238,6 +270,42 @@ export default function EditProfileScreen() {
               autoCapitalize="characters"
               maxLength={2}
             />
+            
+            <View style={[styles.divider, { backgroundColor: borderColor }]} />
+            
+            <Text style={[styles.sectionTitle, { color: textColor }]}>Change Password</Text>
+            <Text style={[styles.sectionSubtitle, { color: textSecondary }]}>Update your account password</Text>
+            
+            <Input
+              label="Current Password"
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+            />
+            
+            <Input
+              label="New Password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+            />
+            
+            <Input
+              label="Confirm New Password"
+              placeholder="Confirm new password"
+              value={confirmNewPassword}
+              onChangeText={setConfirmNewPassword}
+              secureTextEntry
+            />
+            
+            <Button
+              title="Change Password"
+              onPress={handlePasswordChange}
+              variant="outline"
+              style={styles.changePasswordButton}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -365,5 +433,8 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     marginBottom: 16,
+  },
+  changePasswordButton: {
+    marginTop: 8,
   }
 });
