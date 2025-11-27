@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,10 +32,14 @@ import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 
 export default function HomeScreen() {
-  const { user, logout, getExpForNextLevel } = useAuthStore();
+  const { user, logout, getExpForNextLevel, syncAdminRole } = useAuthStore();
   const { getPelletsByLicensePlate, getPelletsCreatedByUser, pellets } = usePelletStore();
   const { getUserBadges } = useBadgeStore();
   const { isDark, toggleTheme } = useTheme();
+  
+  useEffect(() => {
+    syncAdminRole();
+  }, [syncAdminRole]);
 
   if (!user) {
     return null;

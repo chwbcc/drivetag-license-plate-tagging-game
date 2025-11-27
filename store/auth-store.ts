@@ -38,6 +38,7 @@ const calculateLevel = (exp: number): number => {
 type AuthStore = AuthState & {
   registeredUsers: User[];
   login: (user: User) => void;
+  syncAdminRole: () => void;
   logout: () => void;
   register: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
@@ -136,6 +137,32 @@ const useAuthStore = create<AuthStore>()(
         });
       },
       logout: () => set({ user: null, error: null }),
+      syncAdminRole: () => {
+        const currentUser = get().user;
+        if (currentUser) {
+          const adminRole: AdminRole = currentUser.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
+            ? 'super_admin' 
+            : currentUser.adminRole || null;
+          
+          if (currentUser.adminRole !== adminRole) {
+            console.log('[Auth] Syncing admin role for', currentUser.email, '-> role:', adminRole);
+            const updatedUser = { ...currentUser, adminRole };
+            
+            const registeredUsers = get().registeredUsers;
+            const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
+            
+            if (userIndex >= 0) {
+              registeredUsers[userIndex] = updatedUser;
+              set({ 
+                user: updatedUser,
+                registeredUsers: [...registeredUsers]
+              });
+            } else {
+              set({ user: updatedUser });
+            }
+          }
+        }
+      },
       register: (user) => {
         const adminRole: AdminRole = user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
           ? 'super_admin' 

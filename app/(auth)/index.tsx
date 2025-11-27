@@ -41,7 +41,7 @@ export default function LoginScreen() {
           setIsLoading(false);
           return;
         }
-        console.log('[Login] Login successful, navigating to tabs');
+        console.log('[Login] Login successful, user adminRole:', existingUser.adminRole);
         login(existingUser);
         setIsLoading(false);
         router.replace('/(tabs)');
