@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { ShoppingCart, Tag, Shield, Heart, ThumbsUp, ThumbsDown } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
+import { Tag, Shield, Heart, ThumbsUp, ThumbsDown } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import usePaymentStore from '@/store/payment-store';
 import usePelletStore from '@/store/pellet-store';
 import { PaymentItem } from '@/types';
+import { trpc } from '@/lib/trpc';
 
 export default function ShopScreen() {
   const { user, addPellets } = useAuthStore();
@@ -34,58 +35,39 @@ export default function ShopScreen() {
     }
   ) : [];
   
+  const createOrderMutation = trpc.payment.createOrder.useMutation();
+
   const handlePurchase = async (item: PaymentItem) => {
     if (!user) {
       Alert.alert('Error', 'You need to be logged in to make a purchase');
       return;
     }
-    
-    Alert.alert(
-      'Confirm Purchase',
-      `Are you sure you want to purchase ${item.name} for $${item.price.toFixed(2)}?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Purchase',
-          onPress: async () => {
-            if (await processPurchase(item.id, user.id)) {
-              if (item.type === 'purchase' && item.pelletCount) {
-                addPellets(item.pelletCount, item.pelletType);
-                Alert.alert('Success', `You've purchased ${item.pelletCount} ${item.pelletType} pellets!`);
-              } else if (item.type === 'erase' && item.pelletCount) {
-                if (myPellets.length === 0) {
-                  Alert.alert('No Pellets', `You have no ${pelletType} pellets to erase from your record.`);
-                  return;
-                }
-                
-                const pelletsToRemove = Math.min(item.pelletCount, myPellets.length);
-                const removedPellets: string[] = [];
-                
-                for (let i = 0; i < pelletsToRemove; i++) {
-                  if (myPellets[i]) {
-                    removePellet(myPellets[i].id);
-                    removedPellets.push(myPellets[i].id);
-                  }
-                }
-                
-                console.log(`Removed ${removedPellets.length} ${pelletType} pellets:`, removedPellets);
-                Alert.alert(
-                  'Success', 
-                  `You've successfully erased ${removedPellets.length} ${pelletType} pellet${removedPellets.length !== 1 ? 's' : ''} from your record!`
-                );
-              } else if (item.type === 'donation') {
-                Alert.alert('Thank You!', 'Your donation helps us keep the roads safer!');
-              }
-            } else {
-              Alert.alert('Error', 'Payment processing failed. Please try again.');
-            }
-          },
-        },
-      ]
-    );
+
+    try {
+      const order = await createOrderMutation.mutateAsync({
+        itemId: item.id,
+        amount: item.price,
+        itemName: item.name,
+      });
+
+      if (order.approvalUrl) {
+        if (Platform.OS === 'web') {
+          window.open(order.approvalUrl, '_blank');
+        } else {
+          const supported = await Linking.canOpenURL(order.approvalUrl);
+          if (supported) {
+            await Linking.openURL(order.approvalUrl);
+          } else {
+            Alert.alert('Error', 'Unable to open PayPal');
+          }
+        }
+      } else {
+        Alert.alert('Error', 'Failed to create payment order');
+      }
+    } catch (error) {
+      console.error('Order creation error:', error);
+      Alert.alert('Error', 'Failed to initiate payment. Please try again.');
+    }
   };
   
   const renderItem = ({ item }: { item: PaymentItem }) => {
