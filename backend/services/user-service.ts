@@ -31,6 +31,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     exp: number;
     level: number;
     admin_role: AdminRole;
+    created_at: number;
   }>('SELECT * FROM users WHERE id = ?', [userId]);
   
   if (!userRow) {
@@ -56,6 +57,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     exp: userRow.exp,
     level: userRow.level,
     adminRole: userRow.admin_role,
+    createdAt: new Date(userRow.created_at * 1000).toISOString(),
   };
 };
 
@@ -75,6 +77,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     exp: number;
     level: number;
     admin_role: AdminRole;
+    created_at: number;
   }>('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email]);
   
   if (!userRow) {
@@ -100,6 +103,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     exp: userRow.exp,
     level: userRow.level,
     adminRole: userRow.admin_role,
+    createdAt: new Date(userRow.created_at * 1000).toISOString(),
   };
 };
 
@@ -119,6 +123,7 @@ export const getAllUsers = async (): Promise<User[]> => {
     exp: number;
     level: number;
     admin_role: AdminRole;
+    created_at: number;
   }>('SELECT * FROM users ORDER BY created_at DESC');
   
   const users: User[] = [];
@@ -143,6 +148,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       exp: userRow.exp,
       level: userRow.level,
       adminRole: userRow.admin_role,
+      createdAt: new Date(userRow.created_at * 1000).toISOString(),
     });
   }
   

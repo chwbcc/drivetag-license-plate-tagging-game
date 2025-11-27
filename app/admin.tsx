@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Shield, Users, Target, Activity, Settings, ChevronRight, AlertCircle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
@@ -101,11 +101,20 @@ export default function AdminAreaScreen() {
   };
   
   const handleCardPress = (cardId: string) => {
-    Alert.alert(
-      'Admin Feature',
-      `This would open the ${cardId} management interface. This is a placeholder - in production, this would connect to your backend database.`,
-      [{ text: 'OK' }]
-    );
+    switch(cardId) {
+      case 'users':
+        router.push('/admin/users');
+        break;
+      case 'pellets':
+        router.push('/admin/pellets');
+        break;
+      case 'activity':
+        router.push('/admin/activity');
+        break;
+      case 'settings':
+        router.push('/admin/settings');
+        break;
+    }
   };
   
   return (

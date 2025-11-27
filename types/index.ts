@@ -14,6 +14,7 @@ export interface User {
   exp: number; // Experience points earned by the user
   level: number; // User level based on experience
   adminRole?: AdminRole; // Admin role for access control
+  createdAt?: string; // When the user was created
 }
 
 export interface Pellet {
