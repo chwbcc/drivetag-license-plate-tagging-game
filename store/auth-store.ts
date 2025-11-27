@@ -1,7 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AuthState, User } from '@/types';
+import { AuthState, User, AdminRole } from '@/types';
+
+const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
 
 const EXP_LEVELS = [
   0,      // Level 1
@@ -119,21 +121,31 @@ const useAuthStore = create<AuthStore>()(
         });
       },
       login: (user) => {
+        const adminRole: AdminRole = user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
+          ? 'super_admin' 
+          : user.adminRole || null;
+        
         set({ 
           user: {
             ...user,
             exp: user.exp || 0,
-            level: user.level || calculateLevel(user.exp || 0)
+            level: user.level || calculateLevel(user.exp || 0),
+            adminRole
           }, 
           error: null 
         });
       },
       logout: () => set({ user: null, error: null }),
       register: (user) => {
+        const adminRole: AdminRole = user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
+          ? 'super_admin' 
+          : null;
+        
         const newUser = {
           ...user,
           exp: user.exp || 0,
-          level: user.level || 1
+          level: user.level || 1,
+          adminRole
         };
         
         const registeredUsers = get().registeredUsers;

@@ -19,6 +19,7 @@ import {
   Car,
   Moon,
   Sun,
+  Shield,
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
@@ -176,16 +177,31 @@ export default function HomeScreen() {
               </View>
             </View>
             
-            <TouchableOpacity
-              onPress={() => router.push('/edit-profile')}
-              style={{
-                backgroundColor: colors.primary + '30',
-                borderRadius: 8,
-                padding: 7,
-              }}
-            >
-              <Edit size={16} color={accentGreen} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {user.adminRole && (
+                <TouchableOpacity
+                  onPress={() => router.push('/admin')}
+                  style={{
+                    backgroundColor: '#FFD700' + '30',
+                    borderRadius: 8,
+                    padding: 7,
+                  }}
+                >
+                  <Shield size={16} color="#FFD700" />
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity
+                onPress={() => router.push('/edit-profile')}
+                style={{
+                  backgroundColor: colors.primary + '30',
+                  borderRadius: 8,
+                  padding: 7,
+                }}
+              >
+                <Edit size={16} color={accentGreen} />
+              </TouchableOpacity>
+            </View>
           </View>
           
           <View style={{

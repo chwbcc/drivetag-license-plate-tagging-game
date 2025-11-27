@@ -1,3 +1,5 @@
+export type AdminRole = 'super_admin' | 'admin' | 'moderator' | null;
+
 export interface User {
   id: string;
   email: string;
@@ -11,6 +13,7 @@ export interface User {
   badges: string[]; // IDs of badges earned by the user
   exp: number; // Experience points earned by the user
   level: number; // User level based on experience
+  adminRole?: AdminRole; // Admin role for access control
 }
 
 export interface Pellet {
