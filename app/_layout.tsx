@@ -60,6 +60,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const [isNavigationReady, setIsNavigationReady] = React.useState(false);
 
   React.useEffect(() => {
@@ -67,16 +68,22 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    if (!isNavigationReady) return;
+    if (!isNavigationReady || !hasHydrated) {
+      console.log('[Auth] Waiting for hydration...', { isNavigationReady, hasHydrated });
+      return;
+    }
 
     const inAuthGroup = segments[0] === '(auth)';
+    console.log('[Auth] Navigation check:', { user: user?.email, inAuthGroup, segments: segments[0] });
 
     if (!user && !inAuthGroup) {
+      console.log('[Auth] Redirecting to auth...');
       setTimeout(() => router.replace('/(auth)'), 0);
     } else if (user && inAuthGroup) {
+      console.log('[Auth] Redirecting to tabs...');
       setTimeout(() => router.replace('/(tabs)'), 0);
     }
-  }, [user, segments, isNavigationReady]);
+  }, [user, segments, isNavigationReady, hasHydrated, router]);
   
   return (
     <>

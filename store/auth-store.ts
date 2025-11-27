@@ -49,6 +49,8 @@ type AuthStore = AuthState & {
   getAllUsers: () => User[];
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 };
 
 // Mock users for leaderboard
@@ -109,6 +111,12 @@ const useAuthStore = create<AuthStore>()(
       user: null,
       isLoading: false,
       error: null,
+      _hasHydrated: false,
+      setHasHydrated: (state) => {
+        set({
+          _hasHydrated: state
+        });
+      },
       login: (user) => {
         set({ 
           user: {
@@ -271,6 +279,9 @@ const useAuthStore = create<AuthStore>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
