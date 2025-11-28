@@ -8,9 +8,9 @@ const addSuperAdmin = async () => {
     
     const db = getDatabase();
     
-    const email = 'admin@pelletapp.com';
+    const email = 'chwbcc@gmail.com';
     const password = 'SuperAdmin123!';
-    const name = 'Super Admin';
+    const name = 'Jerry Witman';
     const licensePlate = 'ADMIN1';
     const state = 'CA';
     
