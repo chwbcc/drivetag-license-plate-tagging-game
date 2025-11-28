@@ -8,11 +8,15 @@ export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+    const url = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+    console.log('[tRPC] Using custom base URL:', url);
+    return url;
   }
 
   const projectId = 'xh63jg48muu2youwutvyr';
-  return `https://backend.rork.app/${projectId}`;
+  const url = `https://backend.rork.app/${projectId}`;
+  console.log('[tRPC] Using default base URL:', url);
+  return url;
 };
 
 export const createTRPCClient = () => {
@@ -67,6 +71,19 @@ export const createTRPCClient = () => {
               const clonedResponse = response.clone();
               const text = await clonedResponse.text();
               console.error('[tRPC] Error response body:', text.substring(0, 500));
+              
+              if (response.status === 404) {
+                throw new Error(`Backend endpoint not found (404). The backend server may not be deployed or accessible at: ${baseUrl}`);
+              }
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (contentType && !contentType.includes('application/json')) {
+              const clonedResponse = response.clone();
+              const text = await clonedResponse.text();
+              console.error('[tRPC] Expected JSON but got:', contentType);
+              console.error('[tRPC] Response body:', text.substring(0, 500));
+              throw new Error(`Backend returned non-JSON response (${contentType}). Backend may not be running.`);
             }
             
             return response;
