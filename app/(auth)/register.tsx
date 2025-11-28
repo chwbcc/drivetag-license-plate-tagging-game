@@ -90,12 +90,17 @@ export default function RegisterScreen() {
           positivePelletCount: 5,
         };
         
-        await trpcClient.auth.syncUser.mutate({
-          pelletCount: 10,
-          positivePelletCount: 5,
-        });
-        
         register(userWithPellets);
+        
+        try {
+          await trpcClient.auth.syncUser.mutate({
+            pelletCount: 10,
+            positivePelletCount: 5,
+          });
+        } catch (syncError) {
+          console.error('[Register] Error syncing initial pellet data (non-critical):', syncError);
+        }
+        
         router.replace('/(tabs)');
       } else {
         console.log('[Register] Registration failed:', result.message);
