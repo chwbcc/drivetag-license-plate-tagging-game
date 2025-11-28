@@ -175,15 +175,18 @@ export default function TagDriverScreen() {
       // Add the pellet to the local store as well
       addPellet(newPellet);
       
-      // Sync user data with backend
+      // Update pellet counts in database
+      const newPelletCount = user!.pelletCount - (pelletType === 'negative' ? 1 : 0);
+      const newPositivePelletCount = user!.positivePelletCount - (pelletType === 'positive' ? 1 : 0);
+      
       try {
-        await trpcClient.auth.syncUser.mutate({
-          pelletCount: user!.pelletCount - (pelletType === 'negative' ? 1 : 0),
-          positivePelletCount: user!.positivePelletCount - (pelletType === 'positive' ? 1 : 0),
+        await trpcClient.user.updatePelletCount.mutate({
+          pelletCount: newPelletCount,
+          positivePelletCount: newPositivePelletCount,
         });
-        console.log('[TagDriver] User data synced to backend');
+        console.log('[TagDriver] User pellet count synced to backend');
       } catch (error) {
-        console.error('[TagDriver] Failed to sync user data:', error);
+        console.error('[TagDriver] Failed to sync pellet count:', error);
       }
       
       // Calculate and award experience points
@@ -202,11 +205,32 @@ export default function TagDriverScreen() {
       // Add experience to user
       const leveledUp = addExp(expGained);
       
+      // Sync experience with database
+      try {
+        await trpcClient.user.updateExperience.mutate({
+          exp: user!.exp + expGained,
+          level: user!.level,
+        });
+        console.log('[TagDriver] User experience synced to backend');
+      } catch (error) {
+        console.error('[TagDriver] Failed to sync experience:', error);
+      }
+      
       // Check for new badges
       if (user) {
         const newBadges = checkAndAwardBadges(user.id);
         
         if (newBadges.length > 0) {
+          // Sync badges with database
+          for (const badgeId of newBadges) {
+            try {
+              await trpcClient.user.addBadge.mutate({ badgeId });
+              console.log('[TagDriver] Badge synced to backend:', badgeId);
+            } catch (error) {
+              console.error('[TagDriver] Failed to sync badge:', error);
+            }
+          }
+          
           // Show badge notification after the tag success message
           setTimeout(() => {
             Alert.alert(

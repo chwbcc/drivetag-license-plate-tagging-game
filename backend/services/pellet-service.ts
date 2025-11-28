@@ -1,14 +1,15 @@
 import { getDatabase } from '../database';
 import { Pellet } from '@/types';
 
-export const createPellet = async (pellet: Pellet): Promise<void> => {
+export const createPellet = async (pellet: Pellet, targetUserId?: string): Promise<void> => {
   const db = getDatabase();
   
   await db.execute({
-    sql: 'INSERT INTO pellets (id, targetLicensePlate, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    sql: 'INSERT INTO pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     args: [
       pellet.id,
       pellet.targetLicensePlate,
+      targetUserId || null,
       pellet.createdBy,
       pellet.createdAt,
       pellet.reason,
@@ -38,6 +39,7 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
   return {
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
+    targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
     createdAt: row.createdAt as number,
     reason: row.reason as string,
@@ -57,6 +59,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
   const pellets: Pellet[] = result.rows.map(row => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
+    targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
     createdAt: row.createdAt as number,
     reason: row.reason as string,
@@ -90,6 +93,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   const pellets: Pellet[] = result.rows.map(row => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
+    targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
     createdAt: row.createdAt as number,
     reason: row.reason as string,
@@ -121,6 +125,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
   const pellets: Pellet[] = result.rows.map(row => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
+    targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
     createdAt: row.createdAt as number,
     reason: row.reason as string,

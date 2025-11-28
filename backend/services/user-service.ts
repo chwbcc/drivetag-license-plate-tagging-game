@@ -254,3 +254,123 @@ export const updateUserAdminRole = async (userId: string, adminRole: AdminRole):
   
   console.log('[UserService] Updated user admin role:', userId, adminRole);
 };
+
+export const updateUserPelletCount = async (
+  userId: string, 
+  pelletCount: number, 
+  positivePelletCount: number
+): Promise<User> => {
+  const db = getDatabase();
+  
+  const user = await getUserById(userId);
+  
+  const updatedUser: User = {
+    ...user,
+    pelletCount,
+    positivePelletCount,
+  };
+  
+  const stats = JSON.stringify({
+    pelletCount: updatedUser.pelletCount,
+    positivePelletCount: updatedUser.positivePelletCount,
+    badges: updatedUser.badges,
+    exp: updatedUser.exp,
+    level: updatedUser.level,
+    name: updatedUser.name,
+    photo: updatedUser.photo,
+    licensePlate: updatedUser.licensePlate,
+    state: updatedUser.state,
+  });
+  
+  await db.execute({
+    sql: 'UPDATE users SET stats = ? WHERE id = ?',
+    args: [stats, userId]
+  });
+  
+  console.log('[UserService] Updated user pellet counts:', userId);
+  return updatedUser;
+};
+
+export const updateUserExperience = async (
+  userId: string, 
+  exp: number, 
+  level: number
+): Promise<User> => {
+  const db = getDatabase();
+  
+  const user = await getUserById(userId);
+  
+  const updatedUser: User = {
+    ...user,
+    exp,
+    level,
+  };
+  
+  const stats = JSON.stringify({
+    pelletCount: updatedUser.pelletCount,
+    positivePelletCount: updatedUser.positivePelletCount,
+    badges: updatedUser.badges,
+    exp: updatedUser.exp,
+    level: updatedUser.level,
+    name: updatedUser.name,
+    photo: updatedUser.photo,
+    licensePlate: updatedUser.licensePlate,
+    state: updatedUser.state,
+  });
+  
+  await db.execute({
+    sql: 'UPDATE users SET stats = ? WHERE id = ?',
+    args: [stats, userId]
+  });
+  
+  console.log('[UserService] Updated user experience:', userId, exp, level);
+  return updatedUser;
+};
+
+export const getUserBadges = async (userId: string): Promise<string[]> => {
+  const db = getDatabase();
+  
+  const result = await db.execute({
+    sql: 'SELECT badgeId FROM badges WHERE userId = ? ORDER BY earnedAt DESC',
+    args: [userId]
+  });
+  
+  return result.rows.map(row => row.badgeId as string);
+};
+
+export const getUserByLicensePlate = async (licensePlate: string): Promise<User | null> => {
+  const db = getDatabase();
+  
+  const normalizedPlate = licensePlate.toLowerCase();
+  
+  const result = await db.execute({
+    sql: 'SELECT * FROM users WHERE LOWER(licensePlate) = ?',
+    args: [normalizedPlate]
+  });
+  
+  if (result.rows.length === 0) {
+    return null;
+  }
+  
+  const row = result.rows[0];
+  const stats = JSON.parse(row.stats as string);
+  
+  const user: User = {
+    id: row.id as string,
+    email: row.email as string,
+    password: row.passwordHash as string,
+    name: stats.name || '',
+    photo: stats.photo,
+    licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+    state: (row.state as string) || stats.state || '',
+    pelletCount: stats.pelletCount || 0,
+    positivePelletCount: stats.positivePelletCount || 0,
+    badges: stats.badges || [],
+    exp: stats.exp || 0,
+    level: stats.level || 1,
+    adminRole: (row.role as AdminRole) || null,
+    createdAt: new Date(row.createdAt as number).toISOString(),
+  };
+  
+  return user;
+};

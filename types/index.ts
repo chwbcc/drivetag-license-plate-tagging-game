@@ -20,6 +20,7 @@ export interface User {
 export interface Pellet {
   id: string;
   targetLicensePlate: string;
+  targetUserId?: string;
   createdBy: string;
   createdAt: number;
   reason: string;

@@ -14,6 +14,10 @@ import verifyResetTokenRoute from "./routes/auth/verify-reset-token/route";
 import resetPasswordRoute from "./routes/auth/reset-password/route";
 import addPelletRoute from "./routes/pellet/add-pellet/route";
 import getPelletsRoute from "./routes/pellet/get-pellets/route";
+import updatePelletCountRoute from "./routes/user/update-pellet-count/route";
+import updateExperienceRoute from "./routes/user/update-experience/route";
+import addBadgeRoute from "./routes/user/add-badge/route";
+import getLeaderboardRoute from "./routes/user/get-leaderboard/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -40,6 +44,12 @@ export const appRouter = createTRPCRouter({
   pellet: createTRPCRouter({
     addPellet: addPelletRoute,
     getPellets: getPelletsRoute,
+  }),
+  user: createTRPCRouter({
+    updatePelletCount: updatePelletCountRoute,
+    updateExperience: updateExperienceRoute,
+    addBadge: addBadgeRoute,
+    getLeaderboard: getLeaderboardRoute,
   }),
 });
 

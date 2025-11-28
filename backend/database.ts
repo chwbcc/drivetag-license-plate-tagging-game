@@ -19,6 +19,7 @@ interface Badge {
 interface Pellet {
   id: string;
   targetLicensePlate: string;
+  targetUserId?: string;
   createdBy: string;
   createdAt: number;
   reason: string;
@@ -89,13 +90,15 @@ export const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS pellets (
         id TEXT PRIMARY KEY,
         targetLicensePlate TEXT NOT NULL,
+        targetUserId TEXT,
         createdBy TEXT NOT NULL,
         createdAt INTEGER NOT NULL,
         reason TEXT NOT NULL,
         type TEXT NOT NULL,
         latitude REAL,
         longitude REAL,
-        FOREIGN KEY (createdBy) REFERENCES users(id)
+        FOREIGN KEY (createdBy) REFERENCES users(id),
+        FOREIGN KEY (targetUserId) REFERENCES users(id)
       )
     `);
 

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Trophy, ArrowUp, ArrowDown, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, BarChart, Award } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import usePelletStore from '@/store/pellet-store';
 import useAuthStore from '@/store/auth-store';
 import { hashLicensePlate, calculateStatistics } from '@/utils/hash';
 import { useTheme } from '@/store/theme-store';
+import { trpc } from '@/lib/trpc';
 
 type LeaderboardItem = {
   licensePlate: string;
@@ -27,16 +28,49 @@ export default function LeaderboardScreen() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [pelletType, setPelletType] = useState<'negative' | 'positive' | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'pellets' | 'experience'>('pellets');
+  const [useDatabase, setUseDatabase] = useState(true);
+  
+  const pelletLeaderboardQuery = trpc.user.getLeaderboard.useQuery({
+    type: 'pellets',
+    sortOrder,
+    pelletType,
+  }, {
+    enabled: useDatabase && activeTab === 'pellets',
+  });
+  
+  const expLeaderboardQuery = trpc.user.getLeaderboard.useQuery({
+    type: 'experience',
+    sortOrder,
+  }, {
+    enabled: useDatabase && activeTab === 'experience',
+  });
   
   const styles = getStyles(theme);
   const iconColor = theme === 'dark' ? '#9CA3AF' : Colors.textSecondary;
   const textColor = theme === 'dark' ? '#F9FAFB' : Colors.text;
+  
+  // Fallback to local data if database fetch fails
+  useEffect(() => {
+    if (pelletLeaderboardQuery.isError || expLeaderboardQuery.isError) {
+      console.log('[Leaderboard] Database fetch failed, using local data');
+      setUseDatabase(false);
+    }
+  }, [pelletLeaderboardQuery.isError, expLeaderboardQuery.isError]);
   
   const filteredPellets = pelletType === 'all' 
     ? pellets 
     : pellets.filter(pellet => pellet.type === pelletType);
   
   const leaderboardData: LeaderboardItem[] = React.useMemo(() => {
+    if (useDatabase && pelletLeaderboardQuery.data?.data) {
+      return pelletLeaderboardQuery.data.data.map((item: any) => ({
+        licensePlate: item.licensePlate,
+        hashedId: hashLicensePlate(item.licensePlate),
+        count: item.count,
+      }));
+    }
+    
+    // Fallback to local data
     const plateMap = new Map<string, number>();
     
     filteredPellets.forEach(pellet => {
@@ -49,9 +83,19 @@ export default function LeaderboardScreen() {
       hashedId: hashLicensePlate(licensePlate),
       count,
     }));
-  }, [filteredPellets]);
+  }, [filteredPellets, useDatabase, pelletLeaderboardQuery.data]);
   
   const expLeaderboardData: ExpLeaderboardItem[] = React.useMemo(() => {
+    if (useDatabase && expLeaderboardQuery.data?.data) {
+      return expLeaderboardQuery.data.data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        exp: item.exp,
+        level: item.level,
+      }));
+    }
+    
+    // Fallback to local data
     const users = getAllUsers();
     return users.map(user => ({
       id: user.id,
@@ -59,15 +103,19 @@ export default function LeaderboardScreen() {
       exp: user.exp || 0,
       level: user.level || 1
     }));
-  }, [getAllUsers]);
+  }, [getAllUsers, useDatabase, expLeaderboardQuery.data]);
   
-  const sortedPelletData = [...leaderboardData].sort((a, b) => {
-    return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
-  });
+  const sortedPelletData = useDatabase && pelletLeaderboardQuery.data?.data 
+    ? leaderboardData 
+    : [...leaderboardData].sort((a, b) => {
+        return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
+      });
   
-  const sortedExpData = [...expLeaderboardData].sort((a, b) => {
-    return sortOrder === 'desc' ? b.exp - a.exp : a.exp - b.exp;
-  });
+  const sortedExpData = useDatabase && expLeaderboardQuery.data?.data
+    ? expLeaderboardData
+    : [...expLeaderboardData].sort((a, b) => {
+        return sortOrder === 'desc' ? b.exp - a.exp : a.exp - b.exp;
+      });
   
   const statistics = calculateStatistics(pellets);
   
@@ -237,6 +285,13 @@ export default function LeaderboardScreen() {
       
       {activeTab === 'pellets' && (
         <>
+          {useDatabase && pelletLeaderboardQuery.isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.loadingText}>Loading leaderboard data...</Text>
+            </View>
+          )}
+          
           <View style={styles.filterContainer}>
             <TouchableOpacity 
               style={[
@@ -631,6 +686,16 @@ const getStyles = (theme: 'light' | 'dark') => {
     textAlign: 'center',
     marginTop: 8,
     maxWidth: '80%',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   footer: {
     height: 40,
