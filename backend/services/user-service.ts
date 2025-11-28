@@ -6,11 +6,15 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
   
   const adminRole = user.adminRole || null;
   
+  console.log('[UserService] Creating user:', { id: user.id, email: user.email, adminRole });
+  
   await db.runAsync(
     `INSERT INTO users (id, email, password, name, photo, license_plate, state, admin_role, pellet_count, positive_pellet_count, exp, level)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 1)`,
     [user.id, user.email, user.password || null, user.name || null, user.photo || null, user.licensePlate, user.state || null, adminRole]
   );
+  
+  console.log('[UserService] User created successfully');
   
   return getUserById(user.id);
 };
@@ -125,6 +129,8 @@ export const getAllUsers = async (): Promise<User[]> => {
     admin_role: AdminRole;
     created_at: number;
   }>('SELECT * FROM users ORDER BY created_at DESC');
+  
+  console.log(`[UserService] Found ${userRows.length} users in database`);
   
   const users: User[] = [];
   

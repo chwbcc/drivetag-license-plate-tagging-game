@@ -25,11 +25,13 @@ export const createTRPCClient = () => {
         async headers() {
           try {
             const authData = await AsyncStorage.getItem('auth-storage');
+            console.log('[tRPC] Reading auth data from storage');
             if (authData) {
               const parsed = JSON.parse(authData);
               const user = parsed?.state?.user;
               
               if (user) {
+                console.log('[tRPC] Found user in storage:', { email: user.email, adminRole: user.adminRole });
                 return {
                   'x-user-data': JSON.stringify({
                     id: user.id,
@@ -37,10 +39,14 @@ export const createTRPCClient = () => {
                     adminRole: user.adminRole || null,
                   }),
                 };
+              } else {
+                console.log('[tRPC] No user found in auth data');
               }
+            } else {
+              console.log('[tRPC] No auth-storage data found');
             }
           } catch (error) {
-            console.error('Failed to get auth data for trpc headers:', error);
+            console.error('[tRPC] Failed to get auth data for trpc headers:', error);
           }
           
           return {};
