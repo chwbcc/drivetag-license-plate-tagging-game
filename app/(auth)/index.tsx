@@ -42,7 +42,7 @@ export default function LoginScreen() {
       if (result.success && result.user) {
         console.log('[Login] Login successful, user adminRole:', result.user.adminRole);
         login(result.user);
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/home');
       } else {
         console.log('[Login] Login failed:', result.message);
         setError(result.message || 'Login failed. Please check your credentials.');

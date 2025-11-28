@@ -81,7 +81,7 @@ function RootLayoutNav() {
       setTimeout(() => router.replace('/(auth)'), 0);
     } else if (user && inAuthGroup) {
       console.log('[Auth] Redirecting to tabs...');
-      setTimeout(() => router.replace('/(tabs)'), 0);
+      setTimeout(() => router.replace('/(tabs)/home'), 0);
     }
   }, [user, segments, isNavigationReady, hasHydrated, router]);
   

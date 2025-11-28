@@ -101,7 +101,7 @@ export default function RegisterScreen() {
           console.error('[Register] Error syncing initial pellet data (non-critical):', syncError);
         }
         
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/home');
       } else {
         console.log('[Register] Registration failed:', result.message);
         setError(result.message);
