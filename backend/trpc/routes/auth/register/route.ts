@@ -21,7 +21,9 @@ export const registerRoute = publicProcedure
     console.log('[Auth] Registering user:', input.email);
     
     try {
+      console.log('[Auth] Initializing database...');
       await initDatabase();
+      console.log('[Auth] Database initialized successfully');
       
       const existingUser = await getUserByEmail(input.email);
       
@@ -63,9 +65,16 @@ export const registerRoute = publicProcedure
         message: 'User registered successfully',
         user,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Auth] Error registering user:', error);
-      throw new Error('Failed to register user');
+      console.error('[Auth] Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        cause: error?.cause,
+      });
+      
+      const errorMessage = error?.message || 'Failed to register user';
+      throw new Error(errorMessage);
     }
   });
 

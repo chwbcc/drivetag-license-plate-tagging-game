@@ -33,9 +33,14 @@ export const initDatabase = async () => {
   const dbUrl = process.env.TURSO_DB_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
 
+  console.log('[Database] Initializing database...');
+  console.log('[Database] TURSO_DB_URL:', dbUrl ? 'SET' : 'NOT SET');
+  console.log('[Database] TURSO_AUTH_TOKEN:', authToken ? 'SET' : 'NOT SET');
+
   if (!dbUrl || !authToken) {
-    console.error('[Database] TURSO_DB_URL and TURSO_AUTH_TOKEN must be set in environment variables');
-    throw new Error('Database configuration missing');
+    const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DB_URL and TURSO_AUTH_TOKEN';
+    console.error('[Database]', errorMsg);
+    throw new Error(errorMsg);
   }
 
   try {
@@ -43,6 +48,8 @@ export const initDatabase = async () => {
       url: dbUrl,
       authToken: authToken,
     });
+    
+    console.log('[Database] Client created successfully');
 
     await db.execute(`
       CREATE TABLE IF NOT EXISTS users (
@@ -92,6 +99,7 @@ export const initDatabase = async () => {
     `);
 
     console.log('[Database] Turso database initialized successfully');
+    console.log('[Database] Tables created/verified successfully');
   } catch (error) {
     console.error('[Database] Error initializing database:', error);
     throw error;

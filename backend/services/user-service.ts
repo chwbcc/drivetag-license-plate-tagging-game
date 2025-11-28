@@ -2,6 +2,7 @@ import { getDatabase } from '../database';
 import { User, AdminRole } from '@/types';
 
 export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelletCount' | 'badges' | 'exp' | 'level'>): Promise<User> => {
+  console.log('[UserService] Creating user:', user.email);
   const db = getDatabase();
   
   const adminRole = user.adminRole || null;
@@ -35,21 +36,30 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
     state: newUser.state,
   });
   
-  await db.execute({
-    sql: 'INSERT INTO users (id, email, username, passwordHash, createdAt, stats, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    args: [
-      newUser.id,
-      newUser.email,
-      newUser.name,
-      newUser.password,
-      Date.now(),
-      stats,
-      adminRole || 'user'
-    ] as any[]
-  });
-  
-  console.log('[UserService] Created user:', newUser.email);
-  return newUser;
+  try {
+    await db.execute({
+      sql: 'INSERT INTO users (id, email, username, passwordHash, createdAt, stats, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [
+        newUser.id,
+        newUser.email,
+        newUser.name || 'Anonymous',
+        newUser.password,
+        Date.now(),
+        stats,
+        adminRole || 'user'
+      ] as any[]
+    });
+    
+    console.log('[UserService] Created user:', newUser.email);
+    return newUser;
+  } catch (error: any) {
+    console.error('[UserService] Error creating user:', error);
+    console.error('[UserService] Error details:', {
+      message: error?.message,
+      code: error?.code,
+    });
+    throw new Error(`Failed to create user: ${error?.message || 'Unknown error'}`);
+  }
 };
 
 export const getUserById = async (userId: string): Promise<User> => {
