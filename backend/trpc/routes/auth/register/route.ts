@@ -2,9 +2,7 @@ import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
 import { createUser, getUserByEmail } from "@/backend/services/user-service";
 import { logUserActivity } from "@/backend/services/activity-service";
-import { AdminRole } from "@/types";
-
-const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
+import { initDatabase } from "@/backend/database";
 
 const registerSchema = z.object({
   id: z.string(),
@@ -23,6 +21,8 @@ export const registerRoute = publicProcedure
     console.log('[Auth] Registering user:', input.email);
     
     try {
+      await initDatabase();
+      
       const existingUser = await getUserByEmail(input.email);
       
       if (existingUser) {
@@ -34,12 +34,6 @@ export const registerRoute = publicProcedure
         };
       }
       
-      const adminRole: AdminRole = input.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()
-        ? 'super_admin'
-        : input.adminRole || null;
-      
-      console.log('[Auth] Assigning admin role:', adminRole, 'for email:', input.email);
-      
       const user = await createUser({
         id: input.id,
         email: input.email,
@@ -48,7 +42,7 @@ export const registerRoute = publicProcedure
         licensePlate: input.licensePlate,
         state: input.state,
         photo: input.photo,
-        adminRole: adminRole,
+        adminRole: input.adminRole || null,
       });
       
       await logUserActivity(user.id, 'user_registered', {

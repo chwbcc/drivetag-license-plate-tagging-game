@@ -1,5 +1,5 @@
 import { createTRPCReact } from "@trpc/react-query";
-import { httpLink, loggerLink } from "@trpc/client";
+import { httpLink } from "@trpc/client";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,28 +8,19 @@ export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    const url = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-    console.log('[tRPC] Using custom base URL:', url);
-    return url;
+    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
 
-  const projectId = 'xh63jg48muu2youwutvyr';
-  const url = `https://backend.rork.app/${projectId}`;
-  console.log('[tRPC] Using default base URL:', url);
-  return url;
+  throw new Error(
+    "No base url found, please set EXPO_PUBLIC_RORK_API_BASE_URL"
+  );
 };
 
 export const createTRPCClient = () => {
-  const baseUrl = getBaseUrl();
-  console.log('[tRPC] Creating client with base URL:', baseUrl);
-  
   return trpc.createClient({
     links: [
-      loggerLink({
-        enabled: () => true,
-      }),
       httpLink({
-        url: `${baseUrl}/api/trpc`,
+        url: `${getBaseUrl()}/api/trpc`,
         transformer: superjson,
         async headers() {
           try {
@@ -39,7 +30,6 @@ export const createTRPCClient = () => {
               const user = parsed?.state?.user;
               
               if (user) {
-                console.log('[tRPC] Found user in storage:', { email: user.email, adminRole: user.adminRole });
                 return {
                   'x-user-data': JSON.stringify({
                     id: user.id,
@@ -50,43 +40,10 @@ export const createTRPCClient = () => {
               }
             }
           } catch (error) {
-            console.error('[tRPC] Failed to get auth data for trpc headers:', error);
+            console.error('Failed to get auth data for trpc headers:', error);
           }
           
           return {};
-        },
-        fetch(url, options) {
-          console.log('[tRPC] Making request to:', url);
-          return fetch(url, {
-            ...options,
-            headers: {
-              ...options?.headers,
-            },
-          }).then(async (response) => {
-            console.log('[tRPC] Response status:', response.status);
-            console.log('[tRPC] Response content-type:', response.headers.get('content-type'));
-            
-            if (!response.ok) {
-              const clonedResponse = response.clone();
-              const text = await clonedResponse.text();
-              console.error('[tRPC] Error response body:', text.substring(0, 500));
-              
-              if (response.status === 404) {
-                throw new Error(`Backend endpoint not found (404). The backend server may not be deployed or accessible at: ${baseUrl}`);
-              }
-            }
-            
-            const contentType = response.headers.get('content-type');
-            if (contentType && !contentType.includes('application/json')) {
-              const clonedResponse = response.clone();
-              const text = await clonedResponse.text();
-              console.error('[tRPC] Expected JSON but got:', contentType);
-              console.error('[tRPC] Response body:', text.substring(0, 500));
-              throw new Error(`Backend returned non-JSON response (${contentType}). Backend may not be running.`);
-            }
-            
-            return response;
-          });
         },
       }),
     ],

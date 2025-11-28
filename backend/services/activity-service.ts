@@ -1,4 +1,4 @@
-import { getDatabase, type DBActivity } from '../database';
+import { getDatabase } from '../database';
 
 export interface UserActivity {
   id: string;
@@ -13,49 +13,60 @@ export const logUserActivity = async (
   actionType: string,
   actionData?: any
 ): Promise<void> => {
-  const db = getDatabase();
+  const db = await getDatabase();
   
   const id = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const dataJson = actionData ? JSON.stringify(actionData) : null;
   
-  const activity: DBActivity = {
-    id,
-    user_id: userId,
-    action_type: actionType,
-    action_data: dataJson,
-    created_at: Math.floor(Date.now() / 1000),
-  };
-  
-  db.user_activity.push(activity);
+  await db.runAsync(
+    `INSERT INTO user_activity (id, user_id, action_type, action_data)
+     VALUES (?, ?, ?, ?)`,
+    [id, userId, actionType, dataJson]
+  );
 };
 
 export const getUserActivity = async (userId: string, limit = 50): Promise<UserActivity[]> => {
-  const db = getDatabase();
+  const db = await getDatabase();
   
-  return db.user_activity
-    .filter(a => a.user_id === userId)
-    .map(r => ({
-      id: r.id,
-      userId: r.user_id,
-      actionType: r.action_type,
-      actionData: r.action_data ? JSON.parse(r.action_data) : null,
-      createdAt: r.created_at,
-    }))
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, limit);
+  const rows = await db.getAllAsync<{
+    id: string;
+    user_id: string;
+    action_type: string;
+    action_data: string | null;
+    created_at: number;
+  }>(
+    'SELECT * FROM user_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
+    [userId, limit]
+  );
+  
+  return rows.map(row => ({
+    id: row.id,
+    userId: row.user_id,
+    actionType: row.action_type,
+    actionData: row.action_data ? JSON.parse(row.action_data) : null,
+    createdAt: row.created_at,
+  }));
 };
 
 export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> => {
-  const db = getDatabase();
+  const db = await getDatabase();
   
-  return db.user_activity
-    .map(r => ({
-      id: r.id,
-      userId: r.user_id,
-      actionType: r.action_type,
-      actionData: r.action_data ? JSON.parse(r.action_data) : null,
-      createdAt: r.created_at,
-    }))
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, limit);
+  const rows = await db.getAllAsync<{
+    id: string;
+    user_id: string;
+    action_type: string;
+    action_data: string | null;
+    created_at: number;
+  }>(
+    'SELECT * FROM user_activity ORDER BY created_at DESC LIMIT ?',
+    [limit]
+  );
+  
+  return rows.map(row => ({
+    id: row.id,
+    userId: row.user_id,
+    actionType: row.action_type,
+    actionData: row.action_data ? JSON.parse(row.action_data) : null,
+    createdAt: row.created_at,
+  }));
 };

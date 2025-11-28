@@ -47,20 +47,7 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('[Login] Error during login:', error);
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Backend endpoint not found')) {
-          setError('Backend server not accessible. Please contact support.');
-        } else if (error.message.includes('Backend returned non-JSON')) {
-          setError('Backend connection error. Please try again later.');
-        } else if (error.message.includes('JSON Parse error')) {
-          setError('Server communication error. The backend may be down.');
-        } else {
-          setError(error.message || 'An error occurred. Please try again.');
-        }
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }

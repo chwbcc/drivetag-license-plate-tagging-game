@@ -3,59 +3,22 @@ import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
-import { initDatabase } from "./database";
 
 const app = new Hono();
-
-let dbInitialized = false;
-let dbInitError: Error | null = null;
-
-initDatabase()
-  .then(() => {
-    dbInitialized = true;
-    console.log('[Hono] Database initialized successfully');
-  })
-  .catch((error) => {
-    dbInitError = error;
-    console.error('[Hono] Database initialization failed:', error);
-  });
 
 app.use("*", cors());
 
 app.use(
-  "/api/trpc/*",
+  "/trpc/*",
   trpcServer({
+    endpoint: "/api/trpc",
     router: appRouter,
     createContext,
-    onError: ({ error, type, path }) => {
-      console.error('[tRPC Error]', { type, path, error: error.message });
-    },
   })
 );
 
 app.get("/", (c) => {
-  return c.json({ 
-    status: dbInitialized ? "ok" : "initializing", 
-    message: dbInitialized ? "API is running" : "Database is initializing",
-    dbError: dbInitError ? dbInitError.message : null,
-    timestamp: Date.now()
-  });
-});
-
-app.get("/health", (c) => {
-  return c.json({ 
-    status: dbInitialized ? "healthy" : "unhealthy",
-    database: dbInitialized ? "connected" : "not connected",
-    error: dbInitError ? dbInitError.message : null,
-  });
-});
-
-app.onError((error, c) => {
-  console.error('[Hono Error]', error);
-  return c.json({ 
-    error: error.message,
-    status: 'error'
-  }, 500);
+  return c.json({ status: "ok", message: "API is running" });
 });
 
 export default app;

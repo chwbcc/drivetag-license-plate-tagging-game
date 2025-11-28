@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Users, Shield, Mail, Calendar, ChevronRight, RefreshCw } from 'lucide-react-native';
+import { Users, Shield, Mail, Calendar, ChevronRight } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
@@ -16,16 +16,6 @@ export default function UserManagementScreen() {
   const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
     enabled: !!user?.adminRole,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-  });
-  
-  console.log('[AdminUsers] Users query status:', {
-    isLoading: usersQuery.isLoading,
-    isError: usersQuery.isError,
-    error: usersQuery.error?.message,
-    count: usersQuery.data?.count,
-    usersLength: usersQuery.data?.users?.length,
   });
   
   const updateRoleMutation = trpc.admin.updateUserRole.useMutation({
@@ -105,17 +95,6 @@ export default function UserManagementScreen() {
           <View style={styles.headerRow}>
             <Users size={24} color={Colors.primary} />
             <Text style={[styles.headerTitle, { color: textColor }]}>All Users</Text>
-            <TouchableOpacity
-              onPress={() => usersQuery.refetch()}
-              style={styles.refreshButton}
-              disabled={usersQuery.isRefetching}
-            >
-              <RefreshCw 
-                size={20} 
-                color={usersQuery.isRefetching ? textSecondary : Colors.primary}
-                style={usersQuery.isRefetching ? styles.spinning : undefined}
-              />
-            </TouchableOpacity>
           </View>
           <Text style={[styles.headerSubtitle, { color: textSecondary }]}>
             {usersQuery.data?.count || 0} total users
@@ -255,13 +234,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 8,
-  },
-  refreshButton: {
-    marginLeft: 'auto',
-    padding: 8,
-  },
-  spinning: {
-    opacity: 0.5,
   },
   headerTitle: {
     fontSize: 24,
