@@ -11,9 +11,8 @@ const getBaseUrl = () => {
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
 
-  throw new Error(
-    "No base url found, please set EXPO_PUBLIC_RORK_API_BASE_URL"
-  );
+  const projectId = 'xh63jg48muu2youwutvyr';
+  return `https://backend.rork.app/${projectId}`;
 };
 
 export const createTRPCClient = () => {
