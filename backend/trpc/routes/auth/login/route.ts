@@ -3,6 +3,9 @@ import { z } from "zod";
 import { getUserByEmail } from "@/backend/services/user-service";
 import { logUserActivity } from "@/backend/services/activity-service";
 import { initDatabase } from "@/backend/database";
+import { AdminRole } from "@/types";
+
+const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -41,12 +44,21 @@ export const loginRoute = publicProcedure
         email: user.email,
       });
       
-      console.log('[Auth] Login successful:', user.email);
+      const adminRole: AdminRole = user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()
+        ? 'super_admin'
+        : user.adminRole || null;
+      
+      const userWithRole = {
+        ...user,
+        adminRole: adminRole,
+      };
+      
+      console.log('[Auth] Login successful:', user.email, 'with role:', adminRole);
       
       return {
         success: true,
         message: 'Login successful',
-        user,
+        user: userWithRole,
       };
     } catch (error) {
       console.error('[Auth] Error during login:', error);
