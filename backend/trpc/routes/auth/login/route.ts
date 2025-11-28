@@ -18,7 +18,9 @@ export const loginRoute = publicProcedure
     console.log('[Auth] Login attempt:', input.email);
     
     try {
+      console.log('[Auth] Initializing database...');
       await initDatabase();
+      console.log('[Auth] Database initialized, fetching user...');
       
       const user = await getUserByEmail(input.email);
       
@@ -40,6 +42,7 @@ export const loginRoute = publicProcedure
         };
       }
       
+      console.log('[Auth] Password verified, logging activity...');
       await logUserActivity(user.id, 'user_logged_in', {
         email: user.email,
       });
@@ -62,7 +65,22 @@ export const loginRoute = publicProcedure
       };
     } catch (error) {
       console.error('[Auth] Error during login:', error);
-      throw new Error('Failed to login');
+      
+      if (error instanceof Error) {
+        if (error.message.includes('TURSO_DATABASE_URL')) {
+          return {
+            success: false,
+            message: 'Database configuration error. Please check Turso setup.',
+            user: null,
+          };
+        }
+      }
+      
+      return {
+        success: false,
+        message: 'Failed to login. Please try again.',
+        user: null,
+      };
     }
   });
 

@@ -67,8 +67,15 @@ const getClient = (): Client => {
     const url = process.env.TURSO_DATABASE_URL;
     const authToken = process.env.TURSO_AUTH_TOKEN;
 
+    console.log('[Database] Environment check:', {
+      hasUrl: !!url,
+      hasToken: !!authToken,
+      urlPrefix: url ? url.substring(0, 20) : 'none'
+    });
+
     if (!url) {
-      throw new Error('TURSO_DATABASE_URL is not set');
+      console.error('[Database] TURSO_DATABASE_URL is not set');
+      throw new Error('TURSO_DATABASE_URL is not set. Please configure Turso integration.');
     }
 
     console.log('[Database] Creating Turso client');
