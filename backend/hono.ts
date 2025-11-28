@@ -36,8 +36,9 @@ app.use(
 app.get("/", (c) => {
   return c.json({ 
     status: dbInitialized ? "ok" : "initializing", 
-    message: dbInitialized ? "API is running" : "Database is initializing",
-    dbError: dbInitError ? dbInitError.message : null
+    message: dbInitialized ? "API is running with Turso" : "Database is initializing",
+    dbError: dbInitError ? dbInitError.message : null,
+    timestamp: Date.now()
   });
 });
 
