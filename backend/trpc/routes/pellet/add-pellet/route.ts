@@ -27,10 +27,13 @@ export const addPelletRoute = protectedProcedure
     });
     
     try {
+      console.log('[Pellet] Ensuring database is initialized...');
       await initDatabase();
       
+      console.log('[Pellet] Creating pellet in database...');
       await createPellet(input);
       
+      console.log('[Pellet] Logging user activity...');
       await logUserActivity(ctx.userId!, 'pellet_created', {
         pelletId: input.id,
         targetLicensePlate: input.targetLicensePlate,
@@ -44,9 +47,14 @@ export const addPelletRoute = protectedProcedure
         message: 'Pellet added successfully',
         pelletId: input.id,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Pellet] Error adding pellet:', error);
-      throw new Error('Failed to add pellet');
+      console.error('[Pellet] Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+      });
+      throw new Error(`Failed to add pellet: ${error?.message || 'Unknown error'}`);
     }
   });
 

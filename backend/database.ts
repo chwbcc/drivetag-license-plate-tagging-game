@@ -37,28 +37,40 @@ interface Activity {
 }
 
 let db: Client | null = null;
+let initPromise: Promise<void> | null = null;
 
 export const initDatabase = async () => {
-  const dbUrl = process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN;
-
-  console.log('[Database] Initializing database...');
-  console.log('[Database] TURSO_DB_URL:', dbUrl ? 'SET' : 'NOT SET');
-  console.log('[Database] TURSO_AUTH_TOKEN:', authToken ? 'SET' : 'NOT SET');
-
-  if (!dbUrl || !authToken) {
-    const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DB_URL and TURSO_AUTH_TOKEN';
-    console.error('[Database]', errorMsg);
-    throw new Error(errorMsg);
+  if (db) {
+    console.log('[Database] Database already initialized, skipping');
+    return;
   }
 
-  try {
-    db = createClient({
-      url: dbUrl,
-      authToken: authToken,
-    });
-    
-    console.log('[Database] Client created successfully');
+  if (initPromise) {
+    console.log('[Database] Database initialization in progress, waiting...');
+    return initPromise;
+  }
+
+  initPromise = (async () => {
+    const dbUrl = process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
+    const authToken = process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN;
+
+    console.log('[Database] Initializing database...');
+    console.log('[Database] TURSO_DB_URL:', dbUrl ? 'SET' : 'NOT SET');
+    console.log('[Database] TURSO_AUTH_TOKEN:', authToken ? 'SET' : 'NOT SET');
+
+    if (!dbUrl || !authToken) {
+      const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DB_URL and TURSO_AUTH_TOKEN';
+      console.error('[Database]', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    try {
+      db = createClient({
+        url: dbUrl,
+        authToken: authToken,
+      });
+      
+      console.log('[Database] Client created successfully');
 
     await db.execute(`
       CREATE TABLE IF NOT EXISTS users (
@@ -113,12 +125,17 @@ export const initDatabase = async () => {
       )
     `);
 
-    console.log('[Database] Turso database initialized successfully');
-    console.log('[Database] Tables created/verified successfully');
-  } catch (error) {
-    console.error('[Database] Error initializing database:', error);
-    throw error;
-  }
+      console.log('[Database] Turso database initialized successfully');
+      console.log('[Database] Tables created/verified successfully');
+    } catch (error) {
+      console.error('[Database] Error initializing database:', error);
+      db = null;
+      initPromise = null;
+      throw error;
+    }
+  })();
+
+  return initPromise;
 };
 
 export const getDatabase = () => {

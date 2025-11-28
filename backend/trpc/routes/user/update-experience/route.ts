@@ -19,14 +19,17 @@ export const updateExperienceRoute = protectedProcedure
     });
     
     try {
+      console.log('[User] Ensuring database is initialized...');
       await initDatabase();
       
+      console.log('[User] Updating user experience in database...');
       const updatedUser = await updateUserExperience(
         ctx.userId!,
         input.exp,
         input.level
       );
       
+      console.log('[User] Logging user activity...');
       await logUserActivity(ctx.userId!, 'experience_updated', {
         exp: input.exp,
         level: input.level,
@@ -38,9 +41,14 @@ export const updateExperienceRoute = protectedProcedure
         success: true,
         user: updatedUser,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[User] Error updating experience:', error);
-      throw new Error('Failed to update experience');
+      console.error('[User] Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+      });
+      throw new Error(`Failed to update experience: ${error?.message || 'Unknown error'}`);
     }
   });
 

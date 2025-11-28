@@ -19,14 +19,17 @@ export const updatePelletCountRoute = protectedProcedure
     });
     
     try {
+      console.log('[User] Ensuring database is initialized...');
       await initDatabase();
       
+      console.log('[User] Updating user pellet count in database...');
       const updatedUser = await updateUserPelletCount(
         ctx.userId!,
         input.pelletCount,
         input.positivePelletCount
       );
       
+      console.log('[User] Logging user activity...');
       await logUserActivity(ctx.userId!, 'pellet_count_updated', {
         pelletCount: input.pelletCount,
         positivePelletCount: input.positivePelletCount,
@@ -38,9 +41,14 @@ export const updatePelletCountRoute = protectedProcedure
         success: true,
         user: updatedUser,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[User] Error updating pellet count:', error);
-      throw new Error('Failed to update pellet count');
+      console.error('[User] Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+      });
+      throw new Error(`Failed to update pellet count: ${error?.message || 'Unknown error'}`);
     }
   });
 

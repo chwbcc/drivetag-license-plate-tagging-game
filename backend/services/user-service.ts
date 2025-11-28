@@ -260,35 +260,46 @@ export const updateUserPelletCount = async (
   pelletCount: number, 
   positivePelletCount: number
 ): Promise<User> => {
-  const db = getDatabase();
-  
-  const user = await getUserById(userId);
-  
-  const updatedUser: User = {
-    ...user,
-    pelletCount,
-    positivePelletCount,
-  };
-  
-  const stats = JSON.stringify({
-    pelletCount: updatedUser.pelletCount,
-    positivePelletCount: updatedUser.positivePelletCount,
-    badges: updatedUser.badges,
-    exp: updatedUser.exp,
-    level: updatedUser.level,
-    name: updatedUser.name,
-    photo: updatedUser.photo,
-    licensePlate: updatedUser.licensePlate,
-    state: updatedUser.state,
-  });
-  
-  await db.execute({
-    sql: 'UPDATE users SET stats = ? WHERE id = ?',
-    args: [stats, userId]
-  });
-  
-  console.log('[UserService] Updated user pellet counts:', userId);
-  return updatedUser;
+  try {
+    const db = getDatabase();
+    
+    console.log('[UserService] Fetching user for pellet count update:', userId);
+    const user = await getUserById(userId);
+    
+    const updatedUser: User = {
+      ...user,
+      pelletCount,
+      positivePelletCount,
+    };
+    
+    const stats = JSON.stringify({
+      pelletCount: updatedUser.pelletCount,
+      positivePelletCount: updatedUser.positivePelletCount,
+      badges: updatedUser.badges,
+      exp: updatedUser.exp,
+      level: updatedUser.level,
+      name: updatedUser.name,
+      photo: updatedUser.photo,
+      licensePlate: updatedUser.licensePlate,
+      state: updatedUser.state,
+    });
+    
+    console.log('[UserService] Updating user pellet counts in database...');
+    await db.execute({
+      sql: 'UPDATE users SET stats = ? WHERE id = ?',
+      args: [stats, userId]
+    });
+    
+    console.log('[UserService] Updated user pellet counts successfully:', userId);
+    return updatedUser;
+  } catch (error: any) {
+    console.error('[UserService] Error updating user pellet count:', error);
+    console.error('[UserService] Error details:', {
+      message: error?.message,
+      code: error?.code,
+    });
+    throw error;
+  }
 };
 
 export const updateUserExperience = async (
@@ -296,35 +307,46 @@ export const updateUserExperience = async (
   exp: number, 
   level: number
 ): Promise<User> => {
-  const db = getDatabase();
-  
-  const user = await getUserById(userId);
-  
-  const updatedUser: User = {
-    ...user,
-    exp,
-    level,
-  };
-  
-  const stats = JSON.stringify({
-    pelletCount: updatedUser.pelletCount,
-    positivePelletCount: updatedUser.positivePelletCount,
-    badges: updatedUser.badges,
-    exp: updatedUser.exp,
-    level: updatedUser.level,
-    name: updatedUser.name,
-    photo: updatedUser.photo,
-    licensePlate: updatedUser.licensePlate,
-    state: updatedUser.state,
-  });
-  
-  await db.execute({
-    sql: 'UPDATE users SET stats = ? WHERE id = ?',
-    args: [stats, userId]
-  });
-  
-  console.log('[UserService] Updated user experience:', userId, exp, level);
-  return updatedUser;
+  try {
+    const db = getDatabase();
+    
+    console.log('[UserService] Fetching user for experience update:', userId);
+    const user = await getUserById(userId);
+    
+    const updatedUser: User = {
+      ...user,
+      exp,
+      level,
+    };
+    
+    const stats = JSON.stringify({
+      pelletCount: updatedUser.pelletCount,
+      positivePelletCount: updatedUser.positivePelletCount,
+      badges: updatedUser.badges,
+      exp: updatedUser.exp,
+      level: updatedUser.level,
+      name: updatedUser.name,
+      photo: updatedUser.photo,
+      licensePlate: updatedUser.licensePlate,
+      state: updatedUser.state,
+    });
+    
+    console.log('[UserService] Updating user experience in database...');
+    await db.execute({
+      sql: 'UPDATE users SET stats = ? WHERE id = ?',
+      args: [stats, userId]
+    });
+    
+    console.log('[UserService] Updated user experience successfully:', userId, exp, level);
+    return updatedUser;
+  } catch (error: any) {
+    console.error('[UserService] Error updating user experience:', error);
+    console.error('[UserService] Error details:', {
+      message: error?.message,
+      code: error?.code,
+    });
+    throw error;
+  }
 };
 
 export const getUserBadges = async (userId: string): Promise<string[]> => {

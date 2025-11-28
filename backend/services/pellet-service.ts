@@ -2,24 +2,40 @@ import { getDatabase } from '../database';
 import { Pellet } from '@/types';
 
 export const createPellet = async (pellet: Pellet, targetUserId?: string): Promise<void> => {
-  const db = getDatabase();
-  
-  await db.execute({
-    sql: 'INSERT INTO pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    args: [
-      pellet.id,
-      pellet.targetLicensePlate,
-      targetUserId || null,
-      pellet.createdBy,
-      pellet.createdAt,
-      pellet.reason,
-      pellet.type,
-      pellet.location?.latitude || null,
-      pellet.location?.longitude || null
-    ]
-  });
-  
-  console.log('[PelletService] Created pellet:', pellet.id);
+  try {
+    const db = getDatabase();
+    
+    console.log('[PelletService] Creating pellet with data:', {
+      id: pellet.id,
+      targetLicensePlate: pellet.targetLicensePlate,
+      createdBy: pellet.createdBy,
+      type: pellet.type,
+    });
+    
+    await db.execute({
+      sql: 'INSERT INTO pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [
+        pellet.id,
+        pellet.targetLicensePlate,
+        targetUserId || null,
+        pellet.createdBy,
+        pellet.createdAt,
+        pellet.reason,
+        pellet.type,
+        pellet.location?.latitude || null,
+        pellet.location?.longitude || null
+      ]
+    });
+    
+    console.log('[PelletService] Created pellet successfully:', pellet.id);
+  } catch (error: any) {
+    console.error('[PelletService] Error creating pellet:', error);
+    console.error('[PelletService] Error details:', {
+      message: error?.message,
+      code: error?.code,
+    });
+    throw error;
+  }
 };
 
 export const getPelletById = async (pelletId: string): Promise<Pellet | null> => {
