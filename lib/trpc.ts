@@ -61,7 +61,6 @@ export const createTRPCClient = () => {
             ...options,
             headers: {
               ...options?.headers,
-              'Content-Type': 'application/json',
             },
           }).then(async (response) => {
             console.log('[tRPC] Response status:', response.status);
