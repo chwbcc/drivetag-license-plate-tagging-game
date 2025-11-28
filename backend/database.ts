@@ -69,7 +69,9 @@ export const initDatabase = async () => {
         stats TEXT NOT NULL,
         role TEXT DEFAULT 'user',
         licensePlate TEXT,
-        state TEXT
+        state TEXT,
+        resetToken TEXT,
+        resetTokenExpiry INTEGER
       )
     `);
 

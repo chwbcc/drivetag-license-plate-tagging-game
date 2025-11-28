@@ -1,59 +1,64 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import useAuthStore from '@/store/auth-store';
 import { trpcClient } from '@/lib/trpc';
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+export default function ResetPasswordScreen() {
+  const params = useLocalSearchParams();
+  const emailParam = params.email as string;
   
-  const { login } = useAuthStore();
+  const [email, setEmail] = useState(emailParam || '');
+  const [token, setToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
+  const handleResetPassword = async () => {
+    if (!email || !token || !newPassword || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
     
     setIsLoading(true);
     setError('');
+    setSuccess('');
     
     try {
-      console.log('[Login] Attempting login for:', email);
+      console.log('[ResetPassword] Resetting password for:', email);
       
-      if (!email.includes('@')) {
-        setError('Invalid email format');
-        setIsLoading(false);
-        return;
-      }
-      
-      const result = await trpcClient.auth.login.mutate({
+      const result = await trpcClient.auth.resetPassword.mutate({
         email,
-        password,
+        token,
+        newPassword,
       });
       
-      console.log('[Login] Login result:', { success: result.success, message: result.message });
+      console.log('[ResetPassword] Reset result:', result);
       
-      if (result.success && result.user) {
-        console.log('[Login] Login successful, user adminRole:', result.user.adminRole);
-        login(result.user);
-        router.replace('/(tabs)/home');
+      if (result.success) {
+        setSuccess(result.message);
+        
+        setTimeout(() => {
+          router.replace('/(auth)');
+        }, 2000);
       } else {
-        console.log('[Login] Login failed:', result.message);
-        setError(result.message || 'Login failed. Please check your credentials.');
+        setError(result.message);
       }
     } catch (error) {
-      console.error('[Login] Error during login:', error);
-      console.error('[Login] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        toString: String(error),
-      });
-      
+      console.error('[ResetPassword] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';
       setError(errorMessage);
     } finally {
@@ -73,14 +78,15 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoEmoji}>💥</Text>
+            <Text style={styles.logoEmoji}>🔐</Text>
           </View>
-          <Text style={styles.title}>Stupid Pellets</Text>
-          <Text style={styles.subtitle}>Tag bad drivers, praise good ones</Text>
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>Enter the code from your email and create a new password</Text>
         </View>
         
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {success ? <Text style={styles.successText}>{success}</Text> : null}
           
           <Input
             label="Email"
@@ -92,43 +98,45 @@ export default function LoginScreen() {
           />
           
           <Input
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
+            label="Reset Code"
+            placeholder="Enter 6-digit code"
+            value={token}
+            onChangeText={setToken}
+            keyboardType="number-pad"
+            maxLength={6}
+          />
+          
+          <Input
+            label="New Password"
+            placeholder="Enter new password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+          />
+          
+          <Input
+            label="Confirm Password"
+            placeholder="Confirm new password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry
           />
           
           <Button
-            title="Login"
-            onPress={handleLogin}
+            title="Reset Password"
+            onPress={handleResetPassword}
             loading={isLoading}
             style={styles.button}
           />
           
-          <View style={styles.forgotPasswordContainer}>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Did not receive a code?</Text>
             <Button
-              title="Forgot Password?"
+              title="Request New Code"
               variant="outline"
               onPress={() => router.push('/(auth)/forgot-password')}
-              style={styles.forgotPasswordButton}
+              style={styles.requestButton}
             />
-          </View>
-          
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account?</Text>
-            <Button
-              title="Register"
-              variant="outline"
-              onPress={() => router.push('/(auth)/register')}
-              style={styles.registerButton}
-            />
-          </View>
-          
-          <View style={styles.freeInfo}>
-            <Text style={styles.freeInfoText}>
-              New users get 10 negative pellets and 5 positive pellets to start tagging!
-            </Text>
           </View>
         </View>
       </ScrollView>
@@ -154,7 +162,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F97316',
+    backgroundColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -172,6 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#94A3B8',
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
   form: {
     width: '100%',
@@ -181,15 +190,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  successText: {
+    color: '#10B981',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
   button: {
     marginTop: 8,
-  },
-  forgotPasswordContainer: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  forgotPasswordButton: {
-    width: '100%',
   },
   footer: {
     marginTop: 32,
@@ -200,21 +208,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginBottom: 12,
   },
-  registerButton: {
+  requestButton: {
     width: '100%',
-  },
-  freeInfo: {
-    marginTop: 32,
-    padding: 16,
-    backgroundColor: '#10B98120',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#10B98140',
-  },
-  freeInfoText: {
-    fontSize: 14,
-    color: '#10B981',
-    textAlign: 'center',
-    fontWeight: '500',
   },
 });

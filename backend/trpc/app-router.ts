@@ -9,6 +9,9 @@ import getUserActivityRoute from "./routes/admin/get-user-activity/route";
 import registerRoute from "./routes/auth/register/route";
 import loginRoute from "./routes/auth/login/route";
 import syncUserRoute from "./routes/auth/sync-user/route";
+import requestResetRoute from "./routes/auth/request-reset/route";
+import verifyResetTokenRoute from "./routes/auth/verify-reset-token/route";
+import resetPasswordRoute from "./routes/auth/reset-password/route";
 import addPelletRoute from "./routes/pellet/add-pellet/route";
 import getPelletsRoute from "./routes/pellet/get-pellets/route";
 
@@ -30,6 +33,9 @@ export const appRouter = createTRPCRouter({
     register: registerRoute,
     login: loginRoute,
     syncUser: syncUserRoute,
+    requestReset: requestResetRoute,
+    verifyResetToken: verifyResetTokenRoute,
+    resetPassword: resetPasswordRoute,
   }),
   pellet: createTRPCRouter({
     addPellet: addPelletRoute,
