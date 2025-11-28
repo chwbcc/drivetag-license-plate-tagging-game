@@ -1,5 +1,13 @@
 import { createClient, type Client } from '@libsql/client';
 import { User } from '@/types';
+import { config } from 'dotenv';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+config({ path: join(__dirname, '..', '.env') });
 
 interface Badge {
   id: string;
