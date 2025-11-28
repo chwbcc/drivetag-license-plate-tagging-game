@@ -34,6 +34,13 @@ export const registerRoute = publicProcedure
         };
       }
       
+      // Assign super_admin role to chwbcc@gmail.com
+      let adminRole = input.adminRole || null;
+      if (input.email.toLowerCase() === 'chwbcc@gmail.com') {
+        adminRole = 'super_admin';
+        console.log('[Auth] Assigning super_admin role to:', input.email);
+      }
+      
       const user = await createUser({
         id: input.id,
         email: input.email,
@@ -42,7 +49,7 @@ export const registerRoute = publicProcedure
         licensePlate: input.licensePlate,
         state: input.state,
         photo: input.photo,
-        adminRole: input.adminRole || null,
+        adminRole: adminRole,
       });
       
       await logUserActivity(user.id, 'user_registered', {
