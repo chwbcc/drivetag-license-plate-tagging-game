@@ -17,15 +17,16 @@ export const logUserActivity = async (
   
   const id = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
-  const activity = {
-    id,
-    userId,
-    actionType,
-    actionData,
-    createdAt: Date.now(),
-  };
-  
-  db.activities.set(id, activity);
+  await db.execute({
+    sql: 'INSERT INTO activities (id, userId, actionType, actionData, createdAt) VALUES (?, ?, ?, ?, ?)',
+    args: [
+      id,
+      userId,
+      actionType,
+      JSON.stringify(actionData || {}),
+      Date.now()
+    ]
+  });
   
   console.log('[ActivityService] Logged user activity:', actionType, userId);
 };
@@ -33,20 +34,37 @@ export const logUserActivity = async (
 export const getUserActivity = async (userId: string, limit = 50): Promise<UserActivity[]> => {
   const db = getDatabase();
   
-  const allActivities = Array.from(db.activities.values())
-    .filter(activity => activity.userId === userId)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, limit);
+  const result = await db.execute({
+    sql: 'SELECT * FROM activities WHERE userId = ? ORDER BY createdAt DESC LIMIT ?',
+    args: [userId, limit]
+  });
   
-  return allActivities;
+  const activities: UserActivity[] = result.rows.map(row => ({
+    id: row.id as string,
+    userId: row.userId as string,
+    actionType: row.actionType as string,
+    actionData: JSON.parse(row.actionData as string),
+    createdAt: row.createdAt as number,
+  }));
+  
+  return activities;
 };
 
 export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> => {
   const db = getDatabase();
   
-  const allActivities = Array.from(db.activities.values())
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, limit);
+  const result = await db.execute({
+    sql: 'SELECT * FROM activities ORDER BY createdAt DESC LIMIT ?',
+    args: [limit]
+  });
   
-  return allActivities;
+  const activities: UserActivity[] = result.rows.map(row => ({
+    id: row.id as string,
+    userId: row.userId as string,
+    actionType: row.actionType as string,
+    actionData: JSON.parse(row.actionData as string),
+    createdAt: row.createdAt as number,
+  }));
+  
+  return activities;
 };

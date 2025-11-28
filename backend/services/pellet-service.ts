@@ -4,18 +4,19 @@ import { Pellet } from '@/types';
 export const createPellet = async (pellet: Pellet): Promise<void> => {
   const db = getDatabase();
   
-  const dbPellet = {
-    id: pellet.id,
-    targetLicensePlate: pellet.targetLicensePlate,
-    createdBy: pellet.createdBy,
-    createdAt: pellet.createdAt,
-    reason: pellet.reason,
-    type: pellet.type,
-    latitude: pellet.location?.latitude,
-    longitude: pellet.location?.longitude,
-  };
-  
-  db.pellets.set(pellet.id, dbPellet);
+  await db.execute({
+    sql: 'INSERT INTO pellets (id, targetLicensePlate, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      pellet.id,
+      pellet.targetLicensePlate,
+      pellet.createdBy,
+      pellet.createdAt,
+      pellet.reason,
+      pellet.type,
+      pellet.location?.latitude || null,
+      pellet.location?.longitude || null
+    ]
+  });
   
   console.log('[PelletService] Created pellet:', pellet.id);
 };
@@ -23,22 +24,27 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
 export const getPelletById = async (pelletId: string): Promise<Pellet | null> => {
   const db = getDatabase();
   
-  const dbPellet = db.pellets.get(pelletId);
+  const result = await db.execute({
+    sql: 'SELECT * FROM pellets WHERE id = ?',
+    args: [pelletId]
+  });
   
-  if (!dbPellet) {
+  if (result.rows.length === 0) {
     return null;
   }
   
+  const row = result.rows[0];
+  
   return {
-    id: dbPellet.id,
-    targetLicensePlate: dbPellet.targetLicensePlate,
-    createdBy: dbPellet.createdBy,
-    createdAt: dbPellet.createdAt,
-    reason: dbPellet.reason,
-    type: dbPellet.type,
-    location: dbPellet.latitude && dbPellet.longitude ? {
-      latitude: dbPellet.latitude,
-      longitude: dbPellet.longitude,
+    id: row.id as string,
+    targetLicensePlate: row.targetLicensePlate as string,
+    createdBy: row.createdBy as string,
+    createdAt: row.createdAt as number,
+    reason: row.reason as string,
+    type: row.type as 'negative' | 'positive',
+    location: row.latitude && row.longitude ? {
+      latitude: row.latitude as number,
+      longitude: row.longitude as number,
     } : undefined,
   };
 };
@@ -46,22 +52,22 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
 export const getAllPellets = async (): Promise<Pellet[]> => {
   const db = getDatabase();
   
-  const allPellets = Array.from(db.pellets.values())
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map(dbPellet => ({
-      id: dbPellet.id,
-      targetLicensePlate: dbPellet.targetLicensePlate,
-      createdBy: dbPellet.createdBy,
-      createdAt: dbPellet.createdAt,
-      reason: dbPellet.reason,
-      type: dbPellet.type,
-      location: dbPellet.latitude && dbPellet.longitude ? {
-        latitude: dbPellet.latitude,
-        longitude: dbPellet.longitude,
-      } : undefined,
-    }));
+  const result = await db.execute('SELECT * FROM pellets ORDER BY createdAt DESC');
   
-  return allPellets;
+  const pellets: Pellet[] = result.rows.map(row => ({
+    id: row.id as string,
+    targetLicensePlate: row.targetLicensePlate as string,
+    createdBy: row.createdBy as string,
+    createdAt: row.createdAt as number,
+    reason: row.reason as string,
+    type: row.type as 'negative' | 'positive',
+    location: row.latitude && row.longitude ? {
+      latitude: row.latitude as number,
+      longitude: row.longitude as number,
+    } : undefined,
+  }));
+  
+  return pellets;
 };
 
 export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'negative' | 'positive'): Promise<Pellet[]> => {
@@ -69,63 +75,72 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   
   const normalizedPlate = licensePlate.toLowerCase();
   
-  const filtered = Array.from(db.pellets.values())
-    .filter(dbPellet => {
-      const matches = dbPellet.targetLicensePlate.toLowerCase() === normalizedPlate;
-      if (type) {
-        return matches && dbPellet.type === type;
-      }
-      return matches;
-    })
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map(dbPellet => ({
-      id: dbPellet.id,
-      targetLicensePlate: dbPellet.targetLicensePlate,
-      createdBy: dbPellet.createdBy,
-      createdAt: dbPellet.createdAt,
-      reason: dbPellet.reason,
-      type: dbPellet.type,
-      location: dbPellet.latitude && dbPellet.longitude ? {
-        latitude: dbPellet.latitude,
-        longitude: dbPellet.longitude,
-      } : undefined,
-    }));
+  let sql = 'SELECT * FROM pellets WHERE LOWER(targetLicensePlate) = ?';
+  const args: any[] = [normalizedPlate];
   
-  return filtered;
+  if (type) {
+    sql += ' AND type = ?';
+    args.push(type);
+  }
+  
+  sql += ' ORDER BY createdAt DESC';
+  
+  const result = await db.execute({ sql, args });
+  
+  const pellets: Pellet[] = result.rows.map(row => ({
+    id: row.id as string,
+    targetLicensePlate: row.targetLicensePlate as string,
+    createdBy: row.createdBy as string,
+    createdAt: row.createdAt as number,
+    reason: row.reason as string,
+    type: row.type as 'negative' | 'positive',
+    location: row.latitude && row.longitude ? {
+      latitude: row.latitude as number,
+      longitude: row.longitude as number,
+    } : undefined,
+  }));
+  
+  return pellets;
 };
 
 export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' | 'positive'): Promise<Pellet[]> => {
   const db = getDatabase();
   
-  const filtered = Array.from(db.pellets.values())
-    .filter(dbPellet => {
-      const matches = dbPellet.createdBy === userId;
-      if (type) {
-        return matches && dbPellet.type === type;
-      }
-      return matches;
-    })
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map(dbPellet => ({
-      id: dbPellet.id,
-      targetLicensePlate: dbPellet.targetLicensePlate,
-      createdBy: dbPellet.createdBy,
-      createdAt: dbPellet.createdAt,
-      reason: dbPellet.reason,
-      type: dbPellet.type,
-      location: dbPellet.latitude && dbPellet.longitude ? {
-        latitude: dbPellet.latitude,
-        longitude: dbPellet.longitude,
-      } : undefined,
-    }));
+  let sql = 'SELECT * FROM pellets WHERE createdBy = ?';
+  const args: any[] = [userId];
   
-  return filtered;
+  if (type) {
+    sql += ' AND type = ?';
+    args.push(type);
+  }
+  
+  sql += ' ORDER BY createdAt DESC';
+  
+  const result = await db.execute({ sql, args });
+  
+  const pellets: Pellet[] = result.rows.map(row => ({
+    id: row.id as string,
+    targetLicensePlate: row.targetLicensePlate as string,
+    createdBy: row.createdBy as string,
+    createdAt: row.createdAt as number,
+    reason: row.reason as string,
+    type: row.type as 'negative' | 'positive',
+    location: row.latitude && row.longitude ? {
+      latitude: row.latitude as number,
+      longitude: row.longitude as number,
+    } : undefined,
+  }));
+  
+  return pellets;
 };
 
 export const deletePellet = async (pelletId: string): Promise<void> => {
   const db = getDatabase();
   
-  db.pellets.delete(pelletId);
+  await db.execute({
+    sql: 'DELETE FROM pellets WHERE id = ?',
+    args: [pelletId]
+  });
   
   console.log('[PelletService] Deleted pellet:', pelletId);
 };
