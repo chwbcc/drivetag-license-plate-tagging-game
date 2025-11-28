@@ -2,7 +2,6 @@ import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
 import { createUser, getUserByEmail } from "@/backend/services/user-service";
 import { logUserActivity } from "@/backend/services/activity-service";
-import { initDatabase } from "@/backend/database";
 import { AdminRole } from "@/types";
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
@@ -24,8 +23,6 @@ export const registerRoute = publicProcedure
     console.log('[Auth] Registering user:', input.email);
     
     try {
-      await initDatabase();
-      
       const existingUser = await getUserByEmail(input.email);
       
       if (existingUser) {

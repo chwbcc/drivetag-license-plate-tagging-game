@@ -36,7 +36,7 @@ app.use(
 app.get("/", (c) => {
   return c.json({ 
     status: dbInitialized ? "ok" : "initializing", 
-    message: dbInitialized ? "API is running with Turso" : "Database is initializing",
+    message: dbInitialized ? "API is running" : "Database is initializing",
     dbError: dbInitError ? dbInitError.message : null,
     timestamp: Date.now()
   });
@@ -47,10 +47,6 @@ app.get("/health", (c) => {
     status: dbInitialized ? "healthy" : "unhealthy",
     database: dbInitialized ? "connected" : "not connected",
     error: dbInitError ? dbInitError.message : null,
-    env: {
-      hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
-      hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
-    }
   });
 });
 

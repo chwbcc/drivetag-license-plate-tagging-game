@@ -2,7 +2,6 @@ import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
 import { getUserByEmail } from "@/backend/services/user-service";
 import { logUserActivity } from "@/backend/services/activity-service";
-import { initDatabase } from "@/backend/database";
 import { AdminRole } from "@/types";
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
@@ -18,10 +17,6 @@ export const loginRoute = publicProcedure
     console.log('[Auth] Login attempt:', input.email);
     
     try {
-      console.log('[Auth] Initializing database...');
-      await initDatabase();
-      console.log('[Auth] Database initialized, fetching user...');
-      
       const user = await getUserByEmail(input.email);
       
       if (!user) {
@@ -42,7 +37,6 @@ export const loginRoute = publicProcedure
         };
       }
       
-      console.log('[Auth] Password verified, logging activity...');
       await logUserActivity(user.id, 'user_logged_in', {
         email: user.email,
       });
@@ -65,16 +59,6 @@ export const loginRoute = publicProcedure
       };
     } catch (error) {
       console.error('[Auth] Error during login:', error);
-      
-      if (error instanceof Error) {
-        if (error.message.includes('TURSO_DATABASE_URL')) {
-          return {
-            success: false,
-            message: 'Database configuration error. Please check Turso setup.',
-            user: null,
-          };
-        }
-      }
       
       return {
         success: false,

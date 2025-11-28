@@ -10,27 +10,24 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
   
   const now = Math.floor(Date.now() / 1000);
   
-  await db.execute({
-    sql: `
-      INSERT INTO users (
-        id, email, password, name, photo, license_plate, state, 
-        admin_role, pellet_count, positive_pellet_count, exp, level, 
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 1, ?, ?)
-    `,
-    args: [
-      user.id,
-      user.email,
-      user.password || null,
-      user.name || null,
-      user.photo || null,
-      user.licensePlate,
-      user.state || null,
-      adminRole,
-      now,
-      now
-    ]
-  });
+  const dbUser: DBUser = {
+    id: user.id,
+    email: user.email,
+    password: user.password || null,
+    name: user.name || null,
+    photo: user.photo || null,
+    license_plate: user.licensePlate,
+    state: user.state || null,
+    admin_role: adminRole,
+    pellet_count: 0,
+    positive_pellet_count: 0,
+    exp: 0,
+    level: 1,
+    created_at: now,
+    updated_at: now,
+  };
+  
+  db.users.push(dbUser);
   
   console.log('[UserService] User created successfully');
   
@@ -40,21 +37,15 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
 export const getUserById = async (userId: string): Promise<User> => {
   const db = getDatabase();
   
-  const userResult = await db.execute({
-    sql: 'SELECT * FROM users WHERE id = ?',
-    args: [userId]
-  });
+  const userRow = db.users.find(u => u.id === userId);
   
-  if (userResult.rows.length === 0) {
+  if (!userRow) {
     throw new Error('User not found');
   }
   
-  const userRow = userResult.rows[0] as unknown as DBUser;
-  
-  const badgeResult = await db.execute({
-    sql: 'SELECT badge_id FROM badges WHERE user_id = ?',
-    args: [userId]
-  });
+  const badges = db.badges
+    .filter(b => b.user_id === userId)
+    .map(b => b.badge_id);
   
   return {
     id: userRow.id,
@@ -66,7 +57,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     state: userRow.state || undefined,
     pelletCount: userRow.pellet_count,
     positivePelletCount: userRow.positive_pellet_count,
-    badges: badgeResult.rows.map(r => (r as any).badge_id as string),
+    badges,
     exp: userRow.exp,
     level: userRow.level,
     adminRole: userRow.admin_role as AdminRole,
@@ -77,21 +68,15 @@ export const getUserById = async (userId: string): Promise<User> => {
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   const db = getDatabase();
   
-  const userResult = await db.execute({
-    sql: 'SELECT * FROM users WHERE LOWER(email) = LOWER(?)',
-    args: [email]
-  });
+  const userRow = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
   
-  if (userResult.rows.length === 0) {
+  if (!userRow) {
     return null;
   }
   
-  const userRow = userResult.rows[0] as unknown as DBUser;
-  
-  const badgeResult = await db.execute({
-    sql: 'SELECT badge_id FROM badges WHERE user_id = ?',
-    args: [userRow.id]
-  });
+  const badges = db.badges
+    .filter(b => b.user_id === userRow.id)
+    .map(b => b.badge_id);
   
   return {
     id: userRow.id,
@@ -103,7 +88,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     state: userRow.state || undefined,
     pelletCount: userRow.pellet_count,
     positivePelletCount: userRow.positive_pellet_count,
-    badges: badgeResult.rows.map(r => (r as any).badge_id as string),
+    badges,
     exp: userRow.exp,
     level: userRow.level,
     adminRole: userRow.admin_role as AdminRole,
@@ -114,19 +99,14 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
 export const getAllUsers = async (): Promise<User[]> => {
   const db = getDatabase();
   
-  const userResult = await db.execute('SELECT * FROM users ORDER BY created_at DESC');
-  
-  console.log(`[UserService] Found ${userResult.rows.length} users in database`);
+  console.log(`[UserService] Found ${db.users.length} users in database`);
   
   const users: User[] = [];
   
-  for (const row of userResult.rows) {
-    const userRow = row as unknown as DBUser;
-    
-    const badgeResult = await db.execute({
-      sql: 'SELECT badge_id FROM badges WHERE user_id = ?',
-      args: [userRow.id]
-    });
+  for (const userRow of db.users) {
+    const badges = db.badges
+      .filter(b => b.user_id === userRow.id)
+      .map(b => b.badge_id);
     
     users.push({
       id: userRow.id,
@@ -138,7 +118,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       state: userRow.state || undefined,
       pelletCount: userRow.pellet_count,
       positivePelletCount: userRow.positive_pellet_count,
-      badges: badgeResult.rows.map(r => (r as any).badge_id as string),
+      badges,
       exp: userRow.exp,
       level: userRow.level,
       adminRole: userRow.admin_role as AdminRole,
@@ -146,66 +126,57 @@ export const getAllUsers = async (): Promise<User[]> => {
     });
   }
   
-  return users;
+  return users.sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
 };
 
 export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id' | 'email' | 'badges'>>): Promise<User> => {
   const db = getDatabase();
   
-  const setParts: string[] = [];
-  const args: any[] = [];
+  const userIndex = db.users.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    throw new Error('User not found');
+  }
+  
+  const user = db.users[userIndex];
+  const now = Math.floor(Date.now() / 1000);
   
   if (updates.name !== undefined) {
-    setParts.push('name = ?');
-    args.push(updates.name || null);
+    user.name = updates.name || null;
   }
   if (updates.photo !== undefined) {
-    setParts.push('photo = ?');
-    args.push(updates.photo || null);
+    user.photo = updates.photo || null;
   }
   if (updates.password !== undefined) {
-    setParts.push('password = ?');
-    args.push(updates.password || null);
+    user.password = updates.password || null;
   }
   if (updates.licensePlate !== undefined) {
-    setParts.push('license_plate = ?');
-    args.push(updates.licensePlate);
+    user.license_plate = updates.licensePlate;
   }
   if (updates.state !== undefined) {
-    setParts.push('state = ?');
-    args.push(updates.state || null);
+    user.state = updates.state || null;
   }
   if (updates.pelletCount !== undefined) {
-    setParts.push('pellet_count = ?');
-    args.push(updates.pelletCount);
+    user.pellet_count = updates.pelletCount;
   }
   if (updates.positivePelletCount !== undefined) {
-    setParts.push('positive_pellet_count = ?');
-    args.push(updates.positivePelletCount);
+    user.positive_pellet_count = updates.positivePelletCount;
   }
   if (updates.exp !== undefined) {
-    setParts.push('exp = ?');
-    args.push(updates.exp);
+    user.exp = updates.exp;
   }
   if (updates.level !== undefined) {
-    setParts.push('level = ?');
-    args.push(updates.level);
+    user.level = updates.level;
   }
   if (updates.adminRole !== undefined) {
-    setParts.push('admin_role = ?');
-    args.push(updates.adminRole || null);
+    user.admin_role = updates.adminRole || null;
   }
   
-  if (setParts.length > 0) {
-    setParts.push('updated_at = ?');
-    args.push(Math.floor(Date.now() / 1000));
-    args.push(userId);
-    
-    await db.execute({
-      sql: `UPDATE users SET ${setParts.join(', ')} WHERE id = ?`,
-      args
-    });
-  }
+  user.updated_at = now;
   
   return getUserById(userId);
 };
@@ -213,20 +184,14 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
 export const addBadgeToUser = async (userId: string, badgeId: string): Promise<void> => {
   const db = getDatabase();
   
-  const existingResult = await db.execute({
-    sql: 'SELECT id FROM badges WHERE user_id = ? AND badge_id = ?',
-    args: [userId, badgeId]
-  });
+  const existing = db.badges.find(b => b.user_id === userId && b.badge_id === badgeId);
   
-  if (existingResult.rows.length === 0) {
-    await db.execute({
-      sql: 'INSERT INTO badges (id, user_id, badge_id, earned_at) VALUES (?, ?, ?, ?)',
-      args: [
-        `${userId}-${badgeId}`,
-        userId,
-        badgeId,
-        Math.floor(Date.now() / 1000)
-      ]
+  if (!existing) {
+    db.badges.push({
+      id: `${userId}-${badgeId}`,
+      user_id: userId,
+      badge_id: badgeId,
+      earned_at: Math.floor(Date.now() / 1000),
     });
   }
 };
@@ -234,8 +199,10 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
 export const updateUserAdminRole = async (userId: string, adminRole: AdminRole): Promise<void> => {
   const db = getDatabase();
   
-  await db.execute({
-    sql: 'UPDATE users SET admin_role = ?, updated_at = ? WHERE id = ?',
-    args: [adminRole, Math.floor(Date.now() / 1000), userId]
-  });
+  const user = db.users.find(u => u.id === userId);
+  
+  if (user) {
+    user.admin_role = adminRole;
+    user.updated_at = Math.floor(Date.now() / 1000);
+  }
 };
