@@ -38,7 +38,7 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
   
   try {
     await db.execute({
-      sql: 'INSERT INTO users (id, email, username, passwordHash, createdAt, stats, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      sql: 'INSERT INTO users (id, email, username, passwordHash, createdAt, stats, role, licensePlate, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       args: [
         newUser.id,
         newUser.email,
@@ -46,7 +46,9 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         newUser.password,
         Date.now(),
         stats,
-        adminRole || 'user'
+        adminRole || 'user',
+        newUser.licensePlate || null,
+        newUser.state || null
       ] as any[]
     });
     
@@ -83,8 +85,8 @@ export const getUserById = async (userId: string): Promise<User> => {
     password: row.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: stats.licensePlate || '',
-    state: stats.state || '',
+    licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+    state: (row.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
@@ -120,8 +122,8 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     password: row.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: stats.licensePlate || '',
-    state: stats.state || '',
+    licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+    state: (row.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
@@ -148,8 +150,8 @@ export const getAllUsers = async (): Promise<User[]> => {
       password: row.passwordHash as string,
       name: stats.name || '',
       photo: stats.photo,
-      licensePlate: stats.licensePlate || '',
-      state: stats.state || '',
+      licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+      state: (row.state as string) || stats.state || '',
       pelletCount: stats.pelletCount || 0,
       positivePelletCount: stats.positivePelletCount || 0,
       badges: stats.badges || [],
@@ -188,12 +190,14 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
   });
   
   await db.execute({
-    sql: 'UPDATE users SET username = ?, passwordHash = ?, stats = ?, role = ? WHERE id = ?',
+    sql: 'UPDATE users SET username = ?, passwordHash = ?, stats = ?, role = ?, licensePlate = ?, state = ? WHERE id = ?',
     args: [
       updatedUser.name,
       updatedUser.password,
       stats,
       updatedUser.adminRole || 'user',
+      updatedUser.licensePlate || null,
+      updatedUser.state || null,
       userId
     ] as any[]
   });

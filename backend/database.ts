@@ -67,7 +67,9 @@ export const initDatabase = async () => {
         passwordHash TEXT NOT NULL,
         createdAt INTEGER NOT NULL,
         stats TEXT NOT NULL,
-        role TEXT DEFAULT 'user'
+        role TEXT DEFAULT 'user',
+        licensePlate TEXT,
+        state TEXT
       )
     `);
 
