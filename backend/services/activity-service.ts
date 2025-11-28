@@ -13,60 +13,40 @@ export const logUserActivity = async (
   actionType: string,
   actionData?: any
 ): Promise<void> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   
   const id = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const dataJson = actionData ? JSON.stringify(actionData) : null;
   
-  await db.runAsync(
-    `INSERT INTO user_activity (id, user_id, action_type, action_data)
-     VALUES (?, ?, ?, ?)`,
-    [id, userId, actionType, dataJson]
-  );
+  const activity = {
+    id,
+    userId,
+    actionType,
+    actionData,
+    createdAt: Date.now(),
+  };
+  
+  db.activities.set(id, activity);
+  
+  console.log('[ActivityService] Logged user activity:', actionType, userId);
 };
 
 export const getUserActivity = async (userId: string, limit = 50): Promise<UserActivity[]> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   
-  const rows = await db.getAllAsync<{
-    id: string;
-    user_id: string;
-    action_type: string;
-    action_data: string | null;
-    created_at: number;
-  }>(
-    'SELECT * FROM user_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
-    [userId, limit]
-  );
+  const allActivities = Array.from(db.activities.values())
+    .filter(activity => activity.userId === userId)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, limit);
   
-  return rows.map(row => ({
-    id: row.id,
-    userId: row.user_id,
-    actionType: row.action_type,
-    actionData: row.action_data ? JSON.parse(row.action_data) : null,
-    createdAt: row.created_at,
-  }));
+  return allActivities;
 };
 
 export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   
-  const rows = await db.getAllAsync<{
-    id: string;
-    user_id: string;
-    action_type: string;
-    action_data: string | null;
-    created_at: number;
-  }>(
-    'SELECT * FROM user_activity ORDER BY created_at DESC LIMIT ?',
-    [limit]
-  );
+  const allActivities = Array.from(db.activities.values())
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, limit);
   
-  return rows.map(row => ({
-    id: row.id,
-    userId: row.user_id,
-    actionType: row.action_type,
-    actionData: row.action_data ? JSON.parse(row.action_data) : null,
-    createdAt: row.created_at,
-  }));
+  return allActivities;
 };

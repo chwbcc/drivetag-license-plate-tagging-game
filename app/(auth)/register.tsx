@@ -69,6 +69,7 @@ export default function RegisterScreen() {
       
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      console.log('[Register] Calling backend register mutation...');
       const result = await trpcClient.auth.register.mutate({
         id: userId,
         email,
@@ -77,6 +78,8 @@ export default function RegisterScreen() {
         licensePlate: licensePlate.toUpperCase(),
         state,
       });
+      
+      console.log('[Register] Backend response:', JSON.stringify(result));
       
       if (result.success && result.user) {
         console.log('[Register] Registration successful, logging in user');
@@ -98,9 +101,17 @@ export default function RegisterScreen() {
         console.log('[Register] Registration failed:', result.message);
         setError(result.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Register] Error during registration:', error);
-      setError('An error occurred. Please try again.');
+      console.error('[Register] Error details:', {
+        message: error?.message,
+        cause: error?.cause,
+        stack: error?.stack,
+        data: error?.data,
+      });
+      
+      const errorMessage = error?.message || 'An error occurred. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
