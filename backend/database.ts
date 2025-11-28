@@ -38,8 +38,8 @@ interface Activity {
 let db: Client | null = null;
 
 export const initDatabase = async () => {
-  const dbUrl = process.env.TURSO_DB_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
+  const dbUrl = process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN;
 
   console.log('[Database] Initializing database...');
   console.log('[Database] TURSO_DB_URL:', dbUrl ? 'SET' : 'NOT SET');
