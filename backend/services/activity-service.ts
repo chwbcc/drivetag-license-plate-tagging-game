@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase, DBActivity } from '../database';
 
 export interface UserActivity {
   id: string;
@@ -18,26 +18,24 @@ export const logUserActivity = async (
   const id = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const dataJson = actionData ? JSON.stringify(actionData) : null;
   
-  await db.runAsync(
-    `INSERT INTO user_activity (id, user_id, action_type, action_data)
-     VALUES (?, ?, ?, ?)`,
-    [id, userId, actionType, dataJson]
-  );
+  const activity: DBActivity = {
+    id,
+    user_id: userId,
+    action_type: actionType,
+    action_data: dataJson,
+    created_at: Math.floor(Date.now() / 1000),
+  };
+  
+  db.user_activity.push(activity);
 };
 
 export const getUserActivity = async (userId: string, limit = 50): Promise<UserActivity[]> => {
   const db = await getDatabase();
   
-  const rows = await db.getAllAsync<{
-    id: string;
-    user_id: string;
-    action_type: string;
-    action_data: string | null;
-    created_at: number;
-  }>(
-    'SELECT * FROM user_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
-    [userId, limit]
-  );
+  const rows = db.user_activity
+    .filter(a => a.user_id === userId)
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, limit);
   
   return rows.map(row => ({
     id: row.id,
@@ -51,16 +49,9 @@ export const getUserActivity = async (userId: string, limit = 50): Promise<UserA
 export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> => {
   const db = await getDatabase();
   
-  const rows = await db.getAllAsync<{
-    id: string;
-    user_id: string;
-    action_type: string;
-    action_data: string | null;
-    created_at: number;
-  }>(
-    'SELECT * FROM user_activity ORDER BY created_at DESC LIMIT ?',
-    [limit]
-  );
+  const rows = [...db.user_activity]
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, limit);
   
   return rows.map(row => ({
     id: row.id,

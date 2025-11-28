@@ -1,89 +1,78 @@
-import * as SQLite from 'expo-sqlite';
+type DBUser = {
+  id: string;
+  email: string;
+  password: string | null;
+  name: string | null;
+  photo: string | null;
+  license_plate: string;
+  state: string | null;
+  pellet_count: number;
+  positive_pellet_count: number;
+  exp: number;
+  level: number;
+  admin_role: string | null;
+  created_at: number;
+  updated_at: number;
+};
 
-let db: SQLite.SQLiteDatabase | null = null;
+type DBBadge = {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  earned_at: number;
+};
 
-export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
-  if (db) return db;
+type DBPellet = {
+  id: string;
+  target_license_plate: string;
+  created_by: string;
+  created_at: number;
+  reason: string;
+  type: 'negative' | 'positive';
+  latitude: number | null;
+  longitude: number | null;
+};
+
+type DBActivity = {
+  id: string;
+  user_id: string;
+  action_type: string;
+  action_data: string | null;
+  created_at: number;
+};
+
+type DBSpotting = {
+  id: string;
+  user_id: string;
+  state_code: string;
+  spotted_at: number;
+  count: number;
+};
+
+type InMemoryDB = {
+  users: DBUser[];
+  badges: DBBadge[];
+  pellets: DBPellet[];
+  user_activity: DBActivity[];
+  license_plate_spottings: DBSpotting[];
+};
+
+let db: InMemoryDB = {
+  users: [],
+  badges: [],
+  pellets: [],
+  user_activity: [],
+  license_plate_spottings: [],
+};
+
+let isInitialized = false;
+
+export const initDatabase = async (): Promise<InMemoryDB> => {
+  if (isInitialized) return db;
 
   try {
-    db = await SQLite.openDatabaseAsync('app.db');
-    
-    await db.execAsync(`
-      PRAGMA journal_mode = WAL;
-      PRAGMA foreign_keys = ON;
-      
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT,
-        name TEXT,
-        photo TEXT,
-        license_plate TEXT NOT NULL,
-        state TEXT,
-        pellet_count INTEGER DEFAULT 0,
-        positive_pellet_count INTEGER DEFAULT 0,
-        exp INTEGER DEFAULT 0,
-        level INTEGER DEFAULT 1,
-        admin_role TEXT,
-        created_at INTEGER DEFAULT (strftime('%s', 'now')),
-        updated_at INTEGER DEFAULT (strftime('%s', 'now'))
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-      CREATE INDEX IF NOT EXISTS idx_users_admin_role ON users(admin_role);
-      
-      CREATE TABLE IF NOT EXISTS badges (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        badge_id TEXT NOT NULL,
-        earned_at INTEGER DEFAULT (strftime('%s', 'now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        UNIQUE(user_id, badge_id)
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_badges_user_id ON badges(user_id);
-      
-      CREATE TABLE IF NOT EXISTS pellets (
-        id TEXT PRIMARY KEY,
-        target_license_plate TEXT NOT NULL,
-        created_by TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('negative', 'positive')),
-        latitude REAL,
-        longitude REAL,
-        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_pellets_target ON pellets(target_license_plate);
-      CREATE INDEX IF NOT EXISTS idx_pellets_creator ON pellets(created_by);
-      CREATE INDEX IF NOT EXISTS idx_pellets_type ON pellets(type);
-      
-      CREATE TABLE IF NOT EXISTS user_activity (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        action_type TEXT NOT NULL,
-        action_data TEXT,
-        created_at INTEGER DEFAULT (strftime('%s', 'now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_activity_user_id ON user_activity(user_id);
-      CREATE INDEX IF NOT EXISTS idx_activity_created_at ON user_activity(created_at);
-      
-      CREATE TABLE IF NOT EXISTS license_plate_spottings (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        state_code TEXT NOT NULL,
-        spotted_at INTEGER NOT NULL,
-        count INTEGER DEFAULT 1,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        UNIQUE(user_id, state_code)
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_spottings_user_id ON license_plate_spottings(user_id);
-    `);
-    
+    console.log('[Database] Initializing in-memory database');
+    isInitialized = true;
     console.log('[Database] Database initialized successfully');
     return db;
   } catch (error) {
@@ -92,15 +81,13 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
   }
 };
 
-export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
-  if (db) return db;
+export const getDatabase = async (): Promise<InMemoryDB> => {
+  if (isInitialized) return db;
   return await initDatabase();
 };
 
 export const closeDatabase = async (): Promise<void> => {
-  if (db) {
-    await db.closeAsync();
-    db = null;
-    console.log('[Database] Database closed');
-  }
+  console.log('[Database] Closing database (no-op for in-memory)');
 };
+
+export type { DBUser, DBBadge, DBPellet, DBActivity, DBSpotting, InMemoryDB };
