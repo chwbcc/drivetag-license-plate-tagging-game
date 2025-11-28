@@ -204,7 +204,7 @@ export default function RegisterScreen() {
             <Button
               title="Login"
               variant="outline"
-              onPress={() => router.push('/')}
+              onPress={() => router.push('/(auth)')}
               style={styles.loginButton}
             />
           </View>
