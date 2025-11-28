@@ -1,4 +1,8 @@
 import { initDatabase, getDatabase } from './database';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+config({ path: resolve(__dirname, '../.env') });
 
 const addSuperAdmin = async () => {
   try {
