@@ -1,5 +1,5 @@
 import { createTRPCReact } from "@trpc/react-query";
-import { httpLink } from "@trpc/client";
+import { httpLink, loggerLink } from "@trpc/client";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,15 +17,20 @@ const getBaseUrl = () => {
 };
 
 export const createTRPCClient = () => {
+  const baseUrl = getBaseUrl();
+  console.log('[tRPC] Creating client with base URL:', baseUrl);
+  
   return trpc.createClient({
     links: [
+      loggerLink({
+        enabled: () => true,
+      }),
       httpLink({
-        url: `${getBaseUrl()}/api/trpc`,
+        url: `${baseUrl}/api/trpc`,
         transformer: superjson,
         async headers() {
           try {
             const authData = await AsyncStorage.getItem('auth-storage');
-            console.log('[tRPC] Reading auth data from storage');
             if (authData) {
               const parsed = JSON.parse(authData);
               const user = parsed?.state?.user;
@@ -39,17 +44,34 @@ export const createTRPCClient = () => {
                     adminRole: user.adminRole || null,
                   }),
                 };
-              } else {
-                console.log('[tRPC] No user found in auth data');
               }
-            } else {
-              console.log('[tRPC] No auth-storage data found');
             }
           } catch (error) {
             console.error('[tRPC] Failed to get auth data for trpc headers:', error);
           }
           
           return {};
+        },
+        fetch(url, options) {
+          console.log('[tRPC] Making request to:', url);
+          return fetch(url, {
+            ...options,
+            headers: {
+              ...options?.headers,
+              'Content-Type': 'application/json',
+            },
+          }).then(async (response) => {
+            console.log('[tRPC] Response status:', response.status);
+            console.log('[tRPC] Response content-type:', response.headers.get('content-type'));
+            
+            if (!response.ok) {
+              const clonedResponse = response.clone();
+              const text = await clonedResponse.text();
+              console.error('[tRPC] Error response body:', text.substring(0, 500));
+            }
+            
+            return response;
+          });
         },
       }),
     ],
