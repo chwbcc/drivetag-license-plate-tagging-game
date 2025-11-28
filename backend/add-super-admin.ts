@@ -1,8 +1,16 @@
 import { initDatabase, getDatabase } from './database';
 import { config } from 'dotenv';
-import { resolve } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-config({ path: resolve(__dirname, '../.env') });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+config({ path: join(__dirname, '..', '.env') });
+
+console.log('[Add Super Admin] Loading environment variables...');
+console.log('[Add Super Admin] TURSO_DB_URL:', process.env.TURSO_DB_URL ? 'Loaded' : 'Missing');
+console.log('[Add Super Admin] TURSO_AUTH_TOKEN:', process.env.TURSO_AUTH_TOKEN ? 'Loaded' : 'Missing');
 
 const addSuperAdmin = async () => {
   try {
