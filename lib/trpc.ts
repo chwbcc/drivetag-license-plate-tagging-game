@@ -45,6 +45,27 @@ export const createTRPCClient = () => {
           
           return {};
         },
+        fetch: async (url, options) => {
+          try {
+            console.log('[tRPC Client] Request:', url);
+            const response = await fetch(url, options);
+            console.log('[tRPC Client] Response status:', response.status);
+            
+            if (!response.ok) {
+              const text = await response.clone().text();
+              console.error('[tRPC Client] Non-OK response:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: text.substring(0, 200),
+              });
+            }
+            
+            return response;
+          } catch (error) {
+            console.error('[tRPC Client] Fetch error:', error);
+            throw error;
+          }
+        },
       }),
     ],
   });
@@ -77,6 +98,27 @@ export const trpcClient = createVanillaTRPCClient<AppRouter>({
         }
         
         return {};
+      },
+      fetch: async (url, options) => {
+        try {
+          console.log('[tRPC Client] Request:', url);
+          const response = await fetch(url, options);
+          console.log('[tRPC Client] Response status:', response.status);
+          
+          if (!response.ok) {
+            const text = await response.clone().text();
+            console.error('[tRPC Client] Non-OK response:', {
+              status: response.status,
+              statusText: response.statusText,
+              body: text.substring(0, 200),
+            });
+          }
+          
+          return response;
+        } catch (error) {
+          console.error('[tRPC Client] Fetch error:', error);
+          throw error;
+        }
       },
     }),
   ],

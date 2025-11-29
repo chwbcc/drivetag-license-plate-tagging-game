@@ -23,11 +23,23 @@ initDatabase()
 
 app.use("*", cors());
 
+app.use('*', async (c, next) => {
+  console.log(`[Backend] ${c.req.method} ${c.req.url}`);
+  await next();
+  console.log(`[Backend] Response status: ${c.res.status}`);
+});
+
 app.use(
   "/api/trpc/*",
   trpcServer({
     router: appRouter,
     createContext,
+    onError: ({ error, path }) => {
+      console.error(`[tRPC Error] Path: ${path}`);
+      console.error(`[tRPC Error] Code: ${error.code}`);
+      console.error(`[tRPC Error] Message: ${error.message}`);
+      console.error(`[tRPC Error] Stack:`, error.stack);
+    },
   })
 );
 
@@ -57,6 +69,22 @@ app.get("/health", (c) => {
       hasDotenv: typeof process.env.TURSO_DB_URL !== 'undefined',
     }
   });
+});
+
+app.notFound((c) => {
+  console.log('[Backend] 404 Not Found:', c.req.url);
+  return c.json({ error: 'Not Found', url: c.req.url }, 404);
+});
+
+app.onError((err, c) => {
+  console.error('[Backend] Error:', err);
+  return c.json(
+    {
+      error: 'Internal Server Error',
+      message: err.message,
+    },
+    500
+  );
 });
 
 export default app;
