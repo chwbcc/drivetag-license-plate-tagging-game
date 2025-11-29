@@ -1,7 +1,8 @@
 import { getDatabase } from '../database';
 import { Pellet } from '@/types';
+import { getUserByLicensePlate } from './user-service';
 
-export const createPellet = async (pellet: Pellet, targetUserId?: string): Promise<void> => {
+export const createPellet = async (pellet: Pellet): Promise<void> => {
   try {
     const db = getDatabase();
     
@@ -12,12 +13,25 @@ export const createPellet = async (pellet: Pellet, targetUserId?: string): Promi
       type: pellet.type,
     });
     
+    let targetUserId: string | null = null;
+    try {
+      const targetUser = await getUserByLicensePlate(pellet.targetLicensePlate);
+      if (targetUser) {
+        targetUserId = targetUser.id;
+        console.log('[PelletService] Found target user:', targetUserId);
+      } else {
+        console.log('[PelletService] No user found with license plate:', pellet.targetLicensePlate);
+      }
+    } catch (error) {
+      console.log('[PelletService] Could not find user by license plate:', error);
+    }
+    
     await db.execute({
       sql: 'INSERT INTO pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       args: [
         pellet.id,
         pellet.targetLicensePlate,
-        targetUserId || null,
+        targetUserId,
         pellet.createdBy,
         pellet.createdAt,
         pellet.reason,

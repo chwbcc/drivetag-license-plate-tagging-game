@@ -67,13 +67,16 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
 export const getUserById = async (userId: string): Promise<User> => {
   const db = getDatabase();
   
+  console.log('[UserService] Fetching user by ID:', userId);
+  
   const result = await db.execute({
     sql: 'SELECT * FROM users WHERE id = ?',
     args: [userId]
   });
   
   if (result.rows.length === 0) {
-    throw new Error('User not found');
+    console.error('[UserService] User not found with ID:', userId);
+    throw new Error(`User not found: ${userId}`);
   }
   
   const row = result.rows[0];
@@ -209,7 +212,11 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
 export const addBadgeToUser = async (userId: string, badgeId: string): Promise<void> => {
   const db = getDatabase();
   
+  console.log('[UserService] Adding badge to user:', userId, badgeId);
+  console.log('[UserService] Database initialized:', !!db);
+  
   const user = await getUserById(userId);
+  console.log('[UserService] User found:', user.email);
   
   if (!user.badges) {
     user.badges = [];
@@ -264,7 +271,10 @@ export const updateUserPelletCount = async (
     const db = getDatabase();
     
     console.log('[UserService] Fetching user for pellet count update:', userId);
+    console.log('[UserService] Database initialized:', !!db);
+    
     const user = await getUserById(userId);
+    console.log('[UserService] User found:', user.email);
     
     const updatedUser: User = {
       ...user,
@@ -311,7 +321,10 @@ export const updateUserExperience = async (
     const db = getDatabase();
     
     console.log('[UserService] Fetching user for experience update:', userId);
+    console.log('[UserService] Database initialized:', !!db);
+    
     const user = await getUserById(userId);
+    console.log('[UserService] User found:', user.email);
     
     const updatedUser: User = {
       ...user,

@@ -1,5 +1,4 @@
 import { createClient, type Client } from '@libsql/client';
-import { User } from '@/types';
 import { config } from 'dotenv';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -113,6 +112,20 @@ export const initDatabase = async () => {
         FOREIGN KEY (targetUserId) REFERENCES users(id)
       )
     `);
+    
+    console.log('[Database] Running migrations...');
+    try {
+      const result = await db.execute('PRAGMA table_info(pellets)');
+      const columns = result.rows.map(row => row.name as string);
+      
+      if (!columns.includes('targetUserId')) {
+        console.log('[Database] Adding targetUserId column to pellets table...');
+        await db.execute('ALTER TABLE pellets ADD COLUMN targetUserId TEXT');
+        console.log('[Database] targetUserId column added successfully');
+      }
+    } catch (migrationError) {
+      console.log('[Database] Migration check/execution completed or not needed:', migrationError);
+    }
 
     await db.execute(`
       CREATE TABLE IF NOT EXISTS activities (
