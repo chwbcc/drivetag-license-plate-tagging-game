@@ -29,6 +29,28 @@ app.use('*', async (c, next) => {
   console.log(`[Backend] Response status: ${c.res.status}`);
 });
 
+app.use('/api/trpc/*', async (c, next) => {
+  if (!dbInitialized) {
+    console.error('[Backend] Database not initialized, rejecting tRPC request');
+    if (dbError) {
+      console.error('[Backend] Database error:', dbError.message);
+    }
+    return c.json(
+      {
+        error: {
+          message: 'Database not initialized',
+          code: 'INTERNAL_SERVER_ERROR',
+          data: {
+            dbError: dbError ? dbError.message : 'Unknown error',
+          },
+        },
+      },
+      503
+    );
+  }
+  await next();
+});
+
 app.use(
   "/api/trpc/*",
   trpcServer({
@@ -38,7 +60,12 @@ app.use(
       console.error(`[tRPC Error] Path: ${path}`);
       console.error(`[tRPC Error] Code: ${error.code}`);
       console.error(`[tRPC Error] Message: ${error.message}`);
+      console.error(`[tRPC Error] Cause:`, error.cause);
       console.error(`[tRPC Error] Stack:`, error.stack);
+      
+      if (error.cause) {
+        console.error(`[tRPC Error] Cause details:`, JSON.stringify(error.cause, null, 2));
+      }
     },
   })
 );

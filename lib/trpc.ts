@@ -53,11 +53,17 @@ export const createTRPCClient = () => {
             
             if (!response.ok) {
               const text = await response.clone().text();
-              console.error('[tRPC Client] Non-OK response:', {
-                status: response.status,
-                statusText: response.statusText,
-                body: text.substring(0, 200),
-              });
+              console.error('[tRPC Client] Non-OK response:');
+              console.error('Status:', response.status);
+              console.error('Status Text:', response.statusText);
+              console.error('Response Body:', text);
+              
+              try {
+                const json = JSON.parse(text);
+                console.error('Parsed Error:', JSON.stringify(json, null, 2));
+              } catch (e) {
+                console.error('Could not parse response as JSON');
+              }
             }
             
             return response;
@@ -107,11 +113,17 @@ export const trpcClient = createVanillaTRPCClient<AppRouter>({
           
           if (!response.ok) {
             const text = await response.clone().text();
-            console.error('[tRPC Client] Non-OK response:', {
-              status: response.status,
-              statusText: response.statusText,
-              body: text.substring(0, 200),
-            });
+            console.error('[tRPC Client] Non-OK response:');
+            console.error('Status:', response.status);
+            console.error('Status Text:', response.statusText);
+            console.error('Response Body:', text);
+            
+            try {
+              const json = JSON.parse(text);
+              console.error('Parsed Error:', JSON.stringify(json, null, 2));
+            } catch (e) {
+              console.error('Could not parse response as JSON');
+            }
           }
           
           return response;
