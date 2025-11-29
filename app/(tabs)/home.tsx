@@ -30,6 +30,7 @@ import PelletCard from '@/components/PelletCard';
 import colors from '@/constants/colors';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
+import { checkBackendHealth } from '@/utils/backend-health-check';
 
 export default function HomeScreen() {
   const { user, logout, getExpForNextLevel, syncAdminRole } = useAuthStore();
@@ -38,6 +39,17 @@ export default function HomeScreen() {
   const { isDark, toggleTheme } = useTheme();
   
   useEffect(() => {
+    const checkBackend = async () => {
+      console.log('[Home] Checking backend health on mount...');
+      const health = await checkBackendHealth();
+      if (health.success) {
+        console.log('[Home] ✅ Backend is healthy');
+      } else {
+        console.error('[Home] ❌ Backend health check failed:', health.error);
+      }
+    };
+    
+    checkBackend();
     syncAdminRole();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
