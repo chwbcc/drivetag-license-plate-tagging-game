@@ -6,8 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let retryCount = 0;
 let lastRetryTime = 0;
-const MAX_RETRIES = 3;
-const BASE_DELAY = 1000;
+const MAX_RETRIES = 5;
+const BASE_DELAY = 2000;
+const RATE_LIMIT_DELAY = 10000;
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -79,14 +80,15 @@ export const createTRPCClient = () => {
                 }
                 lastRetryTime = now;
                 
-                console.warn(`[tRPC Client] Rate limited (429). Retry ${retryCount} in progress...`);
+                console.warn(`[tRPC Client] Rate limited (429). Waiting ${RATE_LIMIT_DELAY}ms before retry...`);
                 
                 if (attempt < MAX_RETRIES) {
+                  await wait(RATE_LIMIT_DELAY * (attempt + 1));
                   attempt++;
                   continue;
                 }
                 
-                console.error('[tRPC Client] Max retries reached for rate limit');
+                console.error('[tRPC Client] Max retries reached for rate limit. Please wait before making more requests.');
               }
               
               if (!response.ok) {
