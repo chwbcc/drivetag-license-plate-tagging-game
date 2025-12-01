@@ -4,6 +4,13 @@ import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+let retryCount = 0;
+let lastRetryTime = 0;
+const MAX_RETRIES = 3;
+const BASE_DELAY = 1000;
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
@@ -46,44 +53,81 @@ export const createTRPCClient = () => {
           return {};
         },
         fetch: async (url, options) => {
-          try {
-            console.log('[tRPC Client] Making request to:', url);
-            console.log('[tRPC Client] Base URL:', getBaseUrl());
-            console.log('[tRPC Client] Request method:', options?.method || 'GET');
-            
-            const response = await fetch(url, options);
-            console.log('[tRPC Client] Response received - Status:', response.status);
-            console.log('[tRPC Client] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-            
-            if (!response.ok) {
-              const text = await response.clone().text();
-              console.error('[tRPC Client] ========= ERROR RESPONSE =========');
-              console.error('[tRPC Client] URL:', url);
-              console.error('[tRPC Client] Status:', response.status);
-              console.error('[tRPC Client] Status Text:', response.statusText);
-              console.error('[tRPC Client] Response Body:', text.substring(0, 500));
-              console.error('[tRPC Client] Full Base URL:', getBaseUrl());
-              console.error('[tRPC Client] ===================================');
-              
-              try {
-                const json = JSON.parse(text);
-                console.error('[tRPC Client] Parsed Error:', JSON.stringify(json, null, 2));
-              } catch (e) {
-                console.error('[tRPC Client] Could not parse response as JSON - this is likely an HTML error page');
+          let attempt = 0;
+          
+          while (attempt <= MAX_RETRIES) {
+            try {
+              if (attempt > 0) {
+                const delay = BASE_DELAY * Math.pow(2, attempt - 1);
+                console.log(`[tRPC Client] Retry attempt ${attempt}/${MAX_RETRIES} after ${delay}ms`);
+                await wait(delay);
               }
+              
+              console.log('[tRPC Client] Making request to:', url);
+              console.log('[tRPC Client] Base URL:', getBaseUrl());
+              console.log('[tRPC Client] Request method:', options?.method || 'GET');
+              
+              const response = await fetch(url, options);
+              console.log('[tRPC Client] Response received - Status:', response.status);
+              
+              if (response.status === 429) {
+                const now = Date.now();
+                if (now - lastRetryTime < 5000) {
+                  retryCount++;
+                } else {
+                  retryCount = 1;
+                }
+                lastRetryTime = now;
+                
+                console.warn(`[tRPC Client] Rate limited (429). Retry ${retryCount} in progress...`);
+                
+                if (attempt < MAX_RETRIES) {
+                  attempt++;
+                  continue;
+                }
+                
+                console.error('[tRPC Client] Max retries reached for rate limit');
+              }
+              
+              if (!response.ok) {
+                const text = await response.clone().text();
+                console.error('[tRPC Client] ========= ERROR RESPONSE =========');
+                console.error('[tRPC Client] URL:', url);
+                console.error('[tRPC Client] Status:', response.status);
+                console.error('[tRPC Client] Status Text:', response.statusText);
+                console.error('[tRPC Client] Response Body:', text.substring(0, 500));
+                console.error('[tRPC Client] Full Base URL:', getBaseUrl());
+                console.error('[tRPC Client] ===================================');
+                
+                try {
+                  const json = JSON.parse(text);
+                  console.error('[tRPC Client] Parsed Error:', JSON.stringify(json, null, 2));
+                } catch (e) {
+                  console.error('[tRPC Client] Could not parse response as JSON - this is likely an HTML error page');
+                }
+              } else {
+                retryCount = 0;
+              }
+              
+              return response;
+            } catch (error) {
+              if (attempt >= MAX_RETRIES) {
+                console.error('[tRPC Client] ========= FETCH ERROR =========');
+                console.error('[tRPC Client] URL attempted:', url);
+                console.error('[tRPC Client] Error:', error);
+                console.error('[tRPC Client] Error type:', typeof error);
+                console.error('[tRPC Client] Error name:', (error as any)?.name);
+                console.error('[tRPC Client] Error message:', (error as any)?.message);
+                console.error('[tRPC Client] =====================================');
+                throw error;
+              }
+              
+              console.warn(`[tRPC Client] Fetch error on attempt ${attempt + 1}/${MAX_RETRIES + 1}:`, (error as any)?.message);
+              attempt++;
             }
-            
-            return response;
-          } catch (error) {
-            console.error('[tRPC Client] ========= FETCH ERROR =========');
-            console.error('[tRPC Client] URL attempted:', url);
-            console.error('[tRPC Client] Error:', error);
-            console.error('[tRPC Client] Error type:', typeof error);
-            console.error('[tRPC Client] Error name:', (error as any)?.name);
-            console.error('[tRPC Client] Error message:', (error as any)?.message);
-            console.error('[tRPC Client] =====================================');
-            throw error;
           }
+          
+          throw new Error('Max retries exceeded');
         },
       }),
     ],

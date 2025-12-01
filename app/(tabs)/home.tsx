@@ -30,7 +30,6 @@ import PelletCard from '@/components/PelletCard';
 import colors from '@/constants/colors';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
-import { checkBackendHealth } from '@/utils/backend-health-check';
 
 export default function HomeScreen() {
   const { user, logout, getExpForNextLevel, syncAdminRole } = useAuthStore();
