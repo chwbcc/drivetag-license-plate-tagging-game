@@ -39,17 +39,6 @@ export default function HomeScreen() {
   const { isDark, toggleTheme } = useTheme();
   
   useEffect(() => {
-    const checkBackend = async () => {
-      console.log('[Home] Checking backend health on mount...');
-      const health = await checkBackendHealth();
-      if (health.success) {
-        console.log('[Home] ✅ Backend is healthy');
-      } else {
-        console.error('[Home] ❌ Backend health check failed:', health.error);
-      }
-    };
-    
-    checkBackend();
     syncAdminRole();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
