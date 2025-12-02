@@ -62,7 +62,7 @@ app.get("/", (c) => {
 });
 
 app.get("/health", (c) => {
-  const hasUrl = !!(process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL);
+  const hasUrl = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL);
   const hasToken = !!(process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN);
   
   return c.json({
@@ -75,7 +75,7 @@ app.get("/health", (c) => {
     },
     env: {
       nodeEnv: process.env.NODE_ENV,
-      hasDotenv: typeof process.env.TURSO_DB_URL !== 'undefined',
+      hasDotenv: typeof process.env.TURSO_DATABASE_URL !== 'undefined' || typeof process.env.TURSO_DB_URL !== 'undefined',
     }
   });
 });

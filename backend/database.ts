@@ -48,11 +48,11 @@ export const initDatabase = async () => {
   }
 
   initPromise = (async () => {
-    const dbUrl = process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
+    const dbUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
     const authToken = process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN;
 
     if (!dbUrl || !authToken) {
-      const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DB_URL and TURSO_AUTH_TOKEN';
+      const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DATABASE_URL (or TURSO_DB_URL) and TURSO_AUTH_TOKEN';
       console.error('[Database]', errorMsg);
       throw new Error(errorMsg);
     }
