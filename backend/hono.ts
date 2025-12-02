@@ -23,23 +23,7 @@ app.use("*", cors());
 
 
 
-app.use('/api/trpc/*', async (c, next) => {
-  if (!dbInitialized) {
-    return c.json(
-      {
-        error: {
-          message: 'Database not initialized',
-          code: 'INTERNAL_SERVER_ERROR',
-          data: {
-            dbError: dbError ? dbError.message : 'Unknown error',
-          },
-        },
-      },
-      503
-    );
-  }
-  await next();
-});
+
 
 app.use(
   "/api/trpc/*",
@@ -81,7 +65,8 @@ app.get("/health", (c) => {
 });
 
 app.notFound((c) => {
-  return c.json({ error: 'Not Found' }, 404);
+  console.error('[Backend] 404 Not Found:', c.req.url);
+  return c.json({ error: 'Not Found', path: c.req.url }, 404);
 });
 
 app.onError((err, c) => {

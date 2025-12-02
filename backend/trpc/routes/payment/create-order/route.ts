@@ -55,9 +55,11 @@ export const createOrderProcedure = publicProcedure
     })
   )
   .mutation(async ({ input }) => {
+    console.log('[PayPal] Creating order for:', input);
     try {
       const accessToken = await getAccessToken();
 
+      console.log('[PayPal] Creating order with PayPal...');
       const response = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
         method: 'POST',
         headers: {
@@ -84,21 +86,27 @@ export const createOrderProcedure = publicProcedure
           },
         }),
       });
+      console.log('[PayPal] Response status:', response.status);
 
       const order = await response.json();
+      console.log('[PayPal] Order response:', order);
       
       if (!response.ok) {
-        console.error('PayPal order creation failed:', order);
+        console.error('[PayPal] Order creation failed:', order);
         throw new Error(order.message || 'Failed to create PayPal order');
       }
 
+      console.log('[PayPal] Order created successfully:', order.id);
       return { 
         orderId: order.id,
         approvalUrl: order.links?.find((link: any) => link.rel === 'approve')?.href,
       };
     } catch (error) {
-      console.error('Error creating PayPal order:', error);
-      throw new Error('Failed to create payment order');
+      console.error('[PayPal] Error creating order:', error);
+      if (error instanceof Error) {
+        throw new Error(`Failed to create payment order: ${error.message}`);
+      }
+      throw new Error('Failed to create payment order: Unknown error');
     }
   });
 

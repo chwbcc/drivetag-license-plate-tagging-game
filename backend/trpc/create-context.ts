@@ -2,8 +2,15 @@ import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { AdminRole } from "@/types";
+import { getDatabase } from "../database";
 
 export const createContext = async (opts: FetchCreateContextFnOptions) => {
+  try {
+    getDatabase();
+  } catch (error) {
+    console.error('[tRPC Context] Database not available:', error);
+  }
+  
   const userJson = opts.req.headers.get('x-user-data');
   
   let userId: string | null = null;

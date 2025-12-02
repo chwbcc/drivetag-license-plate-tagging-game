@@ -58,22 +58,28 @@ export const createTRPCClient = () => {
             try {
               if (attempt > 0) {
                 const delay = BASE_DELAY * Math.pow(2, attempt - 1);
-  
+                console.log(`[tRPC Client] Retry attempt ${attempt} after ${delay}ms`);
                 await wait(delay);
               }
               
               const response = await fetch(url, options);
               
-              if (response.status === 429) {
-                if (attempt < MAX_RETRIES) {
-                  await wait(RATE_LIMIT_DELAY * (attempt + 1));
-                  attempt++;
-                  continue;
+              if (!response.ok) {
+                console.log(`[tRPC Client] Non-OK response: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 429) {
+                  if (attempt < MAX_RETRIES) {
+                    console.log(`[tRPC Client] Rate limited, waiting ${RATE_LIMIT_DELAY * (attempt + 1)}ms`);
+                    await wait(RATE_LIMIT_DELAY * (attempt + 1));
+                    attempt++;
+                    continue;
+                  }
                 }
               }
               
               return response;
             } catch (error) {
+              console.error(`[tRPC Client] Fetch error on attempt ${attempt}:`, error);
               if (attempt >= MAX_RETRIES) {
                 throw error;
               }
