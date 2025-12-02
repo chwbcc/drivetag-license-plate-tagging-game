@@ -6,13 +6,12 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  FlatList,
+
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { 
   Edit, 
   LogOut, 
-  Target, 
   ThumbsUp, 
   Star,
   User,
@@ -20,20 +19,21 @@ import {
   Moon,
   Sun,
   Shield,
+  Target,
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
 import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
-import PelletCard from '@/components/PelletCard';
+
 import colors from '@/constants/colors';
 import { useTheme } from '@/store/theme-store';
-import { darkMode } from '@/constants/styles';
+
 
 export default function HomeScreen() {
   const { user, logout, getExpForNextLevel, syncAdminRole } = useAuthStore();
-  const { getPelletsByLicensePlate, getPelletsCreatedByUser, pellets } = usePelletStore();
+  const { getPelletsByLicensePlate, getPelletsCreatedByUser } = usePelletStore();
   const { getUserBadges } = useBadgeStore();
   const { isDark, toggleTheme } = useTheme();
   
@@ -58,9 +58,7 @@ export default function HomeScreen() {
   const pelletsGiven = getPelletsCreatedByUser(user.id);
   const expInfo = getExpForNextLevel();
 
-  const recentPellets = [...pelletsReceived]
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 10);
+
 
   const handleLogout = () => {
     Alert.alert(

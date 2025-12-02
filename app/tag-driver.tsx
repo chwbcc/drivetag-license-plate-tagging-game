@@ -12,7 +12,7 @@ import {
   FlatList
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Target, ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react-native';
+import { ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import Colors from '@/constants/colors';
 import Input from '@/components/Input';
@@ -165,11 +165,9 @@ export default function TagDriverScreen() {
     
     if (success) {
       try {
-        // Add the pellet to backend database
         await trpcClient.pellet.addPellet.mutate(newPellet);
-        console.log('[TagDriver] Pellet saved to backend database');
       } catch (error) {
-        console.error('[TagDriver] Failed to save pellet to backend:', error);
+        console.error('[TagDriver] Failed to save pellet:', error);
       }
       
       // Add the pellet to the local store as well
@@ -184,7 +182,6 @@ export default function TagDriverScreen() {
           pelletCount: newPelletCount,
           positivePelletCount: newPositivePelletCount,
         });
-        console.log('[TagDriver] User pellet count synced to backend');
       } catch (error) {
         console.error('[TagDriver] Failed to sync pellet count:', error);
       }
@@ -205,13 +202,11 @@ export default function TagDriverScreen() {
       // Add experience to user
       const leveledUp = addExp(expGained);
       
-      // Sync experience with database
       try {
         await trpcClient.user.updateExperience.mutate({
           exp: user!.exp + expGained,
           level: user!.level,
         });
-        console.log('[TagDriver] User experience synced to backend');
       } catch (error) {
         console.error('[TagDriver] Failed to sync experience:', error);
       }
@@ -221,11 +216,9 @@ export default function TagDriverScreen() {
         const newBadges = checkAndAwardBadges(user.id);
         
         if (newBadges.length > 0) {
-          // Sync badges with database
           for (const badgeId of newBadges) {
             try {
               await trpcClient.user.addBadge.mutate({ badgeId });
-              console.log('[TagDriver] Badge synced to backend:', badgeId);
             } catch (error) {
               console.error('[TagDriver] Failed to sync badge:', error);
             }

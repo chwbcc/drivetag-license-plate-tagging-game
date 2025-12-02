@@ -24,8 +24,6 @@ export default function LoginScreen() {
     setError('');
     
     try {
-      console.log('[Login] Attempting login for:', email);
-      
       if (!email.includes('@')) {
         setError('Invalid email format');
         setIsLoading(false);
@@ -37,23 +35,13 @@ export default function LoginScreen() {
         password,
       });
       
-      console.log('[Login] Login result:', { success: result.success, message: result.message });
-      
       if (result.success && result.user) {
-        console.log('[Login] Login successful, user adminRole:', result.user.adminRole);
         login(result.user);
         router.replace('/(tabs)/home');
       } else {
-        console.log('[Login] Login failed:', result.message);
         setError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
-      console.error('[Login] Error during login:', error);
-      console.error('[Login] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        toString: String(error),
-      });
-      
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';
       setError(errorMessage);
     } finally {

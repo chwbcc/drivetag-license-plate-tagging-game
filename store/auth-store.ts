@@ -145,7 +145,6 @@ const useAuthStore = create<AuthStore>()(
             : currentUser.adminRole || null;
           
           if (currentUser.adminRole !== adminRole) {
-            console.log('[Auth] Syncing admin role for', currentUser.email, '-> role:', adminRole);
             const updatedUser = { ...currentUser, adminRole };
             
             const registeredUsers = get().registeredUsers;

@@ -13,28 +13,18 @@ let dbError: Error | null = null;
 initDatabase()
   .then(() => {
     dbInitialized = true;
-    console.log('[Backend] Database initialized successfully');
   })
   .catch((error) => {
     dbError = error;
     console.error('[Backend] Failed to initialize database:', error);
-    console.error('[Backend] Server will not be able to handle database requests');
   });
 
 app.use("*", cors());
 
-app.use('*', async (c, next) => {
-  console.log(`[Backend] ${c.req.method} ${c.req.url}`);
-  await next();
-  console.log(`[Backend] Response status: ${c.res.status}`);
-});
+
 
 app.use('/api/trpc/*', async (c, next) => {
   if (!dbInitialized) {
-    console.error('[Backend] Database not initialized, rejecting tRPC request');
-    if (dbError) {
-      console.error('[Backend] Database error:', dbError.message);
-    }
     return c.json(
       {
         error: {
@@ -57,15 +47,7 @@ app.use(
     router: appRouter,
     createContext,
     onError: ({ error, path }) => {
-      console.error(`[tRPC Error] Path: ${path}`);
-      console.error(`[tRPC Error] Code: ${error.code}`);
-      console.error(`[tRPC Error] Message: ${error.message}`);
-      console.error(`[tRPC Error] Cause:`, error.cause);
-      console.error(`[tRPC Error] Stack:`, error.stack);
-      
-      if (error.cause) {
-        console.error(`[tRPC Error] Cause details:`, JSON.stringify(error.cause, null, 2));
-      }
+      console.error(`[tRPC Error] ${path}:`, error.message);
     },
   })
 );
@@ -99,8 +81,7 @@ app.get("/health", (c) => {
 });
 
 app.notFound((c) => {
-  console.log('[Backend] 404 Not Found:', c.req.url);
-  return c.json({ error: 'Not Found', url: c.req.url }, 404);
+  return c.json({ error: 'Not Found' }, 404);
 });
 
 app.onError((err, c) => {

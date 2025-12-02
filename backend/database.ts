@@ -40,22 +40,16 @@ let initPromise: Promise<void> | null = null;
 
 export const initDatabase = async () => {
   if (db) {
-    console.log('[Database] Database already initialized, skipping');
     return;
   }
 
   if (initPromise) {
-    console.log('[Database] Database initialization in progress, waiting...');
     return initPromise;
   }
 
   initPromise = (async () => {
     const dbUrl = process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
     const authToken = process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN;
-
-    console.log('[Database] Initializing database...');
-    console.log('[Database] TURSO_DB_URL:', dbUrl ? 'SET' : 'NOT SET');
-    console.log('[Database] TURSO_AUTH_TOKEN:', authToken ? 'SET' : 'NOT SET');
 
     if (!dbUrl || !authToken) {
       const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DB_URL and TURSO_AUTH_TOKEN';
@@ -68,8 +62,6 @@ export const initDatabase = async () => {
         url: dbUrl,
         authToken: authToken,
       });
-      
-      console.log('[Database] Client created successfully');
 
     await db.execute(`
       CREATE TABLE IF NOT EXISTS users (
@@ -113,18 +105,15 @@ export const initDatabase = async () => {
       )
     `);
     
-    console.log('[Database] Running migrations...');
     try {
       const result = await db.execute('PRAGMA table_info(pellets)');
       const columns = result.rows.map(row => row.name as string);
       
       if (!columns.includes('targetUserId')) {
-        console.log('[Database] Adding targetUserId column to pellets table...');
         await db.execute('ALTER TABLE pellets ADD COLUMN targetUserId TEXT');
-        console.log('[Database] targetUserId column added successfully');
       }
-    } catch (migrationError) {
-      console.log('[Database] Migration check/execution completed or not needed:', migrationError);
+    } catch {
+      
     }
 
     await db.execute(`
@@ -138,8 +127,7 @@ export const initDatabase = async () => {
       )
     `);
 
-      console.log('[Database] Turso database initialized successfully');
-      console.log('[Database] Tables created/verified successfully');
+
     } catch (error) {
       console.error('[Database] Error initializing database:', error);
       db = null;
@@ -162,7 +150,6 @@ export const closeDatabase = async (): Promise<void> => {
   if (db) {
     db.close();
     db = null;
-    console.log('[Database] Database closed');
   }
 };
 
