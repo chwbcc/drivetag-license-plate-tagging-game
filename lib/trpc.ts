@@ -123,7 +123,54 @@ export const trpcClient = createVanillaTRPCClient<AppRouter>({
         return {};
       },
       fetch: async (url, options) => {
-        return await fetch(url, options);
+        let attempt = 0;
+        
+        while (attempt <= MAX_RETRIES) {
+          try {
+            if (attempt > 0) {
+              const delay = BASE_DELAY * Math.pow(2, attempt - 1);
+              console.log(`[tRPC Vanilla Client] Retry attempt ${attempt} after ${delay}ms`);
+              await wait(delay);
+            }
+            
+            const response = await fetch(url, options);
+            
+            if (!response.ok) {
+              console.log('[tRPC Vanilla Client] ========= ERROR RESPONSE =========');
+              console.log(`[tRPC Vanilla Client] URL: ${url}`);
+              console.log(`[tRPC Vanilla Client] Status: ${response.status}`);
+              console.log(`[tRPC Vanilla Client] Status Text: ${response.statusText}`);
+              
+              const responseText = await response.clone().text();
+              console.log(`[tRPC Vanilla Client] Response Body: ${responseText.substring(0, 500)}`);
+              console.log('[tRPC Vanilla Client] ===================================');
+              
+              if (response.status === 429) {
+                if (attempt < MAX_RETRIES) {
+                  console.log(`[tRPC Vanilla Client] Rate limited, waiting ${RATE_LIMIT_DELAY * (attempt + 1)}ms`);
+                  await wait(RATE_LIMIT_DELAY * (attempt + 1));
+                  attempt++;
+                  continue;
+                }
+              }
+              
+              if (response.headers.get('content-type')?.includes('text/html')) {
+                console.log('[tRPC Vanilla Client] Could not parse response as JSON');
+                throw new Error(`Server returned HTML instead of JSON (${response.status} ${response.statusText})`);
+              }
+            }
+            
+            return response;
+          } catch (error) {
+            console.error(`[tRPC Vanilla Client] Fetch error on attempt ${attempt}:`, error);
+            if (attempt >= MAX_RETRIES) {
+              throw error;
+            }
+            attempt++;
+          }
+        }
+        
+        throw new Error('Max retries exceeded');
       },
     }),
   ],
