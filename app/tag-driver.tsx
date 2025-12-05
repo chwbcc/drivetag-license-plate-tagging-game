@@ -146,29 +146,31 @@ export default function TagDriverScreen() {
     setIsLoading(true);
     setError('');
     
-    // Create a new pellet
-    const newPellet = {
-      id: Date.now().toString(),
-      targetLicensePlate: fullLicensePlate,
-      createdBy: user?.id || 'anonymous',
-      createdAt: Date.now(),
-      reason,
-      type: pelletType,
-      location: location ? {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      } : undefined,
-    };
-    
-    // Deduct a pellet from the user's count
-    const success = removePellets(1, pelletType);
-    
-    if (success) {
-      try {
-        await trpcClient.pellet.addPellet.mutate(newPellet);
-      } catch (error) {
-        console.error('[TagDriver] Failed to save pellet:', error);
+    try {
+      // Create a new pellet
+      const newPellet = {
+        id: Date.now().toString(),
+        targetLicensePlate: fullLicensePlate,
+        createdBy: user?.id || 'anonymous',
+        createdAt: Date.now(),
+        reason,
+        type: pelletType,
+        location: location ? {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        } : undefined,
+      };
+      
+      // Deduct a pellet from the user's count
+      const success = removePellets(1, pelletType);
+      
+      if (!success) {
+        throw new Error(`Failed to use pellet. You may not have enough ${isPositive ? 'positive' : 'negative'} pellets.`);
       }
+      
+      console.log('[TagDriver] Saving pellet to backend...');
+      await trpcClient.pellet.addPellet.mutate(newPellet);
+      console.log('[TagDriver] Pellet saved successfully');
       
       // Add the pellet to the local store as well
       addPellet(newPellet);
@@ -177,14 +179,12 @@ export default function TagDriverScreen() {
       const newPelletCount = user!.pelletCount - (pelletType === 'negative' ? 1 : 0);
       const newPositivePelletCount = user!.positivePelletCount - (pelletType === 'positive' ? 1 : 0);
       
-      try {
-        await trpcClient.user.updatePelletCount.mutate({
-          pelletCount: newPelletCount,
-          positivePelletCount: newPositivePelletCount,
-        });
-      } catch (error) {
-        console.error('[TagDriver] Failed to sync pellet count:', error);
-      }
+      console.log('[TagDriver] Updating pellet count...');
+      await trpcClient.user.updatePelletCount.mutate({
+        pelletCount: newPelletCount,
+        positivePelletCount: newPositivePelletCount,
+      });
+      console.log('[TagDriver] Pellet count updated successfully');
       
       // Calculate and award experience points
       let expGained = isPositive ? EXP_REWARDS.POSITIVE_TAG : EXP_REWARDS.TAG_DRIVER;
@@ -202,20 +202,19 @@ export default function TagDriverScreen() {
       // Add experience to user
       const leveledUp = addExp(expGained);
       
-      try {
-        await trpcClient.user.updateExperience.mutate({
-          exp: user!.exp + expGained,
-          level: user!.level,
-        });
-      } catch (error) {
-        console.error('[TagDriver] Failed to sync experience:', error);
-      }
+      console.log('[TagDriver] Updating experience...');
+      await trpcClient.user.updateExperience.mutate({
+        exp: user!.exp + expGained,
+        level: user!.level,
+      });
+      console.log('[TagDriver] Experience updated successfully');
       
       // Check for new badges
       if (user) {
         const newBadges = checkAndAwardBadges(user.id);
         
         if (newBadges.length > 0) {
+          console.log('[TagDriver] Awarding new badges...');
           for (const badgeId of newBadges) {
             try {
               await trpcClient.user.addBadge.mutate({ badgeId });
@@ -246,11 +245,14 @@ export default function TagDriverScreen() {
           },
         ]
       );
-    } else {
-      setError(`Failed to use pellet. You may not have enough ${isPositive ? 'positive' : 'negative'} pellets.`);
+    } catch (error: any) {
+      console.error('[TagDriver] Error submitting tag:', error);
+      const errorMessage = error?.message || 'Failed to submit tag. Please try again.';
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
