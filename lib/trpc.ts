@@ -66,6 +66,7 @@ export const createTRPCClient = () => {
               
               if (!response.ok) {
                 console.log(`[tRPC Client] Non-OK response: ${response.status} ${response.statusText}`);
+                const contentType = response.headers.get('content-type') || '';
                 
                 if (response.status === 429) {
                   if (attempt < MAX_RETRIES) {
@@ -74,6 +75,12 @@ export const createTRPCClient = () => {
                     attempt++;
                     continue;
                   }
+                }
+                
+                if (!contentType.includes('application/json')) {
+                  const responseText = await response.clone().text();
+                  console.log(`[tRPC Client] Server returned non-JSON: ${responseText.substring(0, 200)}`);
+                  throw new Error(`Server error: ${response.status} ${response.statusText}`);
                 }
               }
               
@@ -141,6 +148,9 @@ export const trpcClient = createVanillaTRPCClient<AppRouter>({
               console.log(`[tRPC Vanilla Client] Status: ${response.status}`);
               console.log(`[tRPC Vanilla Client] Status Text: ${response.statusText}`);
               
+              const contentType = response.headers.get('content-type') || '';
+              console.log(`[tRPC Vanilla Client] Content-Type: ${contentType}`);
+              
               const responseText = await response.clone().text();
               console.log(`[tRPC Vanilla Client] Response Body: ${responseText.substring(0, 500)}`);
               console.log('[tRPC Vanilla Client] ===================================');
@@ -154,9 +164,9 @@ export const trpcClient = createVanillaTRPCClient<AppRouter>({
                 }
               }
               
-              if (response.headers.get('content-type')?.includes('text/html')) {
-                console.log('[tRPC Vanilla Client] Could not parse response as JSON');
-                throw new Error(`Server returned HTML instead of JSON (${response.status} ${response.statusText})`);
+              if (!contentType.includes('application/json')) {
+                console.log('[tRPC Vanilla Client] Server did not return JSON');
+                throw new Error(`Server error: ${response.status} ${response.statusText}. ${responseText.substring(0, 200)}`);
               }
             }
             
