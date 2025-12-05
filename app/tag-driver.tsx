@@ -377,6 +377,20 @@ export default function TagDriverScreen() {
             <Text style={styles.expInfoText}>• Location Bonus: +{EXP_REWARDS.LOCATION_BONUS} EXP {location ? '✓' : '✗'}</Text>
           </View>
           
+          {(isPositive ? (user?.positivePelletCount || 0) : (user?.pelletCount || 0)) <= 0 && (
+            <View style={styles.noPelletsNotice}>
+              <Text style={styles.noPelletsText}>
+                You don&apos;t have any {isPositive ? 'positive' : 'negative'} pellets.
+              </Text>
+              <TouchableOpacity
+                style={styles.goToShopButton}
+                onPress={() => router.push('/(tabs)/shop')}
+              >
+                <Text style={styles.goToShopText}>Go to Shop</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
           <Button
             title={isPositive ? "Submit Praise" : "Submit Tag"}
             onPress={handleSubmit}
@@ -734,6 +748,32 @@ const styles = StyleSheet.create({
   },
   reasonOptionTextSelected: {
     color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  noPelletsNotice: {
+    backgroundColor: Colors.primary + '15',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.primary + '30',
+    alignItems: 'center',
+  },
+  noPelletsText: {
+    fontSize: 14,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  goToShopButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  goToShopText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });
