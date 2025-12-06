@@ -46,20 +46,20 @@ app.get("/", (c) => {
 });
 
 app.get("/health", (c) => {
-  const hasUrl = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL);
-  const hasToken = !!(process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN);
+  const hasUrl = !!(process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL);
+  const hasKey = !!(process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
   
   return c.json({
     backend: "running",
     database: {
       initialized: dbInitialized,
       hasUrl,
-      hasToken,
+      hasKey,
       error: dbError ? dbError.message : null,
     },
     env: {
       nodeEnv: process.env.NODE_ENV,
-      hasDotenv: typeof process.env.TURSO_DATABASE_URL !== 'undefined' || typeof process.env.TURSO_DB_URL !== 'undefined',
+      hasDotenv: typeof process.env.SUPABASE_URL !== 'undefined',
     }
   });
 });

@@ -1,12 +1,4 @@
-import { createClient, type Client } from '@libsql/client';
-import { config } from 'dotenv';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-config({ path: join(__dirname, '..', '.env') });
 
 interface Badge {
   id: string;
@@ -35,7 +27,7 @@ interface Activity {
   createdAt: number;
 }
 
-let db: Client | null = null;
+let db: any = null;
 let initPromise: Promise<void> | null = null;
 
 export const initDatabase = async () => {
@@ -48,86 +40,20 @@ export const initDatabase = async () => {
   }
 
   initPromise = (async () => {
-    const dbUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL || process.env.EXPO_PUBLIC_TURSO_DB_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN || process.env.EXPO_PUBLIC_TURSO_AUTH_TOKEN;
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!dbUrl || !authToken) {
-      const errorMsg = 'Database configuration missing. Please check your .env file has TURSO_DATABASE_URL (or TURSO_DB_URL) and TURSO_AUTH_TOKEN';
+    if (!supabaseUrl || !supabaseKey) {
+      const errorMsg = 'Database configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables';
       console.error('[Database]', errorMsg);
       throw new Error(errorMsg);
     }
 
     try {
-      db = createClient({
-        url: dbUrl,
-        authToken: authToken,
-      });
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        username TEXT UNIQUE NOT NULL,
-        passwordHash TEXT NOT NULL,
-        createdAt INTEGER NOT NULL,
-        stats TEXT NOT NULL,
-        role TEXT DEFAULT 'user',
-        licensePlate TEXT,
-        state TEXT,
-        resetToken TEXT,
-        resetTokenExpiry INTEGER
-      )
-    `);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS badges (
-        id TEXT PRIMARY KEY,
-        userId TEXT NOT NULL,
-        badgeId TEXT NOT NULL,
-        earnedAt INTEGER NOT NULL,
-        FOREIGN KEY (userId) REFERENCES users(id)
-      )
-    `);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS pellets (
-        id TEXT PRIMARY KEY,
-        targetLicensePlate TEXT NOT NULL,
-        targetUserId TEXT,
-        createdBy TEXT NOT NULL,
-        createdAt INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        type TEXT NOT NULL,
-        latitude REAL,
-        longitude REAL,
-        FOREIGN KEY (createdBy) REFERENCES users(id),
-        FOREIGN KEY (targetUserId) REFERENCES users(id)
-      )
-    `);
-    
-    try {
-      const result = await db.execute('PRAGMA table_info(pellets)');
-      const columns = result.rows.map(row => row.name as string);
+      console.log('[Database] Supabase connection ready to be implemented');
+      console.log('[Database] TODO: Install @supabase/supabase-js and initialize client');
+      console.log('[Database] TODO: Set up database tables in Supabase dashboard');
       
-      if (!columns.includes('targetUserId')) {
-        await db.execute('ALTER TABLE pellets ADD COLUMN targetUserId TEXT');
-      }
-    } catch {
-      
-    }
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS activities (
-        id TEXT PRIMARY KEY,
-        userId TEXT NOT NULL,
-        actionType TEXT NOT NULL,
-        actionData TEXT NOT NULL,
-        createdAt INTEGER NOT NULL,
-        FOREIGN KEY (userId) REFERENCES users(id)
-      )
-    `);
-
-
     } catch (error) {
       console.error('[Database] Error initializing database:', error);
       db = null;
@@ -148,7 +74,6 @@ export const getDatabase = () => {
 
 export const closeDatabase = async (): Promise<void> => {
   if (db) {
-    db.close();
     db = null;
   }
 };
