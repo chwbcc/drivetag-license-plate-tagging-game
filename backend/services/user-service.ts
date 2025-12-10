@@ -144,7 +144,7 @@ export const getAllUsers = async (): Promise<User[]> => {
   
   const result = await db.execute('SELECT * FROM users ORDER BY createdAt DESC');
   
-  const users: User[] = result.rows.map(row => {
+  const users: User[] = result.rows.map((row: any) => {
     const stats = JSON.parse(row.stats as string);
     
     return {
@@ -370,7 +370,7 @@ export const getUserBadges = async (userId: string): Promise<string[]> => {
     args: [userId]
   });
   
-  return result.rows.map(row => row.badgeId as string);
+  return result.rows.map((row: any) => row.badgeId as string);
 };
 
 export const getUserByLicensePlate = async (licensePlate: string): Promise<User | null> => {

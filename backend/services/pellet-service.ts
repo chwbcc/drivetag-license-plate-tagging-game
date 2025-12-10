@@ -86,7 +86,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
   
   const result = await db.execute('SELECT * FROM pellets ORDER BY createdAt DESC');
   
-  const pellets: Pellet[] = result.rows.map(row => ({
+  const pellets: Pellet[] = result.rows.map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
@@ -120,7 +120,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   
   const result = await db.execute({ sql, args });
   
-  const pellets: Pellet[] = result.rows.map(row => ({
+  const pellets: Pellet[] = result.rows.map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
@@ -152,7 +152,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
   
   const result = await db.execute({ sql, args });
   
-  const pellets: Pellet[] = result.rows.map(row => ({
+  const pellets: Pellet[] = result.rows.map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,

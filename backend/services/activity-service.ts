@@ -39,7 +39,7 @@ export const getUserActivity = async (userId: string, limit = 50): Promise<UserA
     args: [userId, limit]
   });
   
-  const activities: UserActivity[] = result.rows.map(row => ({
+  const activities: UserActivity[] = result.rows.map((row: any) => ({
     id: row.id as string,
     userId: row.userId as string,
     actionType: row.actionType as string,
@@ -58,7 +58,7 @@ export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> =
     args: [limit]
   });
   
-  const activities: UserActivity[] = result.rows.map(row => ({
+  const activities: UserActivity[] = result.rows.map((row: any) => ({
     id: row.id as string,
     userId: row.userId as string,
     actionType: row.actionType as string,
