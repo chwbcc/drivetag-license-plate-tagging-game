@@ -17,16 +17,17 @@ export const logUserActivity = async (
   
   const id = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
-  await db.execute({
-    sql: 'INSERT INTO activities (id, userId, actionType, actionData, createdAt) VALUES (?, ?, ?, ?, ?)',
-    args: [
+  const { error } = await db
+    .from('activities')
+    .insert({
       id,
       userId,
       actionType,
-      JSON.stringify(actionData || {}),
-      Date.now()
-    ]
-  });
+      actionData: JSON.stringify(actionData || {}),
+      createdAt: Date.now(),
+    });
+  
+  if (error) throw error;
   
   console.log('[ActivityService] Logged user activity:', actionType, userId);
 };
@@ -34,12 +35,16 @@ export const logUserActivity = async (
 export const getUserActivity = async (userId: string, limit = 50): Promise<UserActivity[]> => {
   const db = getDatabase();
   
-  const result = await db.execute({
-    sql: 'SELECT * FROM activities WHERE userId = ? ORDER BY createdAt DESC LIMIT ?',
-    args: [userId, limit]
-  });
+  const { data, error } = await db
+    .from('activities')
+    .select('*')
+    .eq('userId', userId)
+    .order('createdAt', { ascending: false })
+    .limit(limit);
   
-  const activities: UserActivity[] = result.rows.map((row: any) => ({
+  if (error) throw error;
+  
+  const activities: UserActivity[] = (data || []).map((row: any) => ({
     id: row.id as string,
     userId: row.userId as string,
     actionType: row.actionType as string,
@@ -53,12 +58,15 @@ export const getUserActivity = async (userId: string, limit = 50): Promise<UserA
 export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> => {
   const db = getDatabase();
   
-  const result = await db.execute({
-    sql: 'SELECT * FROM activities ORDER BY createdAt DESC LIMIT ?',
-    args: [limit]
-  });
+  const { data, error } = await db
+    .from('activities')
+    .select('*')
+    .order('createdAt', { ascending: false })
+    .limit(limit);
   
-  const activities: UserActivity[] = result.rows.map((row: any) => ({
+  if (error) throw error;
+  
+  const activities: UserActivity[] = (data || []).map((row: any) => ({
     id: row.id as string,
     userId: row.userId as string,
     actionType: row.actionType as string,

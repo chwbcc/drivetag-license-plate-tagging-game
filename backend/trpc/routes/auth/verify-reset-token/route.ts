@@ -16,12 +16,13 @@ export const verifyResetTokenRoute = publicProcedure
       await initDatabase();
       const db = getDatabase();
       
-      const result = await db.execute({
-        sql: 'SELECT resetToken, resetTokenExpiry FROM users WHERE LOWER(email) = ?',
-        args: [input.email.toLowerCase()]
-      });
+      const { data, error } = await db
+        .from('users')
+        .select('resetToken, resetTokenExpiry')
+        .ilike('email', input.email.toLowerCase())
+        .single();
       
-      if (result.rows.length === 0) {
+      if (error || !data) {
         console.log('[Auth] User not found:', input.email);
         return {
           success: false,
@@ -29,9 +30,8 @@ export const verifyResetTokenRoute = publicProcedure
         };
       }
       
-      const row = result.rows[0];
-      const storedToken = row.resetToken as string | null;
-      const tokenExpiry = row.resetTokenExpiry as number | null;
+      const storedToken = data.resetToken as string | null;
+      const tokenExpiry = data.resetTokenExpiry as number | null;
       
       if (!storedToken || !tokenExpiry) {
         console.log('[Auth] No reset token found for user');

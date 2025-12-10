@@ -18,12 +18,13 @@ export const resetPasswordRoute = publicProcedure
       await initDatabase();
       const db = getDatabase();
       
-      const result = await db.execute({
-        sql: 'SELECT id, resetToken, resetTokenExpiry FROM users WHERE LOWER(email) = ?',
-        args: [input.email.toLowerCase()]
-      });
+      const { data, error } = await db
+        .from('users')
+        .select('id, resetToken, resetTokenExpiry')
+        .ilike('email', input.email.toLowerCase())
+        .single();
       
-      if (result.rows.length === 0) {
+      if (error || !data) {
         console.log('[Auth] User not found:', input.email);
         return {
           success: false,
@@ -31,10 +32,9 @@ export const resetPasswordRoute = publicProcedure
         };
       }
       
-      const row = result.rows[0];
-      const userId = row.id as string;
-      const storedToken = row.resetToken as string | null;
-      const tokenExpiry = row.resetTokenExpiry as number | null;
+      const userId = data.id as string;
+      const storedToken = data.resetToken as string | null;
+      const tokenExpiry = data.resetTokenExpiry as number | null;
       
       if (!storedToken || !tokenExpiry) {
         console.log('[Auth] No reset token found for user');
@@ -60,10 +60,16 @@ export const resetPasswordRoute = publicProcedure
         };
       }
       
-      await db.execute({
-        sql: 'UPDATE users SET passwordHash = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?',
-        args: [input.newPassword, userId]
-      });
+      const { error: updateError } = await db
+        .from('users')
+        .update({
+          passwordHash: input.newPassword,
+          resetToken: null,
+          resetTokenExpiry: null,
+        })
+        .eq('id', userId);
+      
+      if (updateError) throw updateError;
       
       console.log('[Auth] Password reset successfully for:', input.email);
       

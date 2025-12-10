@@ -1,4 +1,4 @@
-
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 interface Badge {
   id: string;
@@ -27,7 +27,7 @@ interface Activity {
   createdAt: number;
 }
 
-let db: any = null;
+let db: SupabaseClient | null = null;
 let initPromise: Promise<void> | null = null;
 
 export const initDatabase = async () => {
@@ -50,9 +50,22 @@ export const initDatabase = async () => {
     }
 
     try {
-      console.log('[Database] Supabase connection ready to be implemented');
-      console.log('[Database] TODO: Install @supabase/supabase-js and initialize client');
-      console.log('[Database] TODO: Set up database tables in Supabase dashboard');
+      console.log('[Database] Initializing Supabase client...');
+      console.log('[Database] URL:', supabaseUrl);
+      
+      db = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
+      
+      console.log('[Database] Supabase client initialized successfully');
+      console.log('[Database] Make sure to create the following tables in your Supabase dashboard:');
+      console.log('[Database] - users (id, email, username, passwordHash, createdAt, stats, role, licensePlate, state)');
+      console.log('[Database] - pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude)');
+      console.log('[Database] - badges (id, userId, badgeId, earnedAt)');
+      console.log('[Database] - activities (id, userId, actionType, actionData, createdAt)');
       
     } catch (error) {
       console.error('[Database] Error initializing database:', error);

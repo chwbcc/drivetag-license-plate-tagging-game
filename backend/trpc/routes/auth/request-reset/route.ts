@@ -29,10 +29,15 @@ export const requestResetRoute = publicProcedure
       const resetTokenExpiry = Date.now() + 15 * 60 * 1000;
       
       const db = getDatabase();
-      await db.execute({
-        sql: 'UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE id = ?',
-        args: [resetToken, resetTokenExpiry, user.id]
-      });
+      const { error } = await db
+        .from('users')
+        .update({
+          resetToken,
+          resetTokenExpiry,
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
       
       console.log('[Auth] Reset token generated:', resetToken);
       console.log('[Auth] Token will expire at:', new Date(resetTokenExpiry).toISOString());

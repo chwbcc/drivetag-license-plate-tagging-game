@@ -26,20 +26,21 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
       console.log('[PelletService] Could not find user by license plate:', error);
     }
     
-    await db.execute({
-      sql: 'INSERT INTO pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      args: [
-        pellet.id,
-        pellet.targetLicensePlate,
+    const { error } = await db
+      .from('pellets')
+      .insert({
+        id: pellet.id,
+        targetLicensePlate: pellet.targetLicensePlate,
         targetUserId,
-        pellet.createdBy,
-        pellet.createdAt,
-        pellet.reason,
-        pellet.type,
-        pellet.location?.latitude || null,
-        pellet.location?.longitude || null
-      ]
-    });
+        createdBy: pellet.createdBy,
+        createdAt: pellet.createdAt,
+        reason: pellet.reason,
+        type: pellet.type,
+        latitude: pellet.location?.latitude || null,
+        longitude: pellet.location?.longitude || null,
+      });
+    
+    if (error) throw error;
     
     console.log('[PelletService] Created pellet successfully:', pellet.id);
   } catch (error: any) {
@@ -55,28 +56,27 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
 export const getPelletById = async (pelletId: string): Promise<Pellet | null> => {
   const db = getDatabase();
   
-  const result = await db.execute({
-    sql: 'SELECT * FROM pellets WHERE id = ?',
-    args: [pelletId]
-  });
+  const { data, error } = await db
+    .from('pellets')
+    .select('*')
+    .eq('id', pelletId)
+    .single();
   
-  if (result.rows.length === 0) {
+  if (error || !data) {
     return null;
   }
   
-  const row = result.rows[0];
-  
   return {
-    id: row.id as string,
-    targetLicensePlate: row.targetLicensePlate as string,
-    targetUserId: row.targetUserId as string | undefined,
-    createdBy: row.createdBy as string,
-    createdAt: row.createdAt as number,
-    reason: row.reason as string,
-    type: row.type as 'negative' | 'positive',
-    location: row.latitude && row.longitude ? {
-      latitude: row.latitude as number,
-      longitude: row.longitude as number,
+    id: data.id as string,
+    targetLicensePlate: data.targetLicensePlate as string,
+    targetUserId: data.targetUserId as string | undefined,
+    createdBy: data.createdBy as string,
+    createdAt: data.createdAt as number,
+    reason: data.reason as string,
+    type: data.type as 'negative' | 'positive',
+    location: data.latitude && data.longitude ? {
+      latitude: data.latitude as number,
+      longitude: data.longitude as number,
     } : undefined,
   };
 };
@@ -84,9 +84,14 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
 export const getAllPellets = async (): Promise<Pellet[]> => {
   const db = getDatabase();
   
-  const result = await db.execute('SELECT * FROM pellets ORDER BY createdAt DESC');
+  const { data, error } = await db
+    .from('pellets')
+    .select('*')
+    .order('createdAt', { ascending: false });
   
-  const pellets: Pellet[] = result.rows.map((row: any) => ({
+  if (error) throw error;
+  
+  const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
@@ -108,19 +113,20 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   
   const normalizedPlate = licensePlate.toLowerCase();
   
-  let sql = 'SELECT * FROM pellets WHERE LOWER(targetLicensePlate) = ?';
-  const args: any[] = [normalizedPlate];
+  let query = db
+    .from('pellets')
+    .select('*')
+    .ilike('targetLicensePlate', normalizedPlate);
   
   if (type) {
-    sql += ' AND type = ?';
-    args.push(type);
+    query = query.eq('type', type);
   }
   
-  sql += ' ORDER BY createdAt DESC';
+  const { data, error } = await query.order('createdAt', { ascending: false });
   
-  const result = await db.execute({ sql, args });
+  if (error) throw error;
   
-  const pellets: Pellet[] = result.rows.map((row: any) => ({
+  const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
@@ -140,19 +146,20 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
 export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' | 'positive'): Promise<Pellet[]> => {
   const db = getDatabase();
   
-  let sql = 'SELECT * FROM pellets WHERE createdBy = ?';
-  const args: any[] = [userId];
+  let query = db
+    .from('pellets')
+    .select('*')
+    .eq('createdBy', userId);
   
   if (type) {
-    sql += ' AND type = ?';
-    args.push(type);
+    query = query.eq('type', type);
   }
   
-  sql += ' ORDER BY createdAt DESC';
+  const { data, error } = await query.order('createdAt', { ascending: false });
   
-  const result = await db.execute({ sql, args });
+  if (error) throw error;
   
-  const pellets: Pellet[] = result.rows.map((row: any) => ({
+  const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
@@ -172,10 +179,12 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
 export const deletePellet = async (pelletId: string): Promise<void> => {
   const db = getDatabase();
   
-  await db.execute({
-    sql: 'DELETE FROM pellets WHERE id = ?',
-    args: [pelletId]
-  });
+  const { error } = await db
+    .from('pellets')
+    .delete()
+    .eq('id', pelletId);
+  
+  if (error) throw error;
   
   console.log('[PelletService] Deleted pellet:', pelletId);
 };

@@ -37,20 +37,21 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
   });
   
   try {
-    await db.execute({
-      sql: 'INSERT INTO users (id, email, username, passwordHash, createdAt, stats, role, licensePlate, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      args: [
-        newUser.id,
-        newUser.email,
-        newUser.name || 'Anonymous',
-        newUser.password,
-        Date.now(),
+    const { error } = await db
+      .from('users')
+      .insert({
+        id: newUser.id,
+        email: newUser.email,
+        username: newUser.name || 'Anonymous',
+        passwordHash: newUser.password,
+        createdAt: Date.now(),
         stats,
-        adminRole || 'user',
-        newUser.licensePlate || null,
-        newUser.state || null
-      ] as any[]
-    });
+        role: adminRole || 'user',
+        licensePlate: newUser.licensePlate || null,
+        state: newUser.state || null,
+      });
+    
+    if (error) throw error;
     
     console.log('[UserService] Created user:', newUser.email);
     return newUser;
@@ -69,34 +70,34 @@ export const getUserById = async (userId: string): Promise<User> => {
   
   console.log('[UserService] Fetching user by ID:', userId);
   
-  const result = await db.execute({
-    sql: 'SELECT * FROM users WHERE id = ?',
-    args: [userId]
-  });
+  const { data, error } = await db
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
   
-  if (result.rows.length === 0) {
-    console.error('[UserService] User not found with ID:', userId);
+  if (error || !data) {
+    console.error('[UserService] User not found with ID:', userId, error);
     throw new Error(`User not found: ${userId}`);
   }
   
-  const row = result.rows[0];
-  const stats = JSON.parse(row.stats as string);
+  const stats = JSON.parse(data.stats as string);
   
   const user: User = {
-    id: row.id as string,
-    email: row.email as string,
-    password: row.passwordHash as string,
+    id: data.id as string,
+    email: data.email as string,
+    password: data.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
-    state: (row.state as string) || stats.state || '',
+    licensePlate: (data.licensePlate as string) || stats.licensePlate || '',
+    state: (data.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
     exp: stats.exp || 0,
     level: stats.level || 1,
-    adminRole: (row.role as AdminRole) || null,
-    createdAt: new Date(row.createdAt as number).toISOString(),
+    adminRole: (data.role as AdminRole) || null,
+    createdAt: new Date(data.createdAt as number).toISOString(),
   };
   
   return user;
@@ -107,33 +108,33 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   
   const normalizedEmail = email.toLowerCase();
   
-  const result = await db.execute({
-    sql: 'SELECT * FROM users WHERE LOWER(email) = ?',
-    args: [normalizedEmail]
-  });
+  const { data, error } = await db
+    .from('users')
+    .select('*')
+    .ilike('email', normalizedEmail)
+    .single();
   
-  if (result.rows.length === 0) {
+  if (error || !data) {
     return null;
   }
   
-  const row = result.rows[0];
-  const stats = JSON.parse(row.stats as string);
+  const stats = JSON.parse(data.stats as string);
   
   const user: User = {
-    id: row.id as string,
-    email: row.email as string,
-    password: row.passwordHash as string,
+    id: data.id as string,
+    email: data.email as string,
+    password: data.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
-    state: (row.state as string) || stats.state || '',
+    licensePlate: (data.licensePlate as string) || stats.licensePlate || '',
+    state: (data.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
     exp: stats.exp || 0,
     level: stats.level || 1,
-    adminRole: (row.role as AdminRole) || null,
-    createdAt: new Date(row.createdAt as number).toISOString(),
+    adminRole: (data.role as AdminRole) || null,
+    createdAt: new Date(data.createdAt as number).toISOString(),
   };
   
   return user;
@@ -142,9 +143,14 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
 export const getAllUsers = async (): Promise<User[]> => {
   const db = getDatabase();
   
-  const result = await db.execute('SELECT * FROM users ORDER BY createdAt DESC');
+  const { data, error } = await db
+    .from('users')
+    .select('*')
+    .order('createdAt', { ascending: false });
   
-  const users: User[] = result.rows.map((row: any) => {
+  if (error) throw error;
+  
+  const users: User[] = (data || []).map((row: any) => {
     const stats = JSON.parse(row.stats as string);
     
     return {
@@ -192,18 +198,19 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
     state: updatedUser.state,
   });
   
-  await db.execute({
-    sql: 'UPDATE users SET username = ?, passwordHash = ?, stats = ?, role = ?, licensePlate = ?, state = ? WHERE id = ?',
-    args: [
-      updatedUser.name,
-      updatedUser.password,
+  const { error } = await db
+    .from('users')
+    .update({
+      username: updatedUser.name,
+      passwordHash: updatedUser.password,
       stats,
-      updatedUser.adminRole || 'user',
-      updatedUser.licensePlate || null,
-      updatedUser.state || null,
-      userId
-    ] as any[]
-  });
+      role: updatedUser.adminRole || 'user',
+      licensePlate: updatedUser.licensePlate || null,
+      state: updatedUser.state || null,
+    })
+    .eq('id', userId);
+  
+  if (error) throw error;
   
   console.log('[UserService] Updated user:', userId);
   return updatedUser;
@@ -225,10 +232,16 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
   if (!user.badges.includes(badgeId)) {
     user.badges.push(badgeId);
     
-    await db.execute({
-      sql: 'INSERT INTO badges (id, userId, badgeId, earnedAt) VALUES (?, ?, ?, ?)',
-      args: [`${userId}-${badgeId}`, userId, badgeId, Date.now()]
-    });
+    const { error: badgeError } = await db
+      .from('badges')
+      .insert({
+        id: `${userId}-${badgeId}`,
+        userId,
+        badgeId,
+        earnedAt: Date.now(),
+      });
+    
+    if (badgeError) throw badgeError;
     
     const stats = JSON.stringify({
       pelletCount: user.pelletCount,
@@ -242,10 +255,12 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
       state: user.state,
     });
     
-    await db.execute({
-      sql: 'UPDATE users SET stats = ? WHERE id = ?',
-      args: [stats, userId]
-    });
+    const { error: updateError } = await db
+      .from('users')
+      .update({ stats })
+      .eq('id', userId);
+    
+    if (updateError) throw updateError;
   }
   
   console.log('[UserService] Added badge to user:', userId, badgeId);
@@ -254,10 +269,12 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
 export const updateUserAdminRole = async (userId: string, adminRole: AdminRole): Promise<void> => {
   const db = getDatabase();
   
-  await db.execute({
-    sql: 'UPDATE users SET role = ? WHERE id = ?',
-    args: [adminRole, userId] as any[]
-  });
+  const { error } = await db
+    .from('users')
+    .update({ role: adminRole })
+    .eq('id', userId);
+  
+  if (error) throw error;
   
   console.log('[UserService] Updated user admin role:', userId, adminRole);
 };
@@ -295,10 +312,12 @@ export const updateUserPelletCount = async (
     });
     
     console.log('[UserService] Updating user pellet counts in database...');
-    await db.execute({
-      sql: 'UPDATE users SET stats = ? WHERE id = ?',
-      args: [stats, userId]
-    });
+    const { error } = await db
+      .from('users')
+      .update({ stats })
+      .eq('id', userId);
+    
+    if (error) throw error;
     
     console.log('[UserService] Updated user pellet counts successfully:', userId);
     return updatedUser;
@@ -345,10 +364,12 @@ export const updateUserExperience = async (
     });
     
     console.log('[UserService] Updating user experience in database...');
-    await db.execute({
-      sql: 'UPDATE users SET stats = ? WHERE id = ?',
-      args: [stats, userId]
-    });
+    const { error } = await db
+      .from('users')
+      .update({ stats })
+      .eq('id', userId);
+    
+    if (error) throw error;
     
     console.log('[UserService] Updated user experience successfully:', userId, exp, level);
     return updatedUser;
@@ -365,12 +386,15 @@ export const updateUserExperience = async (
 export const getUserBadges = async (userId: string): Promise<string[]> => {
   const db = getDatabase();
   
-  const result = await db.execute({
-    sql: 'SELECT badgeId FROM badges WHERE userId = ? ORDER BY earnedAt DESC',
-    args: [userId]
-  });
+  const { data, error } = await db
+    .from('badges')
+    .select('badgeId')
+    .eq('userId', userId)
+    .order('earnedAt', { ascending: false });
   
-  return result.rows.map((row: any) => row.badgeId as string);
+  if (error) throw error;
+  
+  return (data || []).map((row: any) => row.badgeId as string);
 };
 
 export const getUserByLicensePlate = async (licensePlate: string): Promise<User | null> => {
@@ -378,33 +402,33 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
   
   const normalizedPlate = licensePlate.toLowerCase();
   
-  const result = await db.execute({
-    sql: 'SELECT * FROM users WHERE LOWER(licensePlate) = ?',
-    args: [normalizedPlate]
-  });
+  const { data, error } = await db
+    .from('users')
+    .select('*')
+    .ilike('licensePlate', normalizedPlate)
+    .single();
   
-  if (result.rows.length === 0) {
+  if (error || !data) {
     return null;
   }
   
-  const row = result.rows[0];
-  const stats = JSON.parse(row.stats as string);
+  const stats = JSON.parse(data.stats as string);
   
   const user: User = {
-    id: row.id as string,
-    email: row.email as string,
-    password: row.passwordHash as string,
+    id: data.id as string,
+    email: data.email as string,
+    password: data.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
-    state: (row.state as string) || stats.state || '',
+    licensePlate: (data.licensePlate as string) || stats.licensePlate || '',
+    state: (data.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
     exp: stats.exp || 0,
     level: stats.level || 1,
-    adminRole: (row.role as AdminRole) || null,
-    createdAt: new Date(row.createdAt as number).toISOString(),
+    adminRole: (data.role as AdminRole) || null,
+    createdAt: new Date(data.createdAt as number).toISOString(),
   };
   
   return user;
