@@ -18,6 +18,7 @@ import updatePelletCountRoute from "./routes/user/update-pellet-count/route";
 import updateExperienceRoute from "./routes/user/update-experience/route";
 import addBadgeRoute from "./routes/user/add-badge/route";
 import getLeaderboardRoute from "./routes/user/get-leaderboard/route";
+import testConnectionProcedure, { testInsertUserProcedure, testInsertPelletProcedure, testGetAllDataProcedure } from "./routes/test-db/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -50,6 +51,12 @@ export const appRouter = createTRPCRouter({
     updateExperience: updateExperienceRoute,
     addBadge: addBadgeRoute,
     getLeaderboard: getLeaderboardRoute,
+  }),
+  testDb: createTRPCRouter({
+    testConnection: testConnectionProcedure,
+    testInsertUser: testInsertUserProcedure,
+    testInsertPellet: testInsertPelletProcedure,
+    testGetAllData: testGetAllDataProcedure,
   }),
 });
 
