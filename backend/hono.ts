@@ -47,7 +47,7 @@ app.get("/", (c) => {
 
 app.get("/health", (c) => {
   const hasUrl = !!(process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL);
-  const hasKey = !!(process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+  const hasKey = !!(process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_KEY);
   
   return c.json({
     backend: "running",
