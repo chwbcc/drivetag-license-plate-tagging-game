@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { router } from 'expo-router';
-import { UserPlus } from 'lucide-react-native';
+import { router, Link } from 'expo-router';
+
 import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { trpcClient } from '@/lib/trpc';
 
-// List of US states for dropdown
-const US_STATES = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-];
+
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -60,6 +53,7 @@ export default function RegisterScreen() {
     
     try {
       console.log('[Register] Attempting registration for:', email);
+      console.log('[Register] Backend URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
       
       if (!email.includes('@')) {
         setError('Invalid email format');
@@ -115,7 +109,12 @@ export default function RegisterScreen() {
         data: error?.data,
       });
       
-      const errorMessage = error?.message || 'An error occurred. Please try again.';
+      let errorMessage = error?.message || 'An error occurred. Please try again.';
+      
+      if (errorMessage.includes('Failed to fetch')) {
+        errorMessage = 'Cannot connect to server. Please ensure the backend is running.';
+      }
+      
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -214,6 +213,19 @@ export default function RegisterScreen() {
               New users get 10 negative pellets and 5 positive pellets to start tagging!
             </Text>
           </View>
+          
+          {error.includes('Cannot connect to server') && (
+            <View style={styles.debugInfo}>
+              <Text style={styles.debugText}>Need help debugging?</Text>
+              <Link href="/backend-status" asChild>
+                <Button
+                  title="Check Backend Status"
+                  variant="outline"
+                  style={styles.debugButton}
+                />
+              </Link>
+            </View>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -293,5 +305,17 @@ const styles = StyleSheet.create({
     color: Colors.success,
     textAlign: 'center',
     fontWeight: '500',
+  },
+  debugInfo: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  debugText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 8,
+  },
+  debugButton: {
+    width: '100%',
   },
 });

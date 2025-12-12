@@ -21,15 +21,6 @@ import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 
-// List of US states for dropdown
-const US_STATES = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-];
-
 export default function EditProfileScreen() {
   const { user, updateUser, changeLicensePlate, changePassword } = useAuthStore();
   const { isDark, toggleTheme } = useTheme();
@@ -217,7 +208,7 @@ export default function EditProfileScreen() {
               variant="outline"
               onPress={pickImage}
               style={styles.photoButton}
-              icon={<Camera size={16} color={Colors.primary} />}
+              icon={Camera}
             />
           </View>
           

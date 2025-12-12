@@ -17,7 +17,7 @@ interface ButtonProps extends TouchableOpacityProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
-  icon?: React.ReactNode;
+  icon?: React.ComponentType<any>;
 }
 
 export default function Button({ 
@@ -60,7 +60,11 @@ export default function Button({
         />
       ) : (
         <View style={styles.contentContainer}>
-          {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
+          {icon ? (
+            <View style={styles.iconContainer}>
+              {React.createElement(icon, { size: 20, color: variant === 'outline' ? Colors.primary : '#fff' })}
+            </View>
+          ) : null}
           <Text style={textStyles}>{title}</Text>
         </View>
       )}
