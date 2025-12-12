@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { trpc } from '@/lib/trpc';
@@ -13,6 +13,8 @@ export default function TestDatabaseScreen() {
   const [testPlate, setTestPlate] = useState<string>('');
   const [testReason, setTestReason] = useState<string>('');
   const [results, setResults] = useState<string>('');
+  const [backendUrl, setBackendUrl] = useState<string>('');
+  const [healthStatus, setHealthStatus] = useState<any>(null);
 
   const connectionQuery = trpc.testDb.testConnection.useQuery();
   const insertUserMutation = trpc.testDb.testInsertUser.useMutation();
@@ -56,6 +58,28 @@ export default function TestDatabaseScreen() {
     setResults(JSON.stringify(getAllDataQuery.data, null, 2));
   };
 
+  useEffect(() => {
+    const checkBackend = async () => {
+      try {
+        const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+        setBackendUrl(baseUrl || 'NOT SET');
+        
+        if (baseUrl) {
+          console.log('[TestDB] Checking backend health at:', baseUrl);
+          const response = await fetch(`${baseUrl}/health`);
+          const data = await response.json();
+          setHealthStatus(data);
+          console.log('[TestDB] Health check result:', data);
+        }
+      } catch (error: any) {
+        console.error('[TestDB] Health check failed:', error);
+        setHealthStatus({ error: error.message });
+      }
+    };
+    
+    checkBackend();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -68,6 +92,17 @@ export default function TestDatabaseScreen() {
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Supabase Database Test</Text>
+        
+        <View style={styles.debugSection}>
+          <Text style={styles.debugTitle}>Debug Info:</Text>
+          <Text style={styles.debugText}>Backend URL: {backendUrl}</Text>
+          <Text style={styles.debugText}>tRPC URL: {backendUrl}/api/trpc</Text>
+          {healthStatus && (
+            <View style={styles.healthInfo}>
+              <Text style={styles.debugText}>Health: {JSON.stringify(healthStatus, null, 2)}</Text>
+            </View>
+          )}
+        </View>
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. Test Connection</Text>
@@ -211,5 +246,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'monospace',
     color: Colors.text,
+  },
+  debugSection: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  debugTitle: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    color: Colors.text,
+    marginBottom: 10,
+  },
+  debugText: {
+    fontSize: 12,
+    color: Colors.text,
+    marginBottom: 5,
+    fontFamily: 'monospace',
+  },
+  healthInfo: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
   },
 });
