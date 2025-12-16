@@ -25,7 +25,7 @@ const getBaseUrl = () => {
 export const trpcClient = trpc.createClient({
     links: [
       httpLink({
-        url: `${getBaseUrl()}/trpc`,
+        url: `${getBaseUrl()}/api/trpc`,
         transformer: superjson,
         async headers() {
           try {
@@ -102,7 +102,7 @@ export const trpcClient = trpc.createClient({
 export const vanillaClient = createVanillaTRPCClient<AppRouter>({
   links: [
     httpLink({
-      url: `${getBaseUrl()}/trpc`,
+      url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
       async headers() {
         try {
