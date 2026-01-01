@@ -13,13 +13,18 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
-  if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  const url = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  
+  if (!url) {
+    console.error('[tRPC] EXPO_PUBLIC_RORK_API_BASE_URL is not set!');
+    console.error('[tRPC] Please ensure the backend is running and the environment variable is configured.');
+    throw new Error(
+      "EXPO_PUBLIC_RORK_API_BASE_URL is not set. The backend server must be running."
+    );
   }
-
-  throw new Error(
-    "No base url found, please set EXPO_PUBLIC_RORK_API_BASE_URL"
-  );
+  
+  console.log('[tRPC] Using backend URL:', url);
+  return url;
 };
 
 export const trpcClient = trpc.createClient({
@@ -55,6 +60,10 @@ export const trpcClient = trpc.createClient({
           
           while (attempt <= MAX_RETRIES) {
             try {
+              if (attempt === 0) {
+                console.log(`[tRPC Client] Fetching: ${url}`);
+              }
+              
               if (attempt > 0) {
                 const delay = BASE_DELAY * Math.pow(2, attempt - 1);
                 console.log(`[tRPC Client] Retry attempt ${attempt} after ${delay}ms`);
@@ -86,6 +95,12 @@ export const trpcClient = trpc.createClient({
               return response;
             } catch (error) {
               console.error(`[tRPC Client] Fetch error on attempt ${attempt}:`, error);
+              console.error(`[tRPC Client] URL that failed: ${url}`);
+              console.error(`[tRPC Client] This usually means:`);
+              console.error(`[tRPC Client] 1. Backend server is not running`);
+              console.error(`[tRPC Client] 2. Backend URL is incorrect`);
+              console.error(`[tRPC Client] 3. Network connectivity issue`);
+              
               if (attempt >= MAX_RETRIES) {
                 throw error;
               }

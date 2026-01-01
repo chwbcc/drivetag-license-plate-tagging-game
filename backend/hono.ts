@@ -19,7 +19,17 @@ initDatabase()
     console.error('[Backend] Failed to initialize database:', error);
   });
 
-app.use("*", cors());
+app.use("*", cors({
+  origin: '*',
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-user-data'],
+}));
+
+app.use('*', async (c, next) => {
+  console.log(`[Backend] ${c.req.method} ${c.req.url}`);
+  await next();
+});
 
 
 
@@ -37,11 +47,21 @@ app.use(
 );
 
 app.get("/", (c) => {
+  console.log('[Backend] Root endpoint hit');
   return c.json({ 
     status: dbInitialized ? "ok" : "error", 
     message: dbInitialized ? "API is running" : "Database initialization failed",
     dbInitialized,
-    error: dbError ? dbError.message : null
+    error: dbError ? dbError.message : null,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/test", (c) => {
+  console.log('[Backend] Test endpoint hit');
+  return c.json({ 
+    message: "Backend is reachable",
+    timestamp: new Date().toISOString(),
   });
 });
 
