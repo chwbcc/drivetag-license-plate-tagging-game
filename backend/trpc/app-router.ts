@@ -6,6 +6,8 @@ import getAllUsersRoute from "./routes/admin/get-all-users/route";
 import getAllPelletsRoute from "./routes/admin/get-all-pellets/route";
 import updateUserRoleRoute from "./routes/admin/update-user-role/route";
 import getUserActivityRoute from "./routes/admin/get-user-activity/route";
+import createUserRoute from "./routes/admin/create-user/route";
+import updateUserRoute from "./routes/admin/update-user/route";
 import registerRoute from "./routes/auth/register/route";
 import loginRoute from "./routes/auth/login/route";
 import syncUserRoute from "./routes/auth/sync-user/route";
@@ -33,6 +35,8 @@ export const appRouter = createTRPCRouter({
     getAllPellets: getAllPelletsRoute,
     updateUserRole: updateUserRoleRoute,
     getUserActivity: getUserActivityRoute,
+    createUser: createUserRoute,
+    updateUser: updateUserRoute,
   }),
   auth: createTRPCRouter({
     register: registerRoute,

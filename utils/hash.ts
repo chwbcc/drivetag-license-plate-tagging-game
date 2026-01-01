@@ -1,10 +1,19 @@
 import { Pellet } from '@/types';
+import * as Crypto from 'expo-crypto';
 
 /**
  * Creates a deterministic but irreversible hash from a license plate
  * @param licensePlate The license plate to hash
  * @returns A consistent anonymous identifier
  */
+export async function hashPassword(password: string): Promise<string> {
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    password
+  );
+  return hash;
+}
+
 export function hashLicensePlate(licensePlate: string): string {
   if (!licensePlate) return 'Unknown';
   

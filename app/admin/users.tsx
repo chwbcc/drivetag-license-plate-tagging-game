@@ -1,17 +1,46 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Users, Shield, Mail, Calendar, ChevronRight } from 'lucide-react-native';
+import { Users, Shield, Mail, Calendar, ChevronRight, Plus, Edit, Car, Hash } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 import { trpc } from '@/lib/trpc';
+import { User } from '@/types';
+
+type UserFormData = {
+  email: string;
+  password: string;
+  name: string;
+  licensePlate: string;
+  state: string;
+  pelletCount: string;
+  positivePelletCount: string;
+  exp: string;
+  level: string;
+  adminRole: 'user' | 'moderator' | 'admin' | 'super_admin';
+};
 
 export default function UserManagementScreen() {
   const { user } = useAuthStore();
   const { isDark } = useTheme();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState<UserFormData>({
+    email: '',
+    password: '',
+    name: '',
+    licensePlate: '',
+    state: '',
+    pelletCount: '10',
+    positivePelletCount: '5',
+    exp: '0',
+    level: '1',
+    adminRole: 'user',
+  });
   
   const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
     enabled: !!user?.adminRole,
@@ -25,6 +54,31 @@ export default function UserManagementScreen() {
     },
     onError: (error) => {
       Alert.alert('Error', error.message || 'Failed to update user role');
+    },
+  });
+
+  const createUserMutation = trpc.admin.createUser.useMutation({
+    onSuccess: () => {
+      usersQuery.refetch();
+      setShowCreateModal(false);
+      resetForm();
+      Alert.alert('Success', 'User created successfully');
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message || 'Failed to create user');
+    },
+  });
+
+  const updateUserMutation = trpc.admin.updateUser.useMutation({
+    onSuccess: () => {
+      usersQuery.refetch();
+      setShowEditModal(false);
+      setEditingUser(null);
+      resetForm();
+      Alert.alert('Success', 'User updated successfully');
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message || 'Failed to update user');
     },
   });
   
@@ -41,6 +95,80 @@ export default function UserManagementScreen() {
   
   const isSuperAdmin = user.adminRole === 'super_admin';
   const isAdmin = user.adminRole === 'admin' || isSuperAdmin;
+
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      password: '',
+      name: '',
+      licensePlate: '',
+      state: '',
+      pelletCount: '10',
+      positivePelletCount: '5',
+      exp: '0',
+      level: '1',
+      adminRole: 'user',
+    });
+  };
+
+  const openEditModal = (u: User) => {
+    setEditingUser(u);
+    setFormData({
+      email: u.email,
+      password: '',
+      name: u.name || '',
+      licensePlate: u.licensePlate || '',
+      state: u.state || '',
+      pelletCount: String(u.pelletCount),
+      positivePelletCount: String(u.positivePelletCount),
+      exp: String(u.exp),
+      level: String(u.level),
+      adminRole: (u.adminRole || 'user') as any,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCreateUser = () => {
+    if (!formData.email || !formData.password) {
+      Alert.alert('Error', 'Email and password are required');
+      return;
+    }
+
+    createUserMutation.mutate({
+      email: formData.email,
+      password: formData.password,
+      name: formData.name || undefined,
+      licensePlate: formData.licensePlate || undefined,
+      state: formData.state || undefined,
+      pelletCount: parseInt(formData.pelletCount) || 10,
+      positivePelletCount: parseInt(formData.positivePelletCount) || 5,
+      exp: parseInt(formData.exp) || 0,
+      level: parseInt(formData.level) || 1,
+      adminRole: formData.adminRole === 'user' ? undefined : formData.adminRole,
+    });
+  };
+
+  const handleUpdateUser = () => {
+    if (!editingUser) return;
+
+    const updates: any = {
+      userId: editingUser.id,
+      name: formData.name || undefined,
+      licensePlate: formData.licensePlate || undefined,
+      state: formData.state || undefined,
+      pelletCount: parseInt(formData.pelletCount),
+      positivePelletCount: parseInt(formData.positivePelletCount),
+      exp: parseInt(formData.exp),
+      level: parseInt(formData.level),
+      adminRole: formData.adminRole,
+    };
+
+    if (formData.password) {
+      updates.password = formData.password;
+    }
+
+    updateUserMutation.mutate(updates);
+  };
   
   const handleChangeRole = (userId: string, currentRole: string | null) => {
     if (!isAdmin) {
@@ -80,13 +208,181 @@ export default function UserManagementScreen() {
       year: 'numeric' 
     });
   };
+
+  const renderUserForm = (isEdit: boolean) => (
+    <View style={styles.formContainer}>
+      <Text style={[styles.formLabel, { color: textColor }]}>Email</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+        value={formData.email}
+        onChangeText={(text) => setFormData({ ...formData, email: text })}
+        placeholder="user@example.com"
+        placeholderTextColor={textSecondary}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        editable={!isEdit}
+      />
+
+      <Text style={[styles.formLabel, { color: textColor }]}>Password {isEdit && '(leave empty to keep current)'}</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+        value={formData.password}
+        onChangeText={(text) => setFormData({ ...formData, password: text })}
+        placeholder={isEdit ? "Leave empty to keep current" : "Password"}
+        placeholderTextColor={textSecondary}
+        secureTextEntry
+      />
+
+      <Text style={[styles.formLabel, { color: textColor }]}>Name</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+        value={formData.name}
+        onChangeText={(text) => setFormData({ ...formData, name: text })}
+        placeholder="John Doe"
+        placeholderTextColor={textSecondary}
+      />
+
+      <Text style={[styles.formLabel, { color: textColor }]}>License Plate</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+        value={formData.licensePlate}
+        onChangeText={(text) => setFormData({ ...formData, licensePlate: text })}
+        placeholder="ABC123"
+        placeholderTextColor={textSecondary}
+        autoCapitalize="characters"
+      />
+
+      <Text style={[styles.formLabel, { color: textColor }]}>State</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+        value={formData.state}
+        onChangeText={(text) => setFormData({ ...formData, state: text })}
+        placeholder="CA"
+        placeholderTextColor={textSecondary}
+        autoCapitalize="characters"
+        maxLength={2}
+      />
+
+      <View style={styles.rowInputs}>
+        <View style={styles.halfInput}>
+          <Text style={[styles.formLabel, { color: textColor }]}>Pellets</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+            value={formData.pelletCount}
+            onChangeText={(text) => setFormData({ ...formData, pelletCount: text })}
+            placeholder="10"
+            placeholderTextColor={textSecondary}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.halfInput}>
+          <Text style={[styles.formLabel, { color: textColor }]}>Positive Pellets</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+            value={formData.positivePelletCount}
+            onChangeText={(text) => setFormData({ ...formData, positivePelletCount: text })}
+            placeholder="5"
+            placeholderTextColor={textSecondary}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <View style={styles.rowInputs}>
+        <View style={styles.halfInput}>
+          <Text style={[styles.formLabel, { color: textColor }]}>EXP</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+            value={formData.exp}
+            onChangeText={(text) => setFormData({ ...formData, exp: text })}
+            placeholder="0"
+            placeholderTextColor={textSecondary}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.halfInput}>
+          <Text style={[styles.formLabel, { color: textColor }]}>Level</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+            value={formData.level}
+            onChangeText={(text) => setFormData({ ...formData, level: text })}
+            placeholder="1"
+            placeholderTextColor={textSecondary}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <Text style={[styles.formLabel, { color: textColor }]}>Role</Text>
+      <View style={styles.roleSelector}>
+        {(['user', 'moderator', 'admin', ...(isSuperAdmin ? ['super_admin' as const] : [])] as ('user' | 'moderator' | 'admin' | 'super_admin')[]).map((role) => (
+          <TouchableOpacity
+            key={role}
+            style={[
+              styles.roleOption,
+              { backgroundColor: cardColor, borderColor },
+              formData.adminRole === role && { backgroundColor: Colors.primary, borderColor: Colors.primary }
+            ]}
+            onPress={() => setFormData({ ...formData, adminRole: role })}
+          >
+            <Text style={[
+              styles.roleOptionText,
+              { color: textColor },
+              formData.adminRole === role && { color: '#fff' }
+            ]}>
+              {role === 'super_admin' ? 'Super Admin' : role.charAt(0).toUpperCase() + role.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.formButtons}>
+        <TouchableOpacity
+          style={[styles.cancelButton, { backgroundColor: cardColor, borderColor }]}
+          onPress={() => {
+            if (isEdit) {
+              setShowEditModal(false);
+              setEditingUser(null);
+            } else {
+              setShowCreateModal(false);
+            }
+            resetForm();
+          }}
+        >
+          <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: Colors.primary }]}
+          onPress={isEdit ? handleUpdateUser : handleCreateUser}
+          disabled={isEdit ? updateUserMutation.isPending : createUserMutation.isPending}
+        >
+          {(isEdit ? updateUserMutation.isPending : createUserMutation.isPending) ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.submitButtonText}>{isEdit ? 'Update User' : 'Create User'}</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
   
   return (
     <>
       <Stack.Screen 
         options={{ 
           title: 'User Management',
-          headerBackTitle: 'Admin'
+          headerBackTitle: 'Admin',
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => setShowCreateModal(true)}
+              style={styles.headerButton}
+            >
+              <Plus size={24} color={Colors.primary} />
+            </TouchableOpacity>
+          ),
         }} 
       />
       
@@ -182,6 +478,30 @@ export default function UserManagementScreen() {
                           {u.adminRole ? u.adminRole.replace('_', ' ') : 'Regular User'}
                         </Text>
                       </View>
+
+                      <View style={styles.detailRow}>
+                        <Car size={16} color={textSecondary} />
+                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Plate:</Text>
+                        <Text style={[styles.detailValue, { color: textColor }]}>
+                          {u.licensePlate || 'Not set'} {u.state ? `(${u.state})` : ''}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Hash size={16} color={textSecondary} />
+                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Pellets:</Text>
+                        <Text style={[styles.detailValue, { color: textColor }]}>
+                          {u.pelletCount} / {u.positivePelletCount} positive
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <Hash size={16} color={textSecondary} />
+                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Level:</Text>
+                        <Text style={[styles.detailValue, { color: textColor }]}>
+                          Level {u.level} ({u.exp} EXP)
+                        </Text>
+                      </View>
                       
                       <View style={styles.detailRow}>
                         <Mail size={16} color={textSecondary} />
@@ -190,20 +510,30 @@ export default function UserManagementScreen() {
                           {u.id}
                         </Text>
                       </View>
-                      
-                      {isAdmin && u.id !== user.id && (
+
+                      <View style={styles.actionButtons}>
                         <TouchableOpacity
-                          style={[styles.changeRoleButton, { backgroundColor: Colors.primary }]}
-                          onPress={() => handleChangeRole(u.id, u.adminRole || null)}
-                          disabled={updateRoleMutation.isPending}
+                          style={[styles.editButton, { backgroundColor: Colors.primary }]}
+                          onPress={() => openEditModal(u)}
                         >
-                          {updateRoleMutation.isPending ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                          ) : (
-                            <Text style={styles.changeRoleButtonText}>Change Role</Text>
-                          )}
+                          <Edit size={16} color="#fff" />
+                          <Text style={styles.editButtonText}>Edit User</Text>
                         </TouchableOpacity>
-                      )}
+                        
+                        {isAdmin && u.id !== user.id && (
+                          <TouchableOpacity
+                            style={[styles.changeRoleButton, { backgroundColor: cardColor, borderColor }]}
+                            onPress={() => handleChangeRole(u.id, u.adminRole || null)}
+                            disabled={updateRoleMutation.isPending}
+                          >
+                            {updateRoleMutation.isPending ? (
+                              <ActivityIndicator size="small" color={Colors.primary} />
+                            ) : (
+                              <Text style={[styles.changeRoleButtonText, { color: textColor }]}>Change Role</Text>
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
                   )}
                 </View>
@@ -217,6 +547,38 @@ export default function UserManagementScreen() {
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={showCreateModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: bgColor }]}>
+            <Text style={[styles.modalTitle, { color: textColor }]}>Create New User</Text>
+            <ScrollView style={styles.modalScroll}>
+              {renderUserForm(false)}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: bgColor }]}>
+            <Text style={[styles.modalTitle, { color: textColor }]}>Edit User</Text>
+            <ScrollView style={styles.modalScroll}>
+              {renderUserForm(true)}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -242,6 +604,9 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     marginLeft: 36,
+  },
+  headerButton: {
+    marginRight: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -346,14 +711,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
   },
-  changeRoleButton: {
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 8,
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: 12,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  changeRoleButton: {
+    flex: 1,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 1,
   },
   changeRoleButtonText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '600' as const,
   },
@@ -367,5 +751,89 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     marginTop: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+    paddingTop: 24,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  modalScroll: {
+    paddingHorizontal: 24,
+  },
+  formContainer: {
+    paddingBottom: 24,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  halfInput: {
+    flex: 1,
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 24,
+  },
+  roleOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  roleOptionText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  formButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  submitButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600' as const,
   },
 });
