@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
-import { trpcClient } from '@/lib/trpc';
+import { vanillaClient } from '@/lib/trpc';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ export default function LoginScreen() {
         return;
       }
       
-      const result = await trpcClient.auth.login.mutate({
+      const result = await vanillaClient.auth.login.mutate({
         email,
         password,
       });

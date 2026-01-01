@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } fr
 import { router } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { trpcClient } from '@/lib/trpc';
+import { vanillaClient } from '@/lib/trpc';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ export default function ForgotPasswordScreen() {
     try {
       console.log('[ForgotPassword] Requesting reset for:', email);
       
-      const result = await trpcClient.auth.requestReset.mutate({
+      const result = await vanillaClient.auth.requestReset.mutate({
         email,
       });
       

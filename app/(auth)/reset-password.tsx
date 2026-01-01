@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } fr
 import { router, useLocalSearchParams } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { trpcClient } from '@/lib/trpc';
+import { vanillaClient } from '@/lib/trpc';
 
 export default function ResetPasswordScreen() {
   const params = useLocalSearchParams();
@@ -40,7 +40,7 @@ export default function ResetPasswordScreen() {
     try {
       console.log('[ResetPassword] Resetting password for:', email);
       
-      const result = await trpcClient.auth.resetPassword.mutate({
+      const result = await vanillaClient.auth.resetPassword.mutate({
         email,
         token,
         newPassword,

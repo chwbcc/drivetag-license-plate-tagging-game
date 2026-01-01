@@ -6,7 +6,7 @@ import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
-import { trpcClient } from '@/lib/trpc';
+import { vanillaClient } from '@/lib/trpc';
 
 
 
@@ -64,7 +64,7 @@ export default function RegisterScreen() {
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       console.log('[Register] Calling backend register mutation...');
-      const result = await trpcClient.auth.register.mutate({
+      const result = await vanillaClient.auth.register.mutate({
         id: userId,
         email,
         password,
@@ -87,7 +87,7 @@ export default function RegisterScreen() {
         register(userWithPellets);
         
         try {
-          await trpcClient.auth.syncUser.mutate({
+          await vanillaClient.auth.syncUser.mutate({
             pelletCount: 10,
             positivePelletCount: 5,
           });
