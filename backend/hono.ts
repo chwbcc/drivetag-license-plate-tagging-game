@@ -84,6 +84,14 @@ app.get("/health", (c) => {
   });
 });
 
+app.get("/debug/routes", (c) => {
+  console.log('[Backend] Available tRPC procedures:', Object.keys(appRouter._def.procedures || {}));
+  return c.json({
+    message: "Check backend logs for available routes",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.notFound((c) => {
   console.error('[Backend] 404 Not Found:', c.req.url);
   return c.json({ error: 'Not Found', path: c.req.url }, 404);
