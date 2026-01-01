@@ -30,8 +30,8 @@ export default function BackendStatusScreen() {
     }
 
     try {
-      console.log('[Backend Status] Checking health endpoint:', `${url}/api/health`);
-      const healthResponse = await fetch(`${url}/api/health`, {
+      console.log('[Backend Status] Checking health endpoint:', `${url}/health`);
+      const healthResponse = await fetch(`${url}/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
