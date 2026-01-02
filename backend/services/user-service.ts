@@ -28,8 +28,6 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
     pelletCount: newUser.pelletCount,
     positivePelletCount: newUser.positivePelletCount,
     badges: newUser.badges,
-    exp: newUser.exp,
-    level: newUser.level,
     name: newUser.name,
     photo: newUser.photo,
     licensePlate: newUser.licensePlate,
@@ -49,6 +47,8 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         role: adminRole || 'user',
         licensePlate: newUser.licensePlate || null,
         state: newUser.state || null,
+        experience: newUser.exp,
+        level: newUser.level,
       });
     
     if (error) {
@@ -103,8 +103,8 @@ export const getUserById = async (userId: string): Promise<User> => {
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
-    exp: stats.exp || 0,
-    level: stats.level || 1,
+    exp: (data.experience as number) || 0,
+    level: (data.level as number) || 1,
     adminRole: (data.role as AdminRole) || null,
     createdAt: new Date(data.created_at as number).toISOString(),
   };
@@ -140,8 +140,8 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
-    exp: stats.exp || 0,
-    level: stats.level || 1,
+    exp: (data.experience as number) || 0,
+    level: (data.level as number) || 1,
     adminRole: (data.role as AdminRole) || null,
     createdAt: new Date(data.created_at as number).toISOString(),
   };
@@ -178,8 +178,8 @@ export const getAllUsers = async (): Promise<User[]> => {
       pelletCount: stats.pelletCount || 0,
       positivePelletCount: stats.positivePelletCount || 0,
       badges: stats.badges || [],
-      exp: stats.exp || 0,
-      level: stats.level || 1,
+      exp: (row.experience as number) || 0,
+      level: (row.level as number) || 1,
       adminRole: (row.role as AdminRole) || null,
       createdAt: new Date(row.created_at as number).toISOString(),
     };
@@ -204,8 +204,6 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
     pelletCount: updatedUser.pelletCount,
     positivePelletCount: updatedUser.positivePelletCount,
     badges: updatedUser.badges,
-    exp: updatedUser.exp,
-    level: updatedUser.level,
     name: updatedUser.name,
     photo: updatedUser.photo,
     licensePlate: updatedUser.licensePlate,
@@ -221,6 +219,8 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
       role: updatedUser.adminRole || 'user',
       licensePlate: updatedUser.licensePlate || null,
       state: updatedUser.state || null,
+      experience: updatedUser.exp,
+      level: updatedUser.level,
     })
     .eq('id', userId);
   
@@ -261,8 +261,6 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
       pelletCount: user.pelletCount,
       positivePelletCount: user.positivePelletCount,
       badges: user.badges,
-      exp: user.exp,
-      level: user.level,
       name: user.name,
       photo: user.photo,
       licensePlate: user.licensePlate,
@@ -317,8 +315,6 @@ export const updateUserPelletCount = async (
       pelletCount: updatedUser.pelletCount,
       positivePelletCount: updatedUser.positivePelletCount,
       badges: updatedUser.badges,
-      exp: updatedUser.exp,
-      level: updatedUser.level,
       name: updatedUser.name,
       photo: updatedUser.photo,
       licensePlate: updatedUser.licensePlate,
@@ -365,22 +361,13 @@ export const updateUserExperience = async (
       level,
     };
     
-    const stats = JSON.stringify({
-      pelletCount: updatedUser.pelletCount,
-      positivePelletCount: updatedUser.positivePelletCount,
-      badges: updatedUser.badges,
-      exp: updatedUser.exp,
-      level: updatedUser.level,
-      name: updatedUser.name,
-      photo: updatedUser.photo,
-      licensePlate: updatedUser.licensePlate,
-      state: updatedUser.state,
-    });
-    
     console.log('[UserService] Updating user experience in database...');
     const { error } = await db
       .from('users')
-      .update({ stats })
+      .update({ 
+        experience: updatedUser.exp,
+        level: updatedUser.level,
+      })
       .eq('id', userId);
     
     if (error) throw error;
@@ -445,8 +432,8 @@ export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User
       pelletCount: stats.pelletCount || 0,
       positivePelletCount: stats.positivePelletCount || 0,
       badges: stats.badges || [],
-      exp: stats.exp || 0,
-      level: stats.level || 1,
+      exp: (row.experience as number) || 0,
+      level: (row.level as number) || 1,
       adminRole: (row.role as AdminRole) || null,
       createdAt: new Date(row.created_at as number).toISOString(),
     };
@@ -486,8 +473,8 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
     badges: stats.badges || [],
-    exp: stats.exp || 0,
-    level: stats.level || 1,
+    exp: (data.experience as number) || 0,
+    level: (data.level as number) || 1,
     adminRole: (data.role as AdminRole) || null,
     createdAt: new Date(data.created_at as number).toISOString(),
   };
