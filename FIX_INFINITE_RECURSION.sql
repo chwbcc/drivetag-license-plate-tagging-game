@@ -17,6 +17,9 @@ DROP POLICY IF EXISTS "Admins can delete users" ON users;
 DROP POLICY IF EXISTS "Allow read access to users" ON users;
 DROP POLICY IF EXISTS "Allow registration inserts on users" ON users;
 DROP POLICY IF EXISTS "Users can update themselves" ON users;
+DROP POLICY IF EXISTS "Admins can update users" ON users;
+DROP POLICY IF EXISTS "Users can view all users" ON users;
+DROP POLICY IF EXISTS "Admins can manage all users" ON users;
 
 -- Drop ALL existing policies on user_roles table
 DROP POLICY IF EXISTS "Users can read own role" ON user_roles;
@@ -29,9 +32,9 @@ DROP POLICY IF EXISTS "Allow read access to user_roles" ON user_roles;
 DROP POLICY IF EXISTS "Allow registration inserts" ON user_roles;
 DROP POLICY IF EXISTS "Users can update own role to user" ON user_roles;
 
--- Drop old functions
-DROP FUNCTION IF EXISTS is_admin();
-DROP FUNCTION IF EXISTS is_user_admin();
+-- Drop old functions (CASCADE to drop dependent policies)
+DROP FUNCTION IF EXISTS is_admin() CASCADE;
+DROP FUNCTION IF EXISTS is_user_admin() CASCADE;
 
 -- Create a SECURITY DEFINER function that checks admin status using user_roles table
 -- This avoids recursion because it doesn't query the users table
