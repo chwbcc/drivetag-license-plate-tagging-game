@@ -16,11 +16,18 @@ You need to create the following tables in your Supabase dashboard. Follow these
 
 1. Go to your Supabase dashboard: https://vhqpsnezcvqgikpqzdgk.supabase.co
 2. Navigate to the SQL Editor
-3. Run the SQL script below to create all required tables
+3. **IMPORTANT**: If you already created tables, drop them first or run the ALTER statements below
+4. Run the SQL script below to create all required tables
 
 ### SQL Script
 
 ```sql
+-- Drop existing tables if they exist (OPTIONAL - only if recreating)
+-- DROP TABLE IF EXISTS activities CASCADE;
+-- DROP TABLE IF EXISTS badges CASCADE;
+-- DROP TABLE IF EXISTS pellets CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
+
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
@@ -85,6 +92,40 @@ CREATE TABLE IF NOT EXISTS activities (
 CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(userId);
 CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at DESC);
 ```
+
+## Troubleshooting
+
+### Schema Cache Error
+
+If you see errors like "Could not find the 'created_at' column in the schema cache":
+
+1. Go to your Supabase dashboard
+2. Navigate to Settings > API
+3. Click "Reload schema cache" button
+4. Wait a few seconds and try again
+
+OR if tables exist with wrong column names:
+
+```sql
+-- Check your current schema
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'users';
+
+-- If column is named 'createdAt' instead of 'created_at', rename it:
+ALTER TABLE users RENAME COLUMN "createdAt" TO created_at;
+ALTER TABLE pellets RENAME COLUMN "createdAt" TO created_at;
+ALTER TABLE badges RENAME COLUMN "earnedAt" TO earned_at;
+ALTER TABLE activities RENAME COLUMN "createdAt" TO created_at;
+```
+
+### Backend Connection Error
+
+If you see "Failed to fetch" errors:
+
+1. Check that your backend is running (the backend should auto-start)
+2. Check the Console tab for backend initialization logs
+3. Try the "Test Connection" button in the Admin panel
 
 ## Testing the Connection
 
