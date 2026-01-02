@@ -118,7 +118,7 @@ export const getUserById = async (userId: string): Promise<User> => {
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    password: (data.password_hash as string) || stats.passwordHash || '',
+    password: stats.passwordHash || '',
     name: stats.name || '',
     photo: stats.photo,
     licensePlate: (data.license_plate as string) || stats.licensePlate || '',
@@ -155,7 +155,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    password: (data.password_hash as string) || stats.passwordHash || '',
+    password: stats.passwordHash || '',
     name: stats.name || '',
     photo: stats.photo,
     licensePlate: (data.license_plate as string) || stats.licensePlate || '',
@@ -193,7 +193,7 @@ export const getAllUsers = async (): Promise<User[]> => {
     return {
       id: row.id as string,
       email: row.email as string,
-      password: (row.password_hash as string) || stats.passwordHash || '',
+      password: stats.passwordHash || '',
       name: stats.name || '',
       photo: stats.photo,
       licensePlate: (row.license_plate as string) || stats.licensePlate || '',
@@ -443,7 +443,7 @@ export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User
     const user: User = {
       id: row.id as string,
       email: row.email as string,
-      password: (row.password_hash as string) || stats.passwordHash || '',
+      password: stats.passwordHash || '',
       name: stats.name || '',
       photo: stats.photo,
       licensePlate: (row.license_plate as string) || stats.licensePlate || '',
@@ -484,7 +484,7 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    password: (data.password_hash as string) || stats.passwordHash || '',
+    password: stats.passwordHash || '',
     name: stats.name || '',
     photo: stats.photo,
     licensePlate: (data.license_plate as string) || stats.licensePlate || '',
