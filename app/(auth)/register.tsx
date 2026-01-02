@@ -19,8 +19,15 @@ export default function RegisterScreen() {
   const [state, setState] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [backendUrl, setBackendUrl] = useState<string>('');
   
   const register = useAuthStore((state) => state.register);
+
+  React.useEffect(() => {
+    const url = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'Not configured';
+    setBackendUrl(url);
+    console.log('[Register] Backend URL from env:', url);
+  }, []);
 
   const validateLicensePlate = (plate: string) => {
     // This is a simple validation - in a real app, you'd want to validate based on your region's format
@@ -112,7 +119,7 @@ export default function RegisterScreen() {
       let errorMessage = error?.message || 'An error occurred. Please try again.';
       
       if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Cannot connect to server. Please ensure the backend is running.';
+        errorMessage = `Cannot connect to backend server.\n\nBackend URL: ${backendUrl || 'Not configured'}\n\nPlease ensure:\n1. Backend server is running\n2. URL is correct\n3. No network issues`;
       }
       
       setError(errorMessage);
@@ -214,14 +221,22 @@ export default function RegisterScreen() {
             </Text>
           </View>
           
-          {error.includes('Cannot connect to server') && (
+          {error.includes('Cannot connect') && (
             <View style={styles.debugInfo}>
-              <Text style={styles.debugText}>Need help debugging?</Text>
+              <Text style={styles.debugText}>Backend URL:</Text>
+              <Text style={styles.debugUrl}>{backendUrl}</Text>
               <Link href="/backend-status" asChild>
                 <Button
                   title="Check Backend Status"
                   variant="outline"
                   style={styles.debugButton}
+                />
+              </Link>
+              <Link href="/connection-test" asChild>
+                <Button
+                  title="Test Connection"
+                  variant="outline"
+                  style={[styles.debugButton, { marginTop: 8 }]}
                 />
               </Link>
             </View>
@@ -317,5 +332,14 @@ const styles = StyleSheet.create({
   },
   debugButton: {
     width: '100%',
+  },
+  debugUrl: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginBottom: 12,
+    padding: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 4,
   },
 });
