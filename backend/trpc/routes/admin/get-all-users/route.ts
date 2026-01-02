@@ -1,13 +1,11 @@
 import { adminProcedure } from "../../../create-context";
 import { getAllUsers } from "@/backend/services/user-service";
-import { initDatabase } from "@/backend/database";
 
 export const getAllUsersRoute = adminProcedure.query(async ({ ctx }) => {
   console.log('[Admin] Getting all users. Admin:', ctx.userEmail);
   
   try {
-    await initDatabase();
-    console.log('[Admin] Database initialized, fetching users...');
+    console.log('[Admin] Fetching users...');
     
     const users = await getAllUsers();
     

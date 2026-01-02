@@ -1,17 +1,22 @@
 import { adminProcedure } from "../../../create-context";
 import { getAllPellets } from "@/backend/services/pellet-service";
 import { getUsersByIds } from "@/backend/services/user-service";
-import { initDatabase } from "@/backend/database";
 
 export const getAllPelletsRoute = adminProcedure.query(async ({ ctx }) => {
   console.log('[Admin] Getting all pellets. Admin:', ctx.userEmail);
   
   try {
-    await initDatabase();
-    console.log('[Admin] Database initialized, fetching pellets...');
+    console.log('[Admin] Fetching pellets...');
     
     const pellets = await getAllPellets();
     console.log(`[Admin] Found ${pellets.length} pellets`);
+    
+    if (pellets.length === 0) {
+      return {
+        pellets: [],
+        count: 0,
+      };
+    }
     
     const uniqueUserIds = [...new Set(pellets.map(p => p.createdBy))];
     console.log(`[Admin] Fetching ${uniqueUserIds.length} unique users in batch...`);
