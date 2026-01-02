@@ -1,16 +1,16 @@
--- Add missing licensePlate and state columns to users table
+-- Add missing license_plate and state columns to users table
 
--- Add licensePlate column if it doesn't exist
-DO $$ 
+-- Add license_plate column if it doesn't exist
+DO $ 
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'licenseplate'
+        WHERE table_name = 'users' AND column_name = 'license_plate'
     ) THEN
-        ALTER TABLE users ADD COLUMN licensePlate TEXT;
-        COMMENT ON COLUMN users.licensePlate IS 'User license plate number';
+        ALTER TABLE users ADD COLUMN license_plate TEXT;
+        COMMENT ON COLUMN users.license_plate IS 'User license plate number';
     END IF;
-END $$;
+END $;
 
 -- Add state column if it doesn't exist
 DO $$ 
@@ -89,8 +89,8 @@ UPDATE users
 SET badges = '[]'::jsonb 
 WHERE badges IS NULL;
 
--- Create index on licensePlate for faster lookups
-CREATE INDEX IF NOT EXISTS idx_users_licenseplate ON users(licensePlate);
+-- Create index on license_plate for faster lookups
+CREATE INDEX IF NOT EXISTS idx_users_license_plate ON users(license_plate);
 
 -- Create index on state for faster filtering
 CREATE INDEX IF NOT EXISTS idx_users_state ON users(state);
