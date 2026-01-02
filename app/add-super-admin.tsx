@@ -75,7 +75,7 @@ export default function AddSuperAdminScreen() {
       }
 
       console.log('[AddSuperAdmin] Super admin created successfully!');
-      setMessage(`✅ Super admin created successfully!\n\nEmail: ${email}\nPassword: ${password}\n\nYou can now log in with these credentials.`);
+      setMessage(`✅ Super admin created successfully!\n\nEmail: ${email}\nPassword: ${password}\n\nYou can now log in with these credentials`);
     } catch (err: any) {
       console.error('[AddSuperAdmin] Error:', err);
       setError(`Error: ${err.message || 'Unknown error'}`);
