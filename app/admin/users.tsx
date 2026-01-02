@@ -61,6 +61,13 @@ export default function UserManagementScreen() {
   
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, adminRole }: { userId: string; adminRole: string | null }) => {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: adminRole || 'user' })
+        .eq('id', userId);
+      
+      if (roleError) throw roleError;
+      
       const { error } = await supabase
         .from('users')
         .update({ role: adminRole })
@@ -80,23 +87,51 @@ export default function UserManagementScreen() {
   const createUserMutation = useMutation({
     mutationFn: async (data: any) => {
       const passwordHash = await hashPassword(data.password);
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{
+          id: userId,
+          email: data.email,
+          role: data.adminRole || 'user',
+        }]);
+      
+      if (roleError) {
+        console.error('Failed to create user role:', roleError);
+        throw roleError;
+      }
+      
+      const stats = JSON.stringify({
+        pelletCount: data.pelletCount,
+        positivePelletCount: data.positivePelletCount,
+        badges: [],
+        name: data.name,
+        photo: null,
+        licensePlate: data.licensePlate,
+        state: data.state,
+      });
       
       const { error } = await supabase
         .from('users')
         .insert([{
+          id: userId,
           email: data.email,
-          passwordhash: passwordHash,
-          name: data.name,
-          licenseplate: data.licensePlate,
-          state: data.state,
-          pellet_count: data.pelletCount,
-          positive_pellet_count: data.positivePelletCount,
+          passwordHash: passwordHash,
+          username: data.name || 'Anonymous',
+          created_at: Date.now(),
+          stats,
+          role: data.adminRole || 'user',
+          licensePlate: data.licensePlate || null,
+          state: data.state || null,
           experience: data.exp,
           level: data.level,
-          role: data.adminRole === 'user' ? null : data.adminRole,
         }]);
       
-      if (error) throw error;
+      if (error) {
+        await supabase.from('user_roles').delete().eq('id', userId);
+        throw error;
+      }
     },
     onSuccess: () => {
       usersQuery.refetch();
@@ -111,19 +146,43 @@ export default function UserManagementScreen() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
-      const updates: any = {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: data.adminRole || 'user' })
+        .eq('id', data.userId);
+      
+      if (roleError) throw roleError;
+      
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('stats')
+        .eq('id', data.userId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const currentStats = JSON.parse(userData.stats as string);
+      const updatedStats = JSON.stringify({
+        ...currentStats,
+        pelletCount: data.pelletCount,
+        positivePelletCount: data.positivePelletCount,
         name: data.name,
-        licenseplate: data.licensePlate,
+        licensePlate: data.licensePlate,
         state: data.state,
-        pellet_count: data.pelletCount,
-        positive_pellet_count: data.positivePelletCount,
+      });
+      
+      const updates: any = {
+        username: data.name,
+        licensePlate: data.licensePlate,
+        state: data.state,
+        stats: updatedStats,
         experience: data.exp,
         level: data.level,
-        role: data.adminRole === 'user' ? null : data.adminRole,
+        role: data.adminRole || 'user',
       };
       
       if (data.password) {
-        updates.passwordhash = await hashPassword(data.password);
+        updates.passwordHash = await hashPassword(data.password);
       }
       
       const { error } = await supabase
