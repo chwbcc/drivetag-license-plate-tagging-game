@@ -3,7 +3,6 @@ export type AdminRole = 'super_admin' | 'admin' | 'moderator' | null;
 export interface User {
   id: string;
   email: string;
-  password?: string; // User password (hashed in production)
   licensePlate: string;
   state?: string;
   name?: string;

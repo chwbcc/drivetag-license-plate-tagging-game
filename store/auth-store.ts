@@ -43,7 +43,6 @@ type AuthStore = AuthState & {
   register: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
   changeLicensePlate: (newPlate: string, state?: string) => void;
-  changePassword: (currentPassword: string, newPassword: string) => boolean;
   addPellets: (count: number, type?: 'negative' | 'positive') => void;
   removePellets: (count: number, type?: 'negative' | 'positive') => boolean;
   addBadge: (badgeId: string) => void;
@@ -233,33 +232,6 @@ const useAuthStore = create<AuthStore>()(
             set({ user: updatedUser });
           }
         }
-      },
-      changePassword: (currentPassword, newPassword) => {
-        const currentUser = get().user;
-        if (!currentUser) return false;
-        
-        if (currentUser.password !== currentPassword) {
-          return false;
-        }
-        
-        const updatedUser = { 
-          ...currentUser, 
-          password: newPassword
-        };
-        
-        const registeredUsers = get().registeredUsers;
-        const userIndex = registeredUsers.findIndex(u => u.id === currentUser.id);
-        
-        if (userIndex >= 0) {
-          registeredUsers[userIndex] = updatedUser;
-          set({ 
-            user: updatedUser,
-            registeredUsers: [...registeredUsers]
-          });
-        } else {
-          set({ user: updatedUser });
-        }
-        return true;
       },
       addPellets: (count, type = 'negative') => {
         const currentUser = get().user;
