@@ -10,28 +10,33 @@ export const getAllPelletsRoute = adminProcedure.query(async ({ ctx }) => {
     await initDatabase();
     const pellets = await getAllPellets();
     
-    const pelletsWithUserInfo = await Promise.all(
-      pellets.map(async (pellet) => {
+    console.log(`[Admin] Found ${pellets.length} pellets, fetching user info...`);
+    
+    const uniqueUserIds = [...new Set(pellets.map(p => p.createdBy))];
+    console.log(`[Admin] Fetching ${uniqueUserIds.length} unique users`);
+    
+    const userMap = new Map<string, { email: string }>();
+    
+    await Promise.all(
+      uniqueUserIds.map(async (userId) => {
         try {
-          const user = await getUserById(pellet.createdBy);
-          return {
-            ...pellet,
-            userEmail: user.email,
-            licensePlate: pellet.targetLicensePlate,
-            notes: pellet.reason,
-          };
+          const user = await getUserById(userId);
+          userMap.set(userId, { email: user.email });
         } catch (error) {
-          return {
-            ...pellet,
-            userEmail: 'Unknown',
-            licensePlate: pellet.targetLicensePlate,
-            notes: pellet.reason,
-          };
+          console.error(`[Admin] Failed to fetch user ${userId}:`, error);
+          userMap.set(userId, { email: 'Unknown' });
         }
       })
     );
     
-    console.log(`[Admin] Found ${pelletsWithUserInfo.length} pellets`);
+    const pelletsWithUserInfo = pellets.map((pellet) => ({
+      ...pellet,
+      userEmail: userMap.get(pellet.createdBy)?.email || 'Unknown',
+      licensePlate: pellet.targetLicensePlate,
+      notes: pellet.reason,
+    }));
+    
+    console.log(`[Admin] Returning ${pelletsWithUserInfo.length} pellets with user info`);
     
     return {
       pellets: pelletsWithUserInfo,

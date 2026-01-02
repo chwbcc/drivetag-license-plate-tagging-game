@@ -7,6 +7,8 @@ export const getAllUsersRoute = adminProcedure.query(async ({ ctx }) => {
   
   try {
     await initDatabase();
+    console.log('[Admin] Database initialized, fetching users...');
+    
     const users = await getAllUsers();
     
     console.log(`[Admin] Found ${users.length} users`);
@@ -17,7 +19,12 @@ export const getAllUsersRoute = adminProcedure.query(async ({ ctx }) => {
     };
   } catch (error) {
     console.error('[Admin] Error getting all users:', error);
-    throw new Error('Failed to get users');
+    console.error('[Admin] Error details:', {
+      message: (error as any)?.message,
+      code: (error as any)?.code,
+      stack: (error as any)?.stack,
+    });
+    throw new Error(`Failed to get users: ${(error as any)?.message || 'Unknown error'}`);
   }
 });
 
