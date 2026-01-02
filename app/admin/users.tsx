@@ -94,7 +94,6 @@ export default function UserManagementScreen() {
           experience: data.exp,
           level: data.level,
           role: data.adminRole === 'user' ? null : data.adminRole,
-          created_at: new Date().toISOString(),
         }]);
       
       if (error) throw error;

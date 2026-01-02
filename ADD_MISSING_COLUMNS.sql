@@ -3,7 +3,7 @@
 
 -- Add missing columns to users table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS passwordhash TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS license_plate TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS pellet_count INTEGER DEFAULT 10;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS positive_pellet_count INTEGER DEFAULT 5;
@@ -16,7 +16,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS photo TEXT;
 -- Drop the old stats column if it exists (optional - only if you want to clean up)
 -- ALTER TABLE users DROP COLUMN IF EXISTS stats;
 
--- Drop the old passwordHash column if it exists (we're using password_hash now)
+-- Drop the old password_hash column if it exists (we're using passwordhash now)
 -- ALTER TABLE users DROP COLUMN IF EXISTS passwordHash;
 
 -- Drop the old username column if it exists (we're using name now)
