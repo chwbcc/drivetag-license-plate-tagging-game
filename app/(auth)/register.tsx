@@ -7,15 +7,13 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { supabase } from '@/utils/supabase';
-import { hashPassword } from '@/utils/hash';
 
 
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [licensePlate, setLicensePlate] = useState('');
   const [state, setState] = useState('');
   const [error, setError] = useState('');
@@ -36,13 +34,8 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword || !licensePlate) {
+    if (!email || !licensePlate) {
       setError('Please fill in all required fields');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
       return;
     }
     
@@ -69,7 +62,7 @@ export default function RegisterScreen() {
         return;
       }
       
-      const passwordHash = await hashPassword(password);
+
       
       console.log('[Register] Checking if user already exists...');
       const { data: existingUser } = await supabase
@@ -122,12 +115,13 @@ export default function RegisterScreen() {
           id: userId,
           email: email.toLowerCase(),
           username: name || 'Anonymous',
-          passwordHash: passwordHash,
           created_at: Date.now(),
           stats,
           role: 'user',
-          licensePlate: licensePlate.toUpperCase(),
+          license_plate: licensePlate.toUpperCase(),
           state,
+          experience: 0,
+          level: 1,
         }])
         .select()
         .single();
@@ -233,21 +227,7 @@ export default function RegisterScreen() {
             maxLength={2}
           />
           
-          <Input
-            label="Password *"
-            placeholder="Create a password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          
-          <Input
-            label="Confirm Password *"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
+
           
           <Button
             title="Create Account"

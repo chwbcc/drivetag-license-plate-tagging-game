@@ -5,21 +5,20 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { supabase } from '@/utils/supabase';
-import { hashPassword } from '@/utils/hash';
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuthStore();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    if (!email) {
+      setError('Please enter your email');
       return;
     }
     
@@ -54,35 +53,33 @@ export default function LoginScreen() {
         return;
       }
       
-      const passwordHash = await hashPassword(password);
-      
       const { data: users, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email.toLowerCase())
-        .eq('passwordhash', passwordHash)
         .limit(1);
       
       if (error) throw error;
       
       if (users && users.length > 0) {
         const user = users[0];
+        const userStats = JSON.parse(user.stats as string);
         login({
           id: user.id,
           email: user.email,
-          name: user.name,
-          licensePlate: user.licenseplate,
-          state: user.state,
-          pelletCount: user.pellet_count || 10,
-          positivePelletCount: user.positive_pellet_count || 5,
-          badges: user.badges || [],
+          name: userStats.name || '',
+          licensePlate: user.license_plate || userStats.licensePlate || '',
+          state: user.state || userStats.state || '',
+          pelletCount: userStats.pelletCount || 10,
+          positivePelletCount: userStats.positivePelletCount || 5,
+          badges: userStats.badges || [],
           exp: user.experience || 0,
           level: user.level || 1,
-          adminRole: user.admin_role,
+          adminRole: user.role === 'user' ? null : user.role,
         });
         router.replace('/(tabs)/home' as any);
       } else {
-        setError('Invalid email or password');
+        setError('Invalid email - user not found');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';
@@ -122,13 +119,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
           />
           
-          <Input
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+
           
           <Button
             title="Login"
@@ -137,14 +128,7 @@ export default function LoginScreen() {
             style={styles.button}
           />
           
-          <View style={styles.forgotPasswordContainer}>
-            <Button
-              title="Forgot Password?"
-              variant="outline"
-              onPress={() => router.push('/(auth)/forgot-password')}
-              style={styles.forgotPasswordButton}
-            />
-          </View>
+
           
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don&apos;t have an account?</Text>
