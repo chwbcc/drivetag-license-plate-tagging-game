@@ -289,7 +289,7 @@ ORDER BY table_name, ordinal_position;`;
               1. Go to your Supabase Dashboard{'\n'}
               2. Navigate to SQL Editor{'\n'}
               3. Copy the script below and paste it{'\n'}
-              4. Click &quot;Run&quot; to execute{'\n'}
+              4. Click Run to execute{'\n'}
               5. Wait for completion{'\n'}
               6. Run diagnostics again to verify
             </Text>
