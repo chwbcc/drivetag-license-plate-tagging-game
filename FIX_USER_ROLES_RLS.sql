@@ -14,7 +14,7 @@ DROP FUNCTION IF EXISTS can_insert_user_role(TEXT);
 CREATE POLICY "Users can read own role"
 ON user_roles FOR SELECT
 TO authenticated
-USING (auth.uid() = id);
+USING (auth.uid()::text = id);
 
 -- Allow admins to read all roles
 CREATE POLICY "Admins can read all roles"
@@ -23,7 +23,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM user_roles ur
-    WHERE ur.id = auth.uid()
+    WHERE ur.id = auth.uid()::text
     AND ur.role IN ('admin', 'super_admin')
   )
 );
@@ -33,7 +33,7 @@ CREATE POLICY "Users can insert own role during registration"
 ON user_roles FOR INSERT
 TO authenticated
 WITH CHECK (
-  auth.uid() = id 
+  auth.uid()::text = id 
   AND role = 'user'
 );
 
@@ -43,7 +43,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   );
 END;
