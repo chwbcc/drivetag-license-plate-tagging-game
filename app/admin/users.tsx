@@ -89,18 +89,11 @@ export default function UserManagementScreen() {
       const passwordHash = await hashPassword(data.password);
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          id: userId,
-          email: data.email,
-          role: data.adminRole || 'user',
-        }]);
-      
-      if (roleError) {
-        console.error('Failed to create user role:', roleError);
-        throw roleError;
-      }
+      console.log('[CreateUser] Starting user creation:', {
+        userId,
+        email: data.email,
+        role: data.adminRole || 'user',
+      });
       
       const stats = JSON.stringify({
         pelletCount: data.pelletCount,
@@ -112,7 +105,7 @@ export default function UserManagementScreen() {
         state: data.state,
       });
       
-      const { error } = await supabase
+      const { error: usersError } = await supabase
         .from('users')
         .insert([{
           id: userId,
@@ -128,10 +121,41 @@ export default function UserManagementScreen() {
           level: data.level,
         }]);
       
-      if (error) {
-        await supabase.from('user_roles').delete().eq('id', userId);
-        throw error;
+      if (usersError) {
+        console.error('[CreateUser] Failed to insert into users table:', usersError);
+        console.error('[CreateUser] Error details:', JSON.stringify(usersError, null, 2));
+        throw new Error(`Failed to create user in users table: ${usersError.message}`);
       }
+      
+      console.log('[CreateUser] Successfully inserted into users table');
+      
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{
+          id: userId,
+          email: data.email,
+          role: data.adminRole || 'user',
+        }]);
+      
+      if (roleError) {
+        console.error('[CreateUser] Failed to insert into user_roles:', roleError);
+        console.error('[CreateUser] Attempting rollback of users table...');
+        
+        const { error: deleteError } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', userId);
+        
+        if (deleteError) {
+          console.error('[CreateUser] Rollback failed:', deleteError);
+        } else {
+          console.log('[CreateUser] Rollback successful');
+        }
+        
+        throw new Error(`Failed to create user_roles: ${roleError.message}`);
+      }
+      
+      console.log('[CreateUser] User created successfully:', userId);
     },
     onSuccess: () => {
       usersQuery.refetch();
