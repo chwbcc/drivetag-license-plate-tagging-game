@@ -17,16 +17,16 @@ DO UPDATE SET
   role = 'super_admin',
   updated_at = NOW();
 
--- Step 2: Update users table
+-- Step 2: Update users table (using snake_case column names)
 INSERT INTO users (
   id, 
   email, 
   username, 
-  "passwordHash", 
+  password_hash, 
   created_at, 
   stats, 
   role, 
-  "licensePlate", 
+  license_plate, 
   state,
   experience,
   level
@@ -58,7 +58,7 @@ ON CONFLICT (id)
 DO UPDATE SET
   role = 'super_admin',
   username = 'Super Admin',
-  "licensePlate" = 'ADMIN',
+  license_plate = 'ADMIN',
   state = 'CA';
 
 -- Verify the changes
@@ -68,7 +68,7 @@ SELECT
   u.username,
   u.role as users_role,
   ur.role as user_roles_role,
-  u."licensePlate",
+  u.license_plate,
   u.state
 FROM users u
 LEFT JOIN user_roles ur ON ur.id::text = u.id
