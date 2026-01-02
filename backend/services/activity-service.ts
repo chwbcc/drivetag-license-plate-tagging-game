@@ -24,7 +24,7 @@ export const logUserActivity = async (
       userId,
       actionType,
       actionData: JSON.stringify(actionData || {}),
-      createdAt: Date.now(),
+      created_at: Date.now(),
     });
   
   if (error) throw error;
@@ -39,7 +39,7 @@ export const getUserActivity = async (userId: string, limit = 50): Promise<UserA
     .from('activities')
     .select('*')
     .eq('userId', userId)
-    .order('createdAt', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(limit);
   
   if (error) throw error;
@@ -49,7 +49,7 @@ export const getUserActivity = async (userId: string, limit = 50): Promise<UserA
     userId: row.userId as string,
     actionType: row.actionType as string,
     actionData: JSON.parse(row.actionData as string),
-    createdAt: row.createdAt as number,
+    createdAt: (row.created_at || row.createdAt) as number,
   }));
   
   return activities;
@@ -61,7 +61,7 @@ export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> =
   const { data, error } = await db
     .from('activities')
     .select('*')
-    .order('createdAt', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(limit);
   
   if (error) throw error;
@@ -71,7 +71,7 @@ export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> =
     userId: row.userId as string,
     actionType: row.actionType as string,
     actionData: JSON.parse(row.actionData as string),
-    createdAt: row.createdAt as number,
+    createdAt: (row.created_at || row.createdAt) as number,
   }));
   
   return activities;

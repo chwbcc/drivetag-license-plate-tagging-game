@@ -33,7 +33,7 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
         targetLicensePlate: pellet.targetLicensePlate,
         targetUserId,
         createdBy: pellet.createdBy,
-        createdAt: pellet.createdAt,
+        created_at: pellet.createdAt,
         reason: pellet.reason,
         type: pellet.type,
         latitude: pellet.location?.latitude || null,
@@ -71,7 +71,7 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
     targetLicensePlate: data.targetLicensePlate as string,
     targetUserId: data.targetUserId as string | undefined,
     createdBy: data.createdBy as string,
-    createdAt: data.createdAt as number,
+    createdAt: (data.created_at || data.createdAt) as number,
     reason: data.reason as string,
     type: data.type as 'negative' | 'positive',
     location: data.latitude && data.longitude ? {
@@ -87,7 +87,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
   const { data, error } = await db
     .from('pellets')
     .select('*')
-    .order('createdAt', { ascending: false });
+    .order('created_at', { ascending: false });
   
   if (error) throw error;
   
@@ -96,7 +96,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
-    createdAt: row.createdAt as number,
+    createdAt: (row.created_at || row.createdAt) as number,
     reason: row.reason as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
@@ -131,7 +131,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
-    createdAt: row.createdAt as number,
+    createdAt: (row.created_at || row.createdAt) as number,
     reason: row.reason as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
@@ -164,7 +164,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
-    createdAt: row.createdAt as number,
+    createdAt: (row.created_at || row.createdAt) as number,
     reason: row.reason as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {

@@ -44,7 +44,7 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         email: newUser.email,
         username: newUser.name || 'Anonymous',
         passwordHash: newUser.password,
-        createdAt: Date.now(),
+        created_at: Date.now(),
         stats,
         role: adminRole || 'user',
         licensePlate: newUser.licensePlate || null,
@@ -97,7 +97,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     exp: stats.exp || 0,
     level: stats.level || 1,
     adminRole: (data.role as AdminRole) || null,
-    createdAt: new Date(data.createdAt as number).toISOString(),
+    createdAt: new Date((data.created_at || data.createdAt) as number).toISOString(),
   };
   
   return user;
@@ -134,7 +134,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     exp: stats.exp || 0,
     level: stats.level || 1,
     adminRole: (data.role as AdminRole) || null,
-    createdAt: new Date(data.createdAt as number).toISOString(),
+    createdAt: new Date((data.created_at || data.createdAt) as number).toISOString(),
   };
   
   return user;
@@ -146,7 +146,7 @@ export const getAllUsers = async (): Promise<User[]> => {
   const { data, error } = await db
     .from('users')
     .select('*')
-    .order('createdAt', { ascending: false });
+    .order('created_at', { ascending: false });
   
   if (error) throw error;
   
@@ -167,7 +167,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       exp: stats.exp || 0,
       level: stats.level || 1,
       adminRole: (row.role as AdminRole) || null,
-      createdAt: new Date(row.createdAt as number).toISOString(),
+      createdAt: new Date((row.created_at || row.createdAt) as number).toISOString(),
     };
   });
   
@@ -428,7 +428,7 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
     exp: stats.exp || 0,
     level: stats.level || 1,
     adminRole: (data.role as AdminRole) || null,
-    createdAt: new Date(data.createdAt as number).toISOString(),
+    createdAt: new Date((data.created_at || data.createdAt) as number).toISOString(),
   };
   
   return user;
