@@ -87,6 +87,14 @@ export default function AdminAreaScreen() {
       accessLevel: 'admin' as const,
     },
     {
+      id: 'database-fix',
+      title: 'Database Fix',
+      description: 'Fix database schema issues',
+      icon: Database,
+      color: '#9B59B6',
+      accessLevel: 'super_admin' as const,
+    },
+    {
       id: 'settings',
       title: 'Admin Settings',
       description: 'Configure admin roles',
@@ -113,6 +121,9 @@ export default function AdminAreaScreen() {
         break;
       case 'activity':
         router.push('/admin/activity');
+        break;
+      case 'database-fix':
+        router.push('/database-fix');
         break;
       case 'settings':
         router.push('/admin/settings');
