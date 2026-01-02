@@ -1,7 +1,7 @@
 -- Add missing license_plate and state columns to users table
 
 -- Add license_plate column if it doesn't exist
-DO $ 
+DO $$ 
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
@@ -10,7 +10,7 @@ BEGIN
         ALTER TABLE users ADD COLUMN license_plate TEXT;
         COMMENT ON COLUMN users.license_plate IS 'User license plate number';
     END IF;
-END $;
+END $$;
 
 -- Add state column if it doesn't exist
 DO $$ 
