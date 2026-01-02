@@ -161,7 +161,7 @@ CREATE TRIGGER on_auth_user_created
 
 -- Migration: Copy existing user roles from users table to user_roles table
 INSERT INTO user_roles (id, email, role)
-SELECT id, email, COALESCE(role, 'user') as role
+SELECT id::uuid, email, COALESCE(role, 'user') as role
 FROM users
 ON CONFLICT (id) DO UPDATE SET
   role = EXCLUDED.role,
