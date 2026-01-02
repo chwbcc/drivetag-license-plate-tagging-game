@@ -71,7 +71,7 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
     targetLicensePlate: data.targetLicensePlate as string,
     targetUserId: data.targetUserId as string | undefined,
     createdBy: data.createdBy as string,
-    createdAt: (data.created_at || data.createdAt) as number,
+    createdAt: data.created_at as number,
     reason: data.reason as string,
     type: data.type as 'negative' | 'positive',
     location: data.latitude && data.longitude ? {
@@ -96,7 +96,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
-    createdAt: (row.created_at || row.createdAt) as number,
+    createdAt: row.created_at as number,
     reason: row.reason as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
@@ -122,7 +122,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
     query = query.eq('type', type);
   }
   
-  const { data, error } = await query.order('createdAt', { ascending: false });
+  const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) throw error;
   
@@ -131,7 +131,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
-    createdAt: (row.created_at || row.createdAt) as number,
+    createdAt: row.created_at as number,
     reason: row.reason as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
@@ -155,7 +155,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
     query = query.eq('type', type);
   }
   
-  const { data, error } = await query.order('createdAt', { ascending: false });
+  const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) throw error;
   
@@ -164,7 +164,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
     targetLicensePlate: row.targetLicensePlate as string,
     targetUserId: row.targetUserId as string | undefined,
     createdBy: row.createdBy as string,
-    createdAt: (row.created_at || row.createdAt) as number,
+    createdAt: row.created_at as number,
     reason: row.reason as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {

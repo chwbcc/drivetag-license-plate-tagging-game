@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   username TEXT NOT NULL,
   passwordHash TEXT NOT NULL,
-  createdAt BIGINT NOT NULL,
+  created_at BIGINT NOT NULL,
   stats TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'user',
   licensePlate TEXT,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS pellets (
   targetLicensePlate TEXT NOT NULL,
   targetUserId TEXT,
   createdBy TEXT NOT NULL,
-  createdAt BIGINT NOT NULL,
+  created_at BIGINT NOT NULL,
   reason TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('negative', 'positive')),
   latitude DOUBLE PRECISION,
@@ -58,14 +58,14 @@ CREATE TABLE IF NOT EXISTS pellets (
 -- Create indexes for pellets table
 CREATE INDEX IF NOT EXISTS idx_pellets_target_plate ON pellets(LOWER(targetLicensePlate));
 CREATE INDEX IF NOT EXISTS idx_pellets_created_by ON pellets(createdBy);
-CREATE INDEX IF NOT EXISTS idx_pellets_created_at ON pellets(createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_pellets_created_at ON pellets(created_at DESC);
 
 -- Create badges table
 CREATE TABLE IF NOT EXISTS badges (
   id TEXT PRIMARY KEY,
   userId TEXT NOT NULL,
   badgeId TEXT NOT NULL,
-  earnedAt BIGINT NOT NULL,
+  earned_at BIGINT NOT NULL,
   UNIQUE(userId, badgeId)
 );
 
@@ -78,12 +78,12 @@ CREATE TABLE IF NOT EXISTS activities (
   userId TEXT NOT NULL,
   actionType TEXT NOT NULL,
   actionData TEXT NOT NULL,
-  createdAt BIGINT NOT NULL
+  created_at BIGINT NOT NULL
 );
 
 -- Create index for activities table
 CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(userId);
-CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at DESC);
 ```
 
 ## Testing the Connection

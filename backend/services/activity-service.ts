@@ -49,7 +49,7 @@ export const getUserActivity = async (userId: string, limit = 50): Promise<UserA
     userId: row.userId as string,
     actionType: row.actionType as string,
     actionData: JSON.parse(row.actionData as string),
-    createdAt: (row.created_at || row.createdAt) as number,
+    createdAt: row.created_at as number,
   }));
   
   return activities;
@@ -71,7 +71,7 @@ export const getAllUserActivity = async (limit = 100): Promise<UserActivity[]> =
     userId: row.userId as string,
     actionType: row.actionType as string,
     actionData: JSON.parse(row.actionData as string),
-    createdAt: (row.created_at || row.createdAt) as number,
+    createdAt: row.created_at as number,
   }));
   
   return activities;

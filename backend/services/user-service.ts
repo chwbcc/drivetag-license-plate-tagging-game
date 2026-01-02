@@ -44,6 +44,7 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         email: newUser.email,
         username: newUser.name || 'Anonymous',
         passwordHash: newUser.password,
+        created_at: Date.now(),
         stats,
         role: adminRole || 'user',
         licensePlate: newUser.licensePlate || null,
@@ -105,7 +106,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     exp: stats.exp || 0,
     level: stats.level || 1,
     adminRole: (data.role as AdminRole) || null,
-    createdAt: new Date((data.created_at || data.createdAt) as number).toISOString(),
+    createdAt: new Date(data.created_at as number).toISOString(),
   };
   
   return user;
@@ -142,7 +143,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     exp: stats.exp || 0,
     level: stats.level || 1,
     adminRole: (data.role as AdminRole) || null,
-    createdAt: new Date((data.created_at || data.createdAt) as number).toISOString(),
+    createdAt: new Date(data.created_at as number).toISOString(),
   };
   
   return user;
@@ -175,7 +176,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       exp: stats.exp || 0,
       level: stats.level || 1,
       adminRole: (row.role as AdminRole) || null,
-      createdAt: new Date((row.created_at || row.createdAt) as number).toISOString(),
+      createdAt: new Date(row.created_at as number).toISOString(),
     };
   });
   
@@ -246,7 +247,7 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
         id: `${userId}-${badgeId}`,
         userId,
         badgeId,
-        earnedAt: Date.now(),
+        earned_at: Date.now(),
       });
     
     if (badgeError) throw badgeError;
@@ -398,7 +399,7 @@ export const getUserBadges = async (userId: string): Promise<string[]> => {
     .from('badges')
     .select('badgeId')
     .eq('userId', userId)
-    .order('earnedAt', { ascending: false });
+    .order('earned_at', { ascending: false });
   
   if (error) throw error;
   
@@ -436,7 +437,7 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
     exp: stats.exp || 0,
     level: stats.level || 1,
     adminRole: (data.role as AdminRole) || null,
-    createdAt: new Date((data.created_at || data.createdAt) as number).toISOString(),
+    createdAt: new Date(data.created_at as number).toISOString(),
   };
   
   return user;
