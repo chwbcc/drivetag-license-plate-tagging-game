@@ -1,7 +1,7 @@
 import { getDatabase } from '../database';
 import { User, AdminRole } from '@/types';
 
-export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelletCount' | 'badges' | 'exp' | 'level'>): Promise<User> => {
+export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelletCount' | 'badges' | 'exp' | 'level' | 'password'>): Promise<User> => {
   console.log('[UserService] Creating user:', user.email);
   const db = getDatabase();
   
@@ -10,7 +10,6 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
   const newUser: User = {
     id: user.id,
     email: user.email,
-    password: user.password,
     name: user.name,
     photo: user.photo,
     licensePlate: user.licensePlate,
@@ -118,7 +117,6 @@ export const getUserById = async (userId: string): Promise<User> => {
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    password: '',
     name: stats.name || '',
     photo: stats.photo,
     licensePlate: (data.license_plate as string) || stats.licensePlate || '',
@@ -155,7 +153,6 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    password: '',
     name: stats.name || '',
     photo: stats.photo,
     licensePlate: (data.license_plate as string) || stats.licensePlate || '',
@@ -193,7 +190,6 @@ export const getAllUsers = async (): Promise<User[]> => {
     return {
       id: row.id as string,
       email: row.email as string,
-      password: '',
       name: stats.name || '',
       photo: stats.photo,
       licensePlate: (row.license_plate as string) || stats.licensePlate || '',
@@ -443,7 +439,6 @@ export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User
     const user: User = {
       id: row.id as string,
       email: row.email as string,
-      password: '',
       name: stats.name || '',
       photo: stats.photo,
       licensePlate: (row.license_plate as string) || stats.licensePlate || '',
@@ -484,7 +479,6 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    password: '',
     name: stats.name || '',
     photo: stats.photo,
     licensePlate: (data.license_plate as string) || stats.licensePlate || '',
