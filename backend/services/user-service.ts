@@ -44,14 +44,22 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         email: newUser.email,
         username: newUser.name || 'Anonymous',
         passwordHash: newUser.password,
-        created_at: Date.now(),
         stats,
         role: adminRole || 'user',
         licensePlate: newUser.licensePlate || null,
         state: newUser.state || null,
       });
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Database insert error:', error);
+      console.error('❌ Error details:', JSON.stringify({
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      }, null, 2));
+      throw error;
+    }
     
     console.log('[UserService] Created user:', newUser.email);
     return newUser;
