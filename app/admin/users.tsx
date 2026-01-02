@@ -63,7 +63,7 @@ export default function UserManagementScreen() {
     mutationFn: async ({ userId, adminRole }: { userId: string; adminRole: string | null }) => {
       const { error } = await supabase
         .from('users')
-        .update({ admin_role: adminRole })
+        .update({ role: adminRole })
         .eq('id', userId);
       
       if (error) throw error;
@@ -93,7 +93,7 @@ export default function UserManagementScreen() {
           positive_pellet_count: data.positivePelletCount,
           experience: data.exp,
           level: data.level,
-          admin_role: data.adminRole === 'user' ? null : data.adminRole,
+          role: data.adminRole === 'user' ? null : data.adminRole,
           created_at: new Date().toISOString(),
         }]);
       
@@ -120,7 +120,7 @@ export default function UserManagementScreen() {
         positive_pellet_count: data.positivePelletCount,
         experience: data.exp,
         level: data.level,
-        admin_role: data.adminRole === 'user' ? null : data.adminRole,
+        role: data.adminRole === 'user' ? null : data.adminRole,
       };
       
       if (data.password) {
