@@ -14,7 +14,7 @@ ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can read own role"
 ON user_roles FOR SELECT
 TO authenticated
-USING (auth.uid() = id);
+USING (auth.uid()::text = id::text);
 
 -- Allow admins to read all roles (no recursion since we're checking the same table)
 CREATE POLICY "Admins can read all roles"
@@ -23,7 +23,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -32,7 +32,7 @@ USING (
 CREATE POLICY "Users can insert own role during registration"
 ON user_roles FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = id AND role = 'user');
+WITH CHECK (auth.uid()::text = id::text AND role = 'user');
 
 -- Allow admins to insert any role (no recursion)
 CREATE POLICY "Admins can insert any role"
@@ -41,7 +41,7 @@ TO authenticated
 WITH CHECK (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -53,7 +53,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -65,7 +65,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -98,13 +98,13 @@ USING (true);
 CREATE POLICY "Users can update themselves"
 ON users FOR UPDATE
 TO authenticated
-USING (auth.uid() = id);
+USING (auth.uid()::text = id);
 
 -- Users can insert their own record (during registration)
 CREATE POLICY "Users can insert own record"
 ON users FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = id);
+WITH CHECK (auth.uid()::text = id);
 
 -- Admins can insert any user (checks user_roles table - NO RECURSION)
 CREATE POLICY "Admins can insert users"
@@ -113,7 +113,7 @@ TO authenticated
 WITH CHECK (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -125,7 +125,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -137,7 +137,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM user_roles
-    WHERE id = auth.uid()
+    WHERE id::text = auth.uid()::text
     AND role IN ('admin', 'super_admin')
   )
 );
