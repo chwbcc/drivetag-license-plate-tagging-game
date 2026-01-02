@@ -1,16 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Shield, Users, Target, Activity, Settings, ChevronRight, AlertCircle } from 'lucide-react-native';
+import { Shield, Users, Target, Activity, Settings, ChevronRight, AlertCircle, Database, CheckCircle, XCircle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 import { trpc } from '@/lib/trpc';
+import { supabase } from '@/utils/supabase';
 
 export default function AdminAreaScreen() {
   const { user } = useAuthStore();
   const { isDark } = useTheme();
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   
   const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
     enabled: !!user?.adminRole,
@@ -117,6 +120,58 @@ export default function AdminAreaScreen() {
     }
   };
   
+  const testDatabaseConnection = async () => {
+    console.log('🧪 Testing Supabase database connection...');
+    setTestLoading(true);
+    setTestResult(null);
+    
+    try {
+      const testEmail = `test_${Date.now()}@example.com`;
+      const testUser = {
+        email: testEmail,
+        name: 'Test User',
+        password_hash: 'test_hash_' + Date.now(),
+        created_at: new Date().toISOString(),
+        pellet_count: 0,
+        experience: 0,
+        level: 1,
+      };
+      
+      console.log('📝 Attempting to insert test user:', testEmail);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert([testUser])
+        .select();
+      
+      if (error) {
+        console.error('❌ Database insert error:', error);
+        setTestResult({
+          success: false,
+          message: `Error: ${error.message}`,
+        });
+        Alert.alert('Database Test Failed', error.message);
+      } else {
+        console.log('✅ Test user created successfully:', data);
+        setTestResult({
+          success: true,
+          message: `Successfully created test user: ${testEmail}`,
+        });
+        Alert.alert('Success!', `Test user created: ${testEmail}`);
+      }
+    } catch (err) {
+      console.error('❌ Database test exception:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setTestResult({
+        success: false,
+        message: `Exception: ${errorMessage}`,
+      });
+      Alert.alert('Database Test Failed', errorMessage);
+    } finally {
+      setTestLoading(false);
+    }
+  };
+  
   return (
     <>
       <Stack.Screen 
@@ -215,6 +270,60 @@ export default function AdminAreaScreen() {
           <Text style={[styles.infoText, { color: textSecondary }]}>
             Admin area connected to backend database. All user actions are tracked and stored.
           </Text>
+        </View>
+        
+        <View style={styles.testSection}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>Database Connection Test</Text>
+          <View style={[styles.testCard, { backgroundColor: cardColor, borderColor }]}>
+            <View style={styles.testHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
+                <Database size={24} color={Colors.primary} />
+              </View>
+              <View style={styles.testHeaderContent}>
+                <Text style={[styles.testTitle, { color: textColor }]}>Test Supabase Connection</Text>
+                <Text style={[styles.testDescription, { color: textSecondary }]}>Create a test user in your Supabase database</Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity
+              style={[styles.testButton, { backgroundColor: Colors.primary }]}
+              onPress={testDatabaseConnection}
+              disabled={testLoading}
+            >
+              {testLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.testButtonText}>Run Database Test</Text>
+              )}
+            </TouchableOpacity>
+            
+            {testResult && (
+              <View style={[
+                styles.testResultBox,
+                { 
+                  backgroundColor: testResult.success ? Colors.success + '10' : Colors.error + '10',
+                  borderColor: testResult.success ? Colors.success : Colors.error,
+                }
+              ]}>
+                <View style={styles.testResultHeader}>
+                  {testResult.success ? (
+                    <CheckCircle size={20} color={Colors.success} />
+                  ) : (
+                    <XCircle size={20} color={Colors.error} />
+                  )}
+                  <Text style={[
+                    styles.testResultTitle,
+                    { color: testResult.success ? Colors.success : Colors.error }
+                  ]}>
+                    {testResult.success ? 'Test Passed' : 'Test Failed'}
+                  </Text>
+                </View>
+                <Text style={[styles.testResultMessage, { color: textColor }]}>
+                  {testResult.message}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
         
         <View style={styles.userListSection}>
@@ -471,5 +580,62 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     marginTop: 12,
+  },
+  testSection: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  testCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+  },
+  testHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  testHeaderContent: {
+    flex: 1,
+  },
+  testTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    marginBottom: 4,
+  },
+  testDescription: {
+    fontSize: 13,
+  },
+  testButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  testResultBox: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  testResultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  testResultTitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    marginLeft: 8,
+  },
+  testResultMessage: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
