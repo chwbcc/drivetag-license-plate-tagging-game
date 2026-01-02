@@ -6,7 +6,7 @@ import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
-import { trpc } from '@/lib/trpc';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
 
 export default function AdminAreaScreen() {
@@ -15,12 +15,32 @@ export default function AdminAreaScreen() {
   const [testLoading, setTestLoading] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   
-  const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
+  const usersQuery = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from('users')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return { users: data || [], count: count || 0 };
+    },
     enabled: !!user?.adminRole,
     refetchOnMount: true,
   });
   
-  const pelletsQuery = trpc.admin.getAllPellets.useQuery(undefined, {
+  const pelletsQuery = useQuery({
+    queryKey: ['admin-pellets'],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from('pellets')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return { pellets: data || [], count: count || 0 };
+    },
     enabled: !!user?.adminRole,
     refetchOnMount: true,
   });

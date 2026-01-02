@@ -6,7 +6,9 @@ import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
-import { trpc } from '@/lib/trpc';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabase';
+import { hashPassword } from '@/utils/hash';
 import { User } from '@/types';
 
 type UserFormData = {
@@ -42,34 +44,96 @@ export default function UserManagementScreen() {
     adminRole: 'user',
   });
   
-  const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
+  const usersQuery = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from('users')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return { users: data || [], count: count || 0 };
+    },
     enabled: !!user?.adminRole,
     refetchOnMount: true,
   });
   
-  const updateRoleMutation = trpc.admin.updateUserRole.useMutation({
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, adminRole }: { userId: string; adminRole: string | null }) => {
+      const { error } = await supabase
+        .from('users')
+        .update({ admin_role: adminRole })
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
     onSuccess: () => {
       usersQuery.refetch();
       Alert.alert('Success', 'User role updated successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to update user role');
     },
   });
 
-  const createUserMutation = trpc.admin.createUser.useMutation({
+  const createUserMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const passwordHash = await hashPassword(data.password);
+      
+      const { error } = await supabase
+        .from('users')
+        .insert([{
+          email: data.email,
+          password_hash: passwordHash,
+          name: data.name,
+          license_plate: data.licensePlate,
+          state: data.state,
+          pellet_count: data.pelletCount,
+          positive_pellet_count: data.positivePelletCount,
+          experience: data.exp,
+          level: data.level,
+          admin_role: data.adminRole === 'user' ? null : data.adminRole,
+          created_at: new Date().toISOString(),
+        }]);
+      
+      if (error) throw error;
+    },
     onSuccess: () => {
       usersQuery.refetch();
       setShowCreateModal(false);
       resetForm();
       Alert.alert('Success', 'User created successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to create user');
     },
   });
 
-  const updateUserMutation = trpc.admin.updateUser.useMutation({
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const updates: any = {
+        name: data.name,
+        license_plate: data.licensePlate,
+        state: data.state,
+        pellet_count: data.pelletCount,
+        positive_pellet_count: data.positivePelletCount,
+        experience: data.exp,
+        level: data.level,
+        admin_role: data.adminRole === 'user' ? null : data.adminRole,
+      };
+      
+      if (data.password) {
+        updates.password_hash = await hashPassword(data.password);
+      }
+      
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', data.userId);
+      
+      if (error) throw error;
+    },
     onSuccess: () => {
       usersQuery.refetch();
       setShowEditModal(false);
@@ -77,7 +141,7 @@ export default function UserManagementScreen() {
       resetForm();
       Alert.alert('Success', 'User updated successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to update user');
     },
   });

@@ -1,26 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Tag, Shield, Heart, ThumbsUp, ThumbsDown } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import usePaymentStore from '@/store/payment-store';
-import usePelletStore from '@/store/pellet-store';
 import { PaymentItem } from '@/types';
-import { trpc } from '@/lib/trpc';
+
 import { useTheme } from '@/store/theme-store';
 
 export default function ShopScreen() {
   const { theme } = useTheme();
-  const { user, addPellets } = useAuthStore();
-  const { items, processPurchase, isLoading } = usePaymentStore();
-  const { pellets, removePellet } = usePelletStore();
+  const { user } = useAuthStore();
+  const { items, isLoading } = usePaymentStore();
   const [activeTab, setActiveTab] = useState<'purchase' | 'erase' | 'donation'>('purchase');
   const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
   
   const styles = getStyles(theme);
   
-  // Filter items by type and pellet type
   const filteredItems = items.filter(item => {
     if (item.type !== activeTab) return false;
     if (activeTab === 'purchase' || activeTab === 'erase') {
@@ -29,17 +26,6 @@ export default function ShopScreen() {
     return true;
   });
   
-  const myPellets = user ? pellets.filter(
-    pellet => {
-      const userLicensePlateWithState = user.state && !user.licensePlate.includes('-') 
-        ? `${user.state}-${user.licensePlate}` 
-        : user.licensePlate;
-      return pellet.targetLicensePlate.toLowerCase() === userLicensePlateWithState.toLowerCase() &&
-             pellet.type === pelletType;
-    }
-  ) : [];
-  
-  const createOrderMutation = trpc.payment.createOrder.useMutation();
 
   const handlePurchase = async (item: PaymentItem) => {
     if (!user) {
@@ -47,31 +33,11 @@ export default function ShopScreen() {
       return;
     }
 
-    try {
-      const order = await createOrderMutation.mutateAsync({
-        itemId: item.id,
-        amount: item.price,
-        itemName: item.name,
-      });
-
-      if (order.approvalUrl) {
-        if (Platform.OS === 'web') {
-          window.open(order.approvalUrl, '_blank');
-        } else {
-          const supported = await Linking.canOpenURL(order.approvalUrl);
-          if (supported) {
-            await Linking.openURL(order.approvalUrl);
-          } else {
-            Alert.alert('Error', 'Unable to open PayPal');
-          }
-        }
-      } else {
-        Alert.alert('Error', 'Failed to create payment order');
-      }
-    } catch (error) {
-      console.error('Order creation error:', error);
-      Alert.alert('Error', 'Failed to initiate payment. Please try again.');
-    }
+    Alert.alert(
+      'Purchase',
+      `This would purchase ${item.name} for ${item.price}.\n\nPayment integration is not yet configured.`,
+      [{ text: 'OK' }]
+    );
   };
   
   const renderItem = ({ item }: { item: PaymentItem }) => {

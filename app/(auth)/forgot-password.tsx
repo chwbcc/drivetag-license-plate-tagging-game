@@ -3,14 +3,13 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } fr
 import { router } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { vanillaClient } from '@/lib/trpc';
+import { supabase } from '@/utils/supabase';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [resetToken, setResetToken] = useState('');
 
   const handleRequestReset = async () => {
     if (!email) {
@@ -25,33 +24,26 @@ export default function ForgotPasswordScreen() {
     
     setIsLoading(true);
     setError('');
-    setSuccess('');
     
     try {
       console.log('[ForgotPassword] Requesting reset for:', email);
       
-      const result = await vanillaClient.auth.requestReset.mutate({
-        email,
-      });
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .single();
       
-      console.log('[ForgotPassword] Reset result:', result);
-      
-      if (result.success) {
-        setSuccess(result.message);
-        
-        if (result.resetToken) {
-          setResetToken(result.resetToken);
-          console.log('[ForgotPassword] Reset token:', result.resetToken);
-        }
-        
+      if (error || !data) {
+        setError('No account found with this email address.');
+      } else {
+        setEmailSent(true);
         setTimeout(() => {
           router.push({
             pathname: '/(auth)/reset-password',
             params: { email },
           });
         }, 2000);
-      } else {
-        setError(result.message);
       }
     } catch (error) {
       console.error('[ForgotPassword] Error:', error);
@@ -77,18 +69,15 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.logoEmoji}>🔑</Text>
           </View>
           <Text style={styles.title}>Forgot Password</Text>
-          <Text style={styles.subtitle}>Enter your email to receive a reset code</Text>
+          <Text style={styles.subtitle}>Enter your email to reset your password</Text>
         </View>
         
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
-          {resetToken ? (
-            <View style={styles.tokenContainer}>
-              <Text style={styles.tokenLabel}>Your reset code:</Text>
-              <Text style={styles.tokenText}>{resetToken}</Text>
-              <Text style={styles.tokenNote}>Save this code, you will need it on the next screen</Text>
-            </View>
+          {emailSent ? (
+            <Text style={styles.successText}>
+              Account found! Redirecting to reset password...
+            </Text>
           ) : null}
           
           <Input
@@ -101,7 +90,7 @@ export default function ForgotPasswordScreen() {
           />
           
           <Button
-            title="Request Reset Code"
+            title="Continue"
             onPress={handleRequestReset}
             loading={isLoading}
             style={styles.button}
@@ -171,33 +160,6 @@ const styles = StyleSheet.create({
     color: '#10B981',
     marginBottom: 16,
     textAlign: 'center',
-  },
-  tokenContainer: {
-    marginBottom: 24,
-    padding: 16,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#8B5CF6',
-  },
-  tokenLabel: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 8,
-  },
-  tokenText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#8B5CF6',
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: 4,
-  },
-  tokenNote: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
   button: {
     marginTop: 8,

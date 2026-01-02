@@ -20,7 +20,7 @@ import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
-import { trpcClient } from '@/lib/trpc';
+import { supabase } from '@/utils/supabase';
 
 // Experience points awarded for different actions
 const US_STATES = [
@@ -169,22 +169,42 @@ export default function TagDriverScreen() {
       }
       
       console.log('[TagDriver] Saving pellet to backend...');
-      await trpcClient.pellet.addPellet.mutate(newPellet);
-      console.log('[TagDriver] Pellet saved successfully');
+      const { error: pelletError } = await supabase
+        .from('pellets')
+        .insert([{
+          license_plate: newPellet.targetLicensePlate,
+          created_by: newPellet.createdBy,
+          created_at: new Date(newPellet.createdAt).toISOString(),
+          notes: newPellet.reason,
+          type: newPellet.type,
+          location: newPellet.location,
+        }]);
       
-      // Add the pellet to the local store as well
+      if (pelletError) {
+        console.error('[TagDriver] Error saving pellet:', pelletError);
+      } else {
+        console.log('[TagDriver] Pellet saved successfully');
+      }
+      
       addPellet(newPellet);
       
-      // Update pellet counts in database
       const newPelletCount = user!.pelletCount - (pelletType === 'negative' ? 1 : 0);
       const newPositivePelletCount = user!.positivePelletCount - (pelletType === 'positive' ? 1 : 0);
       
       console.log('[TagDriver] Updating pellet count...');
-      await trpcClient.user.updatePelletCount.mutate({
-        pelletCount: newPelletCount,
-        positivePelletCount: newPositivePelletCount,
-      });
-      console.log('[TagDriver] Pellet count updated successfully');
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          pellet_count: newPelletCount,
+          positive_pellet_count: newPositivePelletCount,
+        })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error('[TagDriver] Error updating pellet count:', updateError);
+      } else {
+        console.log('[TagDriver] Pellet count updated successfully');
+      }
       
       // Calculate and award experience points
       let expGained = isPositive ? EXP_REWARDS.POSITIVE_TAG : EXP_REWARDS.TAG_DRIVER;
@@ -203,11 +223,19 @@ export default function TagDriverScreen() {
       const leveledUp = addExp(expGained);
       
       console.log('[TagDriver] Updating experience...');
-      await trpcClient.user.updateExperience.mutate({
-        exp: user!.exp + expGained,
-        level: user!.level,
-      });
-      console.log('[TagDriver] Experience updated successfully');
+      const { error: expError } = await supabase
+        .from('users')
+        .update({
+          experience: user!.exp + expGained,
+          level: user!.level,
+        })
+        .eq('id', user.id);
+      
+      if (expError) {
+        console.error('[TagDriver] Error updating exp:', expError);
+      } else {
+        console.log('[TagDriver] Experience updated successfully');
+      }
       
       // Check for new badges
       if (user) {
@@ -215,12 +243,22 @@ export default function TagDriverScreen() {
         
         if (newBadges.length > 0) {
           console.log('[TagDriver] Awarding new badges...');
-          for (const badgeId of newBadges) {
-            try {
-              await trpcClient.user.addBadge.mutate({ badgeId });
-            } catch (error) {
-              console.error('[TagDriver] Failed to sync badge:', error);
-            }
+          const { data: userData } = await supabase
+            .from('users')
+            .select('badges')
+            .eq('id', user.id)
+            .single();
+          
+          const currentBadges = userData?.badges || [];
+          const updatedBadges = [...new Set([...currentBadges, ...newBadges])];
+          
+          const { error: badgeError } = await supabase
+            .from('users')
+            .update({ badges: updatedBadges })
+            .eq('id', user.id);
+          
+          if (badgeError) {
+            console.error('[TagDriver] Failed to sync badges:', badgeError);
           }
           
           // Show badge notification after the tag success message

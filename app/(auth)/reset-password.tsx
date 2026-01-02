@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { vanillaClient } from '@/lib/trpc';
+import { supabase } from '@/utils/supabase';
+import { hashPassword } from '@/utils/hash';
 
 export default function ResetPasswordScreen() {
   const params = useLocalSearchParams();
@@ -40,22 +41,28 @@ export default function ResetPasswordScreen() {
     try {
       console.log('[ResetPassword] Resetting password for:', email);
       
-      const result = await vanillaClient.auth.resetPassword.mutate({
-        email,
-        token,
-        newPassword,
-      });
+      const passwordHash = await hashPassword(newPassword);
       
-      console.log('[ResetPassword] Reset result:', result);
+      const { error } = await supabase
+        .from('users')
+        .update({ password_hash: passwordHash })
+        .eq('email', email.toLowerCase());
       
-      if (result.success) {
-        setSuccess(result.message);
-        
-        setTimeout(() => {
-          router.replace('/(auth)');
-        }, 2000);
+      if (error) {
+        setError('Failed to reset password. Please try again.');
       } else {
-        setError(result.message);
+        setSuccess('Password reset successfully!');
+        
+        Alert.alert(
+          'Success',
+          'Your password has been reset successfully.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/(auth)'),
+            },
+          ]
+        );
       }
     } catch (error) {
       console.error('[ResetPassword] Error:', error);

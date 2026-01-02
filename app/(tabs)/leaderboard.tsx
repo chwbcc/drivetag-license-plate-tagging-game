@@ -6,7 +6,8 @@ import usePelletStore from '@/store/pellet-store';
 import useAuthStore from '@/store/auth-store';
 import { hashLicensePlate, calculateStatistics } from '@/utils/hash';
 import { useTheme } from '@/store/theme-store';
-import { trpc } from '@/lib/trpc';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabase';
 
 type LeaderboardItem = {
   licensePlate: string;
@@ -30,18 +31,32 @@ export default function LeaderboardScreen() {
   const [activeTab, setActiveTab] = useState<'pellets' | 'experience'>('pellets');
   const [useDatabase, setUseDatabase] = useState(true);
   
-  const pelletLeaderboardQuery = trpc.user.getLeaderboard.useQuery({
-    type: 'pellets',
-    sortOrder,
-    pelletType,
-  }, {
+  const pelletLeaderboardQuery = useQuery({
+    queryKey: ['leaderboard', 'pellets', sortOrder, pelletType],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pellets')
+        .select('license_plate')
+        .order('created_at', { ascending: sortOrder === 'asc' });
+      
+      if (error) throw error;
+      return { data: data || [] };
+    },
     enabled: useDatabase && activeTab === 'pellets',
   });
   
-  const expLeaderboardQuery = trpc.user.getLeaderboard.useQuery({
-    type: 'experience',
-    sortOrder,
-  }, {
+  const expLeaderboardQuery = useQuery({
+    queryKey: ['leaderboard', 'experience', sortOrder],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, experience, level')
+        .order('experience', { ascending: sortOrder === 'asc' })
+        .limit(100);
+      
+      if (error) throw error;
+      return { data: data || [] };
+    },
     enabled: useDatabase && activeTab === 'experience',
   });
   

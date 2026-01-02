@@ -6,7 +6,8 @@ import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
-import { vanillaClient } from '@/lib/trpc';
+import { supabase } from '@/utils/supabase';
+import { hashPassword } from '@/utils/hash';
 
 
 
@@ -68,45 +69,50 @@ export default function RegisterScreen() {
         return;
       }
       
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const passwordHash = await hashPassword(password);
       
-      console.log('[Register] Calling backend register mutation...');
-      const result = await vanillaClient.auth.register.mutate({
-        id: userId,
-        email,
-        password,
-        name: name || undefined,
-        licensePlate: licensePlate.toUpperCase(),
-        state,
-      });
+      console.log('[Register] Creating user in Supabase...');
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          email: email.toLowerCase(),
+          password_hash: passwordHash,
+          name: name || null,
+          license_plate: licensePlate.toUpperCase(),
+          state,
+          pellet_count: 10,
+          positive_pellet_count: 5,
+          experience: 0,
+          level: 1,
+          badges: [],
+          created_at: new Date().toISOString(),
+        }])
+        .select()
+        .single();
       
-      console.log('[Register] Backend response:', JSON.stringify(result));
-      
-      if (result.success && result.user) {
-        console.log('[Register] Registration successful, logging in user');
-        
-        const userWithPellets = {
-          ...result.user,
-          pelletCount: 10,
-          positivePelletCount: 5,
-        };
-        
-        register(userWithPellets);
-        
-        try {
-          await vanillaClient.auth.syncUser.mutate({
-            pelletCount: 10,
-            positivePelletCount: 5,
-          });
-        } catch (syncError) {
-          console.error('[Register] Error syncing initial pellet data (non-critical):', syncError);
-        }
-        
-        router.replace('/(tabs)/home');
-      } else {
-        console.log('[Register] Registration failed:', result.message);
-        setError(result.message);
+      if (error) {
+        console.error('[Register] Supabase error:', error);
+        throw error;
       }
+      
+      console.log('[Register] Registration successful');
+      
+      const newUser = {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        licensePlate: data.license_plate,
+        state: data.state,
+        pelletCount: data.pellet_count || 10,
+        positivePelletCount: data.positive_pellet_count || 5,
+        badges: data.badges || [],
+        exp: data.experience || 0,
+        level: data.level || 1,
+        adminRole: data.admin_role,
+      };
+      
+      register(newUser);
+      router.replace('/(tabs)/home');
     } catch (error: any) {
       console.error('[Register] Error during registration:', error);
       console.error('[Register] Error details:', {

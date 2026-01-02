@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
-import { vanillaClient } from '@/lib/trpc';
+import { supabase } from '@/utils/supabase';
+import { hashPassword } from '@/utils/hash';
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
 
@@ -53,16 +54,35 @@ export default function LoginScreen() {
         return;
       }
       
-      const result = await vanillaClient.auth.login.mutate({
-        email,
-        password,
-      });
+      const passwordHash = await hashPassword(password);
       
-      if (result.success && result.user) {
-        login(result.user);
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .eq('password_hash', passwordHash)
+        .limit(1);
+      
+      if (error) throw error;
+      
+      if (users && users.length > 0) {
+        const user = users[0];
+        login({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          licensePlate: user.license_plate,
+          state: user.state,
+          pelletCount: user.pellet_count || 10,
+          positivePelletCount: user.positive_pellet_count || 5,
+          badges: user.badges || [],
+          exp: user.experience || 0,
+          level: user.level || 1,
+          adminRole: user.admin_role,
+        });
         router.replace('/(tabs)/home');
       } else {
-        setError(result.message || 'Login failed. Please check your credentials.');
+        setError('Invalid email or password');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';

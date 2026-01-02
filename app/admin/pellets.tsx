@@ -6,13 +6,24 @@ import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
-import { trpc } from '@/lib/trpc';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabase';
 
 export default function PelletReportsScreen() {
   const { user } = useAuthStore();
   const { isDark } = useTheme();
   
-  const pelletsQuery = trpc.admin.getAllPellets.useQuery(undefined, {
+  const pelletsQuery = useQuery({
+    queryKey: ['admin-pellets'],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from('pellets')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return { pellets: data || [], count: count || 0 };
+    },
     enabled: !!user?.adminRole,
     refetchOnMount: true,
   });
