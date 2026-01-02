@@ -87,7 +87,7 @@ export default function UserManagementScreen() {
           email: data.email,
           password_hash: passwordHash,
           name: data.name,
-          license_plate: data.licensePlate,
+          licenseplate: data.licensePlate,
           state: data.state,
           pellet_count: data.pelletCount,
           positive_pellet_count: data.positivePelletCount,
@@ -114,7 +114,7 @@ export default function UserManagementScreen() {
     mutationFn: async (data: any) => {
       const updates: any = {
         name: data.name,
-        license_plate: data.licensePlate,
+        licenseplate: data.licensePlate,
         state: data.state,
         pellet_count: data.pelletCount,
         positive_pellet_count: data.positivePelletCount,

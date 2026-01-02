@@ -71,7 +71,7 @@ export default function LoginScreen() {
           id: user.id,
           email: user.email,
           name: user.name,
-          licensePlate: user.license_plate,
+          licensePlate: user.licenseplate,
           state: user.state,
           pelletCount: user.pellet_count || 10,
           positivePelletCount: user.positive_pellet_count || 5,

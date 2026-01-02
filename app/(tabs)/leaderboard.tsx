@@ -36,7 +36,7 @@ export default function LeaderboardScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pellets')
-        .select('license_plate')
+        .select('licenseplate')
         .order('created_at', { ascending: sortOrder === 'asc' });
       
       if (error) throw error;

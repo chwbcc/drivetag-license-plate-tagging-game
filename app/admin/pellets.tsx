@@ -85,7 +85,7 @@ export default function PelletReportsScreen() {
                   </View>
                   <View style={styles.pelletInfo}>
                     <Text style={[styles.licensePlate, { color: textColor }]}>
-                      {pellet.license_plate || 'N/A'}
+                      {pellet.licenseplate || 'N/A'}
                     </Text>
                     <Text style={[styles.pelletDate, { color: textSecondary }]}>
                       {formatDate(new Date(pellet.created_at).getTime())}

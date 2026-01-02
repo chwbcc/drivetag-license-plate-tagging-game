@@ -172,7 +172,7 @@ export default function TagDriverScreen() {
       const { error: pelletError } = await supabase
         .from('pellets')
         .insert([{
-          license_plate: newPellet.targetLicensePlate,
+          licenseplate: newPellet.targetLicensePlate,
           created_by: newPellet.createdBy,
           created_at: new Date(newPellet.createdAt).toISOString(),
           notes: newPellet.reason,
