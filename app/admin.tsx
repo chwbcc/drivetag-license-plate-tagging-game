@@ -146,11 +146,15 @@ export default function AdminAreaScreen() {
       
       if (error) {
         console.error('❌ Database insert error:', error);
+        console.error('❌ Error details:', JSON.stringify(error, null, 2));
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error code:', error.code);
+        console.error('❌ Error hint:', error.hint);
         setTestResult({
           success: false,
-          message: `Error: ${error.message}`,
+          message: `Error: ${error.message || JSON.stringify(error)}`,
         });
-        Alert.alert('Database Test Failed', error.message);
+        Alert.alert('Database Test Failed', error.message || 'Unknown error');
       } else {
         console.log('✅ Test user created successfully:', data);
         setTestResult({
@@ -161,7 +165,8 @@ export default function AdminAreaScreen() {
       }
     } catch (err) {
       console.error('❌ Database test exception:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('❌ Exception details:', JSON.stringify(err, null, 2));
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
       setTestResult({
         success: false,
         message: `Exception: ${errorMessage}`,

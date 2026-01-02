@@ -1,10 +1,14 @@
 import 'expo-sqlite/localStorage/install';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://vhqpsnezcvqgikpqzdgk.supabase.co';
-const supabasePublishableKey = 'sb_publishable_Qi1OhFZksZhC0ONgzE6ojQ_3VO0zWhU';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://vhqpsnezcvqgikpqzdgk.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+if (!supabaseAnonKey) {
+  console.error('[Supabase] EXPO_PUBLIC_SUPABASE_ANON_KEY is not set!');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: localStorage,
     autoRefreshToken: true,
