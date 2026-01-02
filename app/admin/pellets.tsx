@@ -85,10 +85,10 @@ export default function PelletReportsScreen() {
                   </View>
                   <View style={styles.pelletInfo}>
                     <Text style={[styles.licensePlate, { color: textColor }]}>
-                      {pellet.licensePlate}
+                      {pellet.license_plate || 'N/A'}
                     </Text>
                     <Text style={[styles.pelletDate, { color: textSecondary }]}>
-                      {formatDate(pellet.createdAt)}
+                      {formatDate(new Date(pellet.created_at).getTime())}
                     </Text>
                   </View>
                 </View>
@@ -105,16 +105,18 @@ export default function PelletReportsScreen() {
                     <User size={14} color={textSecondary} />
                     <Text style={[styles.detailLabel, { color: textSecondary }]}>Reported by:</Text>
                     <Text style={[styles.detailValue, { color: textColor }]}>
-                      {pellet.userEmail || 'Unknown'}
+                      {pellet.created_by || 'Unknown'}
                     </Text>
                   </View>
                   
-                  {pellet.location && (
+                  {pellet.location && pellet.location.latitude && pellet.location.longitude && (
                     <View style={styles.detailRow}>
                       <MapPin size={14} color={textSecondary} />
                       <Text style={[styles.detailLabel, { color: textSecondary }]}>Location:</Text>
                       <Text style={[styles.detailValue, { color: textColor }]}>
-                        {pellet.location.latitude.toFixed(4)}, {pellet.location.longitude.toFixed(4)}
+                        {typeof pellet.location.latitude === 'number' && typeof pellet.location.longitude === 'number'
+                          ? `${pellet.location.latitude.toFixed(4)}, ${pellet.location.longitude.toFixed(4)}`
+                          : 'Location recorded'}
                       </Text>
                     </View>
                   )}
