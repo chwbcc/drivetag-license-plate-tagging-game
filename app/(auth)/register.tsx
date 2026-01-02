@@ -72,20 +72,32 @@ export default function RegisterScreen() {
       const passwordHash = await hashPassword(password);
       
       console.log('[Register] Creating user in Supabase...');
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const stats = JSON.stringify({
+        pelletCount: 10,
+        positivePelletCount: 5,
+        badges: [],
+        exp: 0,
+        level: 1,
+        name: name || 'Anonymous',
+        photo: null,
+        licensePlate: licensePlate.toUpperCase(),
+        state,
+      });
+      
       const { data, error } = await supabase
         .from('users')
         .insert([{
+          id: userId,
           email: email.toLowerCase(),
-          password_hash: passwordHash,
-          name: name || null,
-          license_plate: licensePlate.toUpperCase(),
+          username: name || 'Anonymous',
+          passwordHash: passwordHash,
+          created_at: Date.now(),
+          stats,
+          role: 'user',
+          licensePlate: licensePlate.toUpperCase(),
           state,
-          pellet_count: 10,
-          positive_pellet_count: 5,
-          experience: 0,
-          level: 1,
-          badges: [],
-          created_at: new Date().toISOString(),
         }])
         .select()
         .single();
@@ -97,18 +109,20 @@ export default function RegisterScreen() {
       
       console.log('[Register] Registration successful');
       
+      const userStats = JSON.parse(data.stats as string);
+      
       const newUser = {
         id: data.id,
         email: data.email,
-        name: data.name,
-        licensePlate: data.license_plate,
-        state: data.state,
-        pelletCount: data.pellet_count || 10,
-        positivePelletCount: data.positive_pellet_count || 5,
-        badges: data.badges || [],
-        exp: data.experience || 0,
-        level: data.level || 1,
-        adminRole: data.admin_role,
+        name: userStats.name || '',
+        licensePlate: data.licensePlate || userStats.licensePlate || '',
+        state: data.state || userStats.state || '',
+        pelletCount: userStats.pelletCount || 10,
+        positivePelletCount: userStats.positivePelletCount || 5,
+        badges: userStats.badges || [],
+        exp: userStats.exp || 0,
+        level: userStats.level || 1,
+        adminRole: data.role === 'user' ? null : data.role,
       };
       
       register(newUser);
