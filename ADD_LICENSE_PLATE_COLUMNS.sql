@@ -49,7 +49,7 @@ BEGIN
 END $$;
 
 -- Add badges column if it doesn't exist (JSON array)
-DO $$ 
+DO $ 
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
@@ -58,7 +58,23 @@ BEGIN
         ALTER TABLE users ADD COLUMN badges JSONB DEFAULT '[]'::jsonb;
         COMMENT ON COLUMN users.badges IS 'Array of badge IDs earned by user';
     END IF;
-END $$;
+END $;
+
+-- Fix badges column type if it's text[] instead of jsonb
+DO $
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'users' 
+        AND column_name = 'badges' 
+        AND data_type = 'ARRAY'
+    ) THEN
+        -- Drop the text[] column and recreate as jsonb
+        ALTER TABLE users DROP COLUMN badges;
+        ALTER TABLE users ADD COLUMN badges JSONB DEFAULT '[]'::jsonb;
+        COMMENT ON COLUMN users.badges IS 'Array of badge IDs earned by user';
+    END IF;
+END $;
 
 -- Update existing users to have default values if they don't have them
 UPDATE users 
