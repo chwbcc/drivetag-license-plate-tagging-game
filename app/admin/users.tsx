@@ -12,7 +12,6 @@ import { User } from '@/types';
 
 type UserFormData = {
   email: string;
-  password: string;
   name: string;
   licensePlate: string;
   state: string;
@@ -32,7 +31,6 @@ export default function UserManagementScreen() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
-    password: '',
     name: '',
     licensePlate: '',
     state: '',
@@ -238,7 +236,6 @@ export default function UserManagementScreen() {
   const resetForm = () => {
     setFormData({
       email: '',
-      password: '',
       name: '',
       licensePlate: '',
       state: '',
@@ -254,7 +251,6 @@ export default function UserManagementScreen() {
     setEditingUser(u);
     setFormData({
       email: u.email,
-      password: '',
       name: u.name || '',
       licensePlate: u.licensePlate || '',
       state: u.state || '',
@@ -268,14 +264,13 @@ export default function UserManagementScreen() {
   };
 
   const handleCreateUser = () => {
-    if (!formData.email || !formData.password) {
-      Alert.alert('Error', 'Email and password are required');
+    if (!formData.email) {
+      Alert.alert('Error', 'Email is required');
       return;
     }
 
     createUserMutation.mutate({
       email: formData.email,
-      password: formData.password,
       name: formData.name || undefined,
       licensePlate: formData.licensePlate || undefined,
       state: formData.state || undefined,
@@ -301,10 +296,6 @@ export default function UserManagementScreen() {
       level: parseInt(formData.level),
       adminRole: formData.adminRole,
     };
-
-    if (formData.password) {
-      updates.password = formData.password;
-    }
 
     updateUserMutation.mutate(updates);
   };
@@ -360,16 +351,6 @@ export default function UserManagementScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
         editable={!isEdit}
-      />
-
-      <Text style={[styles.formLabel, { color: textColor }]}>Password{isEdit && ' (leave empty to keep current)'}</Text>
-      <TextInput
-        style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
-        value={formData.password}
-        onChangeText={(text) => setFormData({ ...formData, password: text })}
-        placeholder={isEdit ? "Leave empty to keep current" : "Password"}
-        placeholderTextColor={textSecondary}
-        secureTextEntry
       />
 
       <Text style={[styles.formLabel, { color: textColor }]}>Name</Text>
