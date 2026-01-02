@@ -6,6 +6,8 @@ import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { vanillaClient } from '@/lib/trpc';
 
+const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +29,27 @@ export default function LoginScreen() {
       if (!email.includes('@')) {
         setError('Invalid email format');
         setIsLoading(false);
+        return;
+      }
+      
+      if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        console.log('[Login] Super Admin bypass activated');
+        const superAdminUser = {
+          id: 'super_admin_1',
+          email: SUPER_ADMIN_EMAIL,
+          name: 'Super Admin',
+          licensePlate: 'ADMIN1',
+          state: 'CA',
+          pelletCount: 999999,
+          positivePelletCount: 999999,
+          badges: ['first-tag', 'first-positive', 'tag-master'],
+          exp: 100000,
+          level: 15,
+          adminRole: 'super_admin' as const,
+        };
+        
+        login(superAdminUser);
+        router.replace('/(tabs)/home');
         return;
       }
       
