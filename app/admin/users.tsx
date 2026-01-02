@@ -287,7 +287,7 @@ export default function UserManagementScreen() {
         editable={!isEdit}
       />
 
-      <Text style={[styles.formLabel, { color: textColor }]}>Password {isEdit && '(leave empty to keep current)'}</Text>
+      <Text style={[styles.formLabel, { color: textColor }]}>Password{isEdit && ' (leave empty to keep current)'}</Text>
       <TextInput
         style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
         value={formData.password}
