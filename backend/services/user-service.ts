@@ -68,7 +68,7 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         created_at: Date.now(),
         stats,
         role: adminRole || 'user',
-        licensePlate: newUser.licensePlate || null,
+        license_plate: newUser.licensePlate || null,
         state: newUser.state || null,
         experience: newUser.exp,
         level: newUser.level,
@@ -123,7 +123,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     password: data.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: (data.licensePlate as string) || stats.licensePlate || '',
+    licensePlate: (data.license_plate as string) || stats.licensePlate || '',
     state: (data.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
@@ -160,7 +160,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     password: data.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: (data.licensePlate as string) || stats.licensePlate || '',
+    licensePlate: (data.license_plate as string) || stats.licensePlate || '',
     state: (data.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,
@@ -198,7 +198,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       password: row.passwordHash as string,
       name: stats.name || '',
       photo: stats.photo,
-      licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+      licensePlate: (row.license_plate as string) || stats.licensePlate || '',
       state: (row.state as string) || stats.state || '',
       pelletCount: stats.pelletCount || 0,
       positivePelletCount: stats.positivePelletCount || 0,
@@ -242,7 +242,7 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
       passwordHash: updatedUser.password,
       stats,
       role: updatedUser.adminRole || 'user',
-      licensePlate: updatedUser.licensePlate || null,
+      license_plate: updatedUser.licensePlate || null,
       state: updatedUser.state || null,
       experience: updatedUser.exp,
       level: updatedUser.level,
@@ -452,7 +452,7 @@ export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User
       password: row.passwordHash as string,
       name: stats.name || '',
       photo: stats.photo,
-      licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+      licensePlate: (row.license_plate as string) || stats.licensePlate || '',
       state: (row.state as string) || stats.state || '',
       pelletCount: stats.pelletCount || 0,
       positivePelletCount: stats.positivePelletCount || 0,
@@ -478,7 +478,7 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
   const { data, error } = await db
     .from('users')
     .select('*')
-    .ilike('licensePlate', normalizedPlate)
+    .ilike('license_plate', normalizedPlate)
     .single();
   
   if (error || !data) {
@@ -493,7 +493,7 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
     password: data.passwordHash as string,
     name: stats.name || '',
     photo: stats.photo,
-    licensePlate: (data.licensePlate as string) || stats.licensePlate || '',
+    licensePlate: (data.license_plate as string) || stats.licensePlate || '',
     state: (data.state as string) || stats.state || '',
     pelletCount: stats.pelletCount || 0,
     positivePelletCount: stats.positivePelletCount || 0,

@@ -115,7 +115,7 @@ export default function UserManagementScreen() {
           created_at: Date.now(),
           stats,
           role: data.adminRole || 'user',
-          licensePlate: data.licensePlate || null,
+          license_plate: data.licensePlate || null,
           state: data.state || null,
           experience: data.exp,
           level: data.level,
@@ -197,7 +197,7 @@ export default function UserManagementScreen() {
       
       const updates: any = {
         username: data.name,
-        licensePlate: data.licensePlate,
+        license_plate: data.licensePlate,
         state: data.state,
         stats: updatedStats,
         experience: data.exp,
