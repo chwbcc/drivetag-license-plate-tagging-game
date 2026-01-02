@@ -546,7 +546,7 @@ export default function UserManagementScreen() {
                         <Car size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Plate:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          {u.licensePlate || 'Not set'} {u.state ? `(${u.state})` : ''}
+                          {u.licensePlate || 'Not set'}{u.state ? ` (${u.state})` : ''}
                         </Text>
                       </View>
 
