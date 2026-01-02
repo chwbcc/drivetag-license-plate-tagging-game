@@ -49,7 +49,7 @@ export default function ProfileScreen() {
           { text: 'Cancel', style: 'cancel' },
           { 
             text: 'Go to Shop', 
-            onPress: () => router.push('/(tabs)/shop')
+            onPress: () => router.push('/(tabs)/shop' as any)
           }
         ]
       );
@@ -57,7 +57,7 @@ export default function ProfileScreen() {
     }
     
     router.push({
-      pathname: '/tag-driver',
+      pathname: '/tag-driver' as any,
       params: { type: pelletType }
     });
   };

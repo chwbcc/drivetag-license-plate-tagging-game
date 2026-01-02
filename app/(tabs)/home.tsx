@@ -71,7 +71,7 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: () => {
             logout();
-            router.replace('/(auth)');
+            router.replace('/(auth)' as any);
           }
         },
       ]
@@ -183,7 +183,7 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {user.adminRole && (
                 <TouchableOpacity
-                  onPress={() => router.push('/admin')}
+                  onPress={() => router.push('/admin' as any)}
                   style={{
                     backgroundColor: '#FFD700' + '30',
                     borderRadius: 8,
@@ -195,7 +195,7 @@ export default function HomeScreen() {
               )}
               
               <TouchableOpacity
-                onPress={() => router.push('/edit-profile')}
+                onPress={() => router.push('/edit-profile' as any)}
                 style={{
                   backgroundColor: colors.primary + '30',
                   borderRadius: 8,

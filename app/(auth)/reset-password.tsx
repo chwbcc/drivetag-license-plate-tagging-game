@@ -59,7 +59,7 @@ export default function ResetPasswordScreen() {
           [
             {
               text: 'OK',
-              onPress: () => router.replace('/(auth)'),
+              onPress: () => router.replace('/(auth)' as any),
             },
           ]
         );
@@ -141,7 +141,7 @@ export default function ResetPasswordScreen() {
             <Button
               title="Request New Code"
               variant="outline"
-              onPress={() => router.push('/(auth)/forgot-password')}
+              onPress={() => router.push('/(auth)/forgot-password' as any)}
               style={styles.requestButton}
             />
           </View>

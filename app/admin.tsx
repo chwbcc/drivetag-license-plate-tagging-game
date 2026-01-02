@@ -142,13 +142,13 @@ export default function AdminAreaScreen() {
   const handleCardPress = (cardId: string) => {
     switch(cardId) {
       case 'users':
-        router.push('/admin/users');
+        router.push('/admin/users' as any);
         break;
       case 'pellets':
-        router.push('/admin/pellets');
+        router.push('/admin/pellets' as any);
         break;
       case 'activity':
-        router.push('/admin/activity');
+        router.push('/admin/activity' as any);
         break;
       case 'backend-check':
         router.push('/backend-check');

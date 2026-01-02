@@ -84,12 +84,12 @@ function RootLayoutNav() {
       return;
     }
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const inAuthGroup = segments[0] === '(auth)' || segments[0] === undefined;
 
     if (!user && !inAuthGroup) {
-      setTimeout(() => router.replace('/(auth)'), 0);
+      setTimeout(() => router.replace('/(auth)' as any), 0);
     } else if (user && inAuthGroup) {
-      setTimeout(() => router.replace('/(tabs)/home'), 0);
+      setTimeout(() => router.replace('/(tabs)/home' as any), 0);
     }
   }, [user, segments, isNavigationReady, hasHydrated, router]);
   

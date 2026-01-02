@@ -1,8 +1,7 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { User, Trophy, ShoppingCart, Play, Target, Shield } from 'lucide-react-native';
 import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
@@ -47,7 +46,7 @@ export default function TabLayout() {
         },
         headerRight: user?.adminRole ? () => (
           <TouchableOpacity
-            onPress={() => router.push('/admin')}
+            onPress={() => router.push('/admin' as any)}
             style={{
               marginRight: 16,
               backgroundColor: '#FFD700' + '20',
@@ -79,7 +78,7 @@ export default function TabLayout() {
         options={{
           title: "Tag Driver",
           tabBarButton: (props) => (
-            <CenterTabButton onPress={() => router.push('/tag-driver')} />
+            <CenterTabButton onPress={() => router.push('/tag-driver' as any)} />
           ),
         }}
       />

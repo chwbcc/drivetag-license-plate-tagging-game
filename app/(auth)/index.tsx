@@ -50,7 +50,7 @@ export default function LoginScreen() {
         };
         
         login(superAdminUser);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/home' as any);
         return;
       }
       
@@ -80,7 +80,7 @@ export default function LoginScreen() {
           level: user.level || 1,
           adminRole: user.admin_role,
         });
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/home' as any);
       } else {
         setError('Invalid email or password');
       }

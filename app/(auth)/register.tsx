@@ -157,7 +157,7 @@ export default function RegisterScreen() {
       };
       
       register(newUser);
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/home' as any);
     } catch (error: any) {
       console.error('[Register] Error during registration:', error);
       console.error('[Register] Error details:', {
@@ -261,7 +261,7 @@ export default function RegisterScreen() {
             <Button
               title="Login"
               variant="outline"
-              onPress={() => router.push('/(auth)')}
+              onPress={() => router.push('/(auth)' as any)}
               style={styles.loginButton}
             />
           </View>
