@@ -30,6 +30,7 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
     badges: newUser.badges,
     name: newUser.name,
     photo: newUser.photo,
+    passwordHash: newUser.password,
   });
   
   try {
@@ -69,7 +70,6 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         state: newUser.state || null,
         experience: newUser.exp,
         level: newUser.level,
-        password_hash: newUser.password,
       });
     
     if (userError) {
@@ -229,6 +229,7 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
     badges: updatedUser.badges,
     name: updatedUser.name,
     photo: updatedUser.photo,
+    passwordHash: updatedUser.password,
   });
   
   const { error } = await db
@@ -241,7 +242,6 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
       state: updatedUser.state || null,
       experience: updatedUser.exp,
       level: updatedUser.level,
-      password_hash: updatedUser.password,
     })
     .eq('id', userId);
   
@@ -284,6 +284,7 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
       badges: user.badges,
       name: user.name,
       photo: user.photo,
+      passwordHash: user.password,
     });
     
     const { error: updateError } = await db
@@ -336,6 +337,7 @@ export const updateUserPelletCount = async (
       badges: updatedUser.badges,
       name: updatedUser.name,
       photo: updatedUser.photo,
+      passwordHash: updatedUser.password,
     });
     
     console.log('[UserService] Updating user pellet counts in database...');
