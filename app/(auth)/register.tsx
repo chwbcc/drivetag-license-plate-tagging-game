@@ -71,6 +71,19 @@ export default function RegisterScreen() {
       
       const passwordHash = await hashPassword(password);
       
+      console.log('[Register] Checking if user already exists...');
+      const { data: existingUser } = await supabase
+        .from('user_roles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .single();
+      
+      if (existingUser) {
+        setError('An account with this email already exists');
+        setIsLoading(false);
+        return;
+      }
+      
       console.log('[Register] Creating user in Supabase...');
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
