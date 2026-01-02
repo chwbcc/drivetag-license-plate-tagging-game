@@ -8,7 +8,6 @@ import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
-import { hashPassword } from '@/utils/hash';
 import { User } from '@/types';
 
 type UserFormData = {
@@ -86,7 +85,6 @@ export default function UserManagementScreen() {
 
   const createUserMutation = useMutation({
     mutationFn: async (data: any) => {
-      const passwordHash = await hashPassword(data.password);
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       console.log('[CreateUser] Starting user creation:', {
@@ -110,7 +108,6 @@ export default function UserManagementScreen() {
         .insert([{
           id: userId,
           email: data.email,
-          passwordHash: passwordHash,
           username: data.name || 'Anonymous',
           created_at: Date.now(),
           stats,
@@ -204,10 +201,6 @@ export default function UserManagementScreen() {
         level: data.level,
         role: data.adminRole || 'user',
       };
-      
-      if (data.password) {
-        updates.passwordHash = await hashPassword(data.password);
-      }
       
       const { error } = await supabase
         .from('users')
