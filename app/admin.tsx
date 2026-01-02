@@ -172,7 +172,7 @@ export default function AdminAreaScreen() {
       const testUser = {
         email: testEmail,
         name: 'Test User',
-        password_hash: 'test_hash_' + Date.now(),
+        passwordhash: 'test_hash_' + Date.now(),
         created_at: new Date().toISOString(),
         pellet_count: 0,
         experience: 0,

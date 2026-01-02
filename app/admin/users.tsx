@@ -85,7 +85,7 @@ export default function UserManagementScreen() {
         .from('users')
         .insert([{
           email: data.email,
-          password_hash: passwordHash,
+          passwordhash: passwordHash,
           name: data.name,
           licenseplate: data.licensePlate,
           state: data.state,
@@ -124,7 +124,7 @@ export default function UserManagementScreen() {
       };
       
       if (data.password) {
-        updates.password_hash = await hashPassword(data.password);
+        updates.passwordhash = await hashPassword(data.password);
       }
       
       const { error } = await supabase

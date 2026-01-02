@@ -60,7 +60,7 @@ export default function LoginScreen() {
         .from('users')
         .select('*')
         .eq('email', email.toLowerCase())
-        .eq('password_hash', passwordHash)
+        .eq('passwordhash', passwordHash)
         .limit(1);
       
       if (error) throw error;

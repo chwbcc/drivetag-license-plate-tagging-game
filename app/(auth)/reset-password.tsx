@@ -45,7 +45,7 @@ export default function ResetPasswordScreen() {
       
       const { error } = await supabase
         .from('users')
-        .update({ password_hash: passwordHash })
+        .update({ passwordhash: passwordHash })
         .eq('email', email.toLowerCase());
       
       if (error) {
