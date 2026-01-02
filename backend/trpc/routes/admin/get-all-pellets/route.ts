@@ -1,6 +1,6 @@
 import { adminProcedure } from "../../../create-context";
 import { getAllPellets } from "@/backend/services/pellet-service";
-import { getUserById } from "@/backend/services/user-service";
+import { getUsersByIds } from "@/backend/services/user-service";
 import { initDatabase } from "@/backend/database";
 
 export const getAllPelletsRoute = adminProcedure.query(async ({ ctx }) => {
@@ -8,26 +8,16 @@ export const getAllPelletsRoute = adminProcedure.query(async ({ ctx }) => {
   
   try {
     await initDatabase();
-    const pellets = await getAllPellets();
+    console.log('[Admin] Database initialized, fetching pellets...');
     
-    console.log(`[Admin] Found ${pellets.length} pellets, fetching user info...`);
+    const pellets = await getAllPellets();
+    console.log(`[Admin] Found ${pellets.length} pellets`);
     
     const uniqueUserIds = [...new Set(pellets.map(p => p.createdBy))];
-    console.log(`[Admin] Fetching ${uniqueUserIds.length} unique users`);
+    console.log(`[Admin] Fetching ${uniqueUserIds.length} unique users in batch...`);
     
-    const userMap = new Map<string, { email: string }>();
-    
-    await Promise.all(
-      uniqueUserIds.map(async (userId) => {
-        try {
-          const user = await getUserById(userId);
-          userMap.set(userId, { email: user.email });
-        } catch (error) {
-          console.error(`[Admin] Failed to fetch user ${userId}:`, error);
-          userMap.set(userId, { email: 'Unknown' });
-        }
-      })
-    );
+    const userMap = await getUsersByIds(uniqueUserIds);
+    console.log(`[Admin] Fetched ${userMap.size} users`);
     
     const pelletsWithUserInfo = pellets.map((pellet) => ({
       ...pellet,
@@ -44,7 +34,12 @@ export const getAllPelletsRoute = adminProcedure.query(async ({ ctx }) => {
     };
   } catch (error) {
     console.error('[Admin] Error getting all pellets:', error);
-    throw new Error('Failed to get pellets');
+    console.error('[Admin] Error details:', {
+      message: (error as any)?.message,
+      code: (error as any)?.code,
+      stack: (error as any)?.stack,
+    });
+    throw new Error(`Failed to get pellets: ${(error as any)?.message || 'Unknown error'}`);
   }
 });
 

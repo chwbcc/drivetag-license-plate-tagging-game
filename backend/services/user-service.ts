@@ -152,13 +152,18 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
 export const getAllUsers = async (): Promise<User[]> => {
   const db = getDatabase();
   
+  console.log('[UserService] Fetching all users...');
   const { data, error } = await db
     .from('users')
     .select('*')
     .order('created_at', { ascending: false });
   
-  if (error) throw error;
+  if (error) {
+    console.error('[UserService] Error fetching all users:', error);
+    throw error;
+  }
   
+  console.log(`[UserService] Found ${data?.length || 0} users`);
   const users: User[] = (data || []).map((row: any) => {
     const stats = JSON.parse(row.stats as string);
     
@@ -404,6 +409,53 @@ export const getUserBadges = async (userId: string): Promise<string[]> => {
   if (error) throw error;
   
   return (data || []).map((row: any) => row.badgeId as string);
+};
+
+export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User>> => {
+  const db = getDatabase();
+  
+  if (userIds.length === 0) {
+    return new Map();
+  }
+  
+  console.log(`[UserService] Fetching ${userIds.length} users by IDs...`);
+  const { data, error } = await db
+    .from('users')
+    .select('*')
+    .in('id', userIds);
+  
+  if (error) {
+    console.error('[UserService] Error fetching users by IDs:', error);
+    throw error;
+  }
+  
+  const userMap = new Map<string, User>();
+  
+  (data || []).forEach((row: any) => {
+    const stats = JSON.parse(row.stats as string);
+    
+    const user: User = {
+      id: row.id as string,
+      email: row.email as string,
+      password: row.passwordHash as string,
+      name: stats.name || '',
+      photo: stats.photo,
+      licensePlate: (row.licensePlate as string) || stats.licensePlate || '',
+      state: (row.state as string) || stats.state || '',
+      pelletCount: stats.pelletCount || 0,
+      positivePelletCount: stats.positivePelletCount || 0,
+      badges: stats.badges || [],
+      exp: stats.exp || 0,
+      level: stats.level || 1,
+      adminRole: (row.role as AdminRole) || null,
+      createdAt: new Date(row.created_at as number).toISOString(),
+    };
+    
+    userMap.set(user.id, user);
+  });
+  
+  console.log(`[UserService] Fetched ${userMap.size} users`);
+  return userMap;
 };
 
 export const getUserByLicensePlate = async (licensePlate: string): Promise<User | null> => {
