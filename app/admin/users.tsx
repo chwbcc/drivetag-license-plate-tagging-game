@@ -58,16 +58,9 @@ export default function UserManagementScreen() {
   
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, adminRole }: { userId: string; adminRole: string | null }) => {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role: adminRole || 'user' })
-        .eq('id', userId);
-      
-      if (roleError) throw roleError;
-      
       const { error } = await supabase
         .from('users')
-        .update({ role: adminRole })
+        .update({ role: adminRole || 'user' })
         .eq('id', userId);
       
       if (error) throw error;
@@ -122,34 +115,6 @@ export default function UserManagementScreen() {
         throw new Error(`Failed to create user in users table: ${usersError.message}`);
       }
       
-      console.log('[CreateUser] Successfully inserted into users table');
-      
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          id: userId,
-          email: data.email,
-          role: data.adminRole || 'user',
-        }]);
-      
-      if (roleError) {
-        console.error('[CreateUser] Failed to insert into user_roles:', roleError);
-        console.error('[CreateUser] Attempting rollback of users table...');
-        
-        const { error: deleteError } = await supabase
-          .from('users')
-          .delete()
-          .eq('id', userId);
-        
-        if (deleteError) {
-          console.error('[CreateUser] Rollback failed:', deleteError);
-        } else {
-          console.log('[CreateUser] Rollback successful');
-        }
-        
-        throw new Error(`Failed to create user_roles: ${roleError.message}`);
-      }
-      
       console.log('[CreateUser] User created successfully:', userId);
     },
     onSuccess: () => {
@@ -165,13 +130,6 @@ export default function UserManagementScreen() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role: data.adminRole || 'user' })
-        .eq('id', data.userId);
-      
-      if (roleError) throw roleError;
-      
       const { data: userData, error: fetchError } = await supabase
         .from('users')
         .select('stats')

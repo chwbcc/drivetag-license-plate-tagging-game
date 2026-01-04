@@ -33,29 +33,6 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
   });
   
   try {
-    // First, insert into user_roles table
-    const { error: roleError } = await db
-      .from('user_roles')
-      .insert({
-        id: newUser.id,
-        email: newUser.email,
-        role: adminRole || 'user',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    
-    if (roleError) {
-      console.error('❌ Database insert error (user_roles):', roleError);
-      console.error('❌ Error details:', JSON.stringify({
-        code: roleError.code,
-        message: roleError.message,
-        details: roleError.details,
-        hint: roleError.hint
-      }, null, 2));
-      throw roleError;
-    }
-    
-    // Then, insert into users table
     const { error: userError } = await db
       .from('users')
       .insert({
@@ -79,8 +56,6 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         details: userError.details,
         hint: userError.hint
       }, null, 2));
-      // Rollback: delete from user_roles
-      await db.from('user_roles').delete().eq('id', newUser.id);
       throw userError;
     }
     
@@ -299,7 +274,7 @@ export const updateUserAdminRole = async (userId: string, adminRole: AdminRole):
   
   const { error } = await db
     .from('users')
-    .update({ role: adminRole })
+    .update({ role: adminRole || 'user' })
     .eq('id', userId);
   
   if (error) throw error;

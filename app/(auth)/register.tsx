@@ -66,7 +66,7 @@ export default function RegisterScreen() {
       
       console.log('[Register] Checking if user already exists...');
       const { data: existingUser } = await supabase
-        .from('user_roles')
+        .from('users')
         .select('email')
         .eq('email', email.toLowerCase())
         .single();
@@ -92,22 +92,6 @@ export default function RegisterScreen() {
         state,
       });
       
-      console.log('[Register] Inserting into user_roles...');
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          id: userId,
-          email: email.toLowerCase(),
-          role: 'user',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }]);
-      
-      if (roleError) {
-        console.error('[Register] Error creating user role:', roleError);
-        throw roleError;
-      }
-      
       console.log('[Register] Inserting into users...');
       const { data, error } = await supabase
         .from('users')
@@ -128,7 +112,6 @@ export default function RegisterScreen() {
       
       if (error) {
         console.error('[Register] Supabase error:', error);
-        await supabase.from('user_roles').delete().eq('id', userId);
         throw error;
       }
       
