@@ -111,8 +111,11 @@ export default function RegisterScreen() {
         .single();
       
       if (error) {
-        console.error('[Register] Supabase error:', error);
-        throw error;
+        console.error('[Register] Supabase error:', JSON.stringify(error, null, 2));
+        console.error('[Register] Error code:', error.code);
+        console.error('[Register] Error message:', error.message);
+        console.error('[Register] Error details:', error.details);
+        throw new Error(`Database error: ${error.message || 'Unknown error'}`);
       }
       
       console.log('[Register] Registration successful');
@@ -136,13 +139,11 @@ export default function RegisterScreen() {
       register(newUser);
       router.replace('/(tabs)/home' as any);
     } catch (error: any) {
-      console.error('[Register] Error during registration:', error);
-      console.error('[Register] Error details:', {
-        message: error?.message,
-        cause: error?.cause,
-        stack: error?.stack,
-        data: error?.data,
-      });
+      console.error('[Register] Error during registration:', JSON.stringify(error, null, 2));
+      console.error('[Register] Error message:', error?.message);
+      console.error('[Register] Error code:', error?.code);
+      console.error('[Register] Error details:', error?.details);
+      console.error('[Register] Error hint:', error?.hint);
       
       let errorMessage = error?.message || 'An error occurred. Please try again.';
       
