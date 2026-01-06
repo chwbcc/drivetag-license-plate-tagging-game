@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase, getAdminDatabase } from '../database';
 import { User, AdminRole } from '@/types';
 
 export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelletCount' | 'badges' | 'exp' | 'level' | 'password'>): Promise<User> => {
@@ -435,45 +435,61 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {
-  const db = getDatabase();
+  const adminDb = getAdminDatabase();
   
   console.log('[UserService] Deleting user:', userId);
+  console.log('[UserService] Using admin database for deletion');
   
-  const { error: badgesError } = await db
+  const { data: badgesData, error: badgesError } = await adminDb
     .from('badges')
     .delete()
-    .eq('userid', userId);
+    .eq('userid', userId)
+    .select();
   
   if (badgesError) {
     console.error('[UserService] Error deleting user badges:', badgesError);
+  } else {
+    console.log(`[UserService] Deleted ${badgesData?.length || 0} badges`);
   }
   
-  const { error: pelletsError } = await db
+  const { data: pelletsData, error: pelletsError } = await adminDb
     .from('pellets')
     .delete()
-    .or(`createdby.eq.${userId},targetuserid.eq.${userId}`);
+    .or(`createdby.eq.${userId},targetuserid.eq.${userId}`)
+    .select();
   
   if (pelletsError) {
     console.error('[UserService] Error deleting user pellets:', pelletsError);
+  } else {
+    console.log(`[UserService] Deleted ${pelletsData?.length || 0} pellets`);
   }
   
-  const { error: activitiesError } = await db
+  const { data: activitiesData, error: activitiesError } = await adminDb
     .from('activities')
     .delete()
-    .eq('userid', userId);
+    .eq('userid', userId)
+    .select();
   
   if (activitiesError) {
     console.error('[UserService] Error deleting user activities:', activitiesError);
+  } else {
+    console.log(`[UserService] Deleted ${activitiesData?.length || 0} activities`);
   }
   
-  const { error: userError } = await db
+  const { data: userData, error: userError } = await adminDb
     .from('users')
     .delete()
-    .eq('id', userId);
+    .eq('id', userId)
+    .select();
   
   if (userError) {
     console.error('[UserService] Error deleting user:', userError);
     throw userError;
+  }
+  
+  if (!userData || userData.length === 0) {
+    console.error('[UserService] User was not deleted - user may not exist');
+    throw new Error('User was not deleted. The user may not exist.');
   }
   
   console.log('[UserService] User deleted successfully:', userId);
