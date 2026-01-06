@@ -173,7 +173,7 @@ export default function TagDriverScreen() {
       const { error: pelletError } = await supabase
         .from('pellets')
         .insert([{
-          licenseplate: newPellet.targetLicensePlate,
+          license_plate: newPellet.targetLicensePlate,
           created_by: newPellet.createdBy,
           created_at: new Date(newPellet.createdAt).toISOString(),
           notes: newPellet.reason,
@@ -182,7 +182,7 @@ export default function TagDriverScreen() {
         }]);
       
       if (pelletError) {
-        console.error('[TagDriver] Error saving pellet:', JSON.stringify(pelletError, null, 2));
+        console.error('[TagDriver] Error saving pellet:', pelletError.message, pelletError);
       } else {
         console.log('[TagDriver] Pellet saved successfully');
       }

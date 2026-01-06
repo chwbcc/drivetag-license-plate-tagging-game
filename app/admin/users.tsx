@@ -644,7 +644,7 @@ export default function UserManagementScreen() {
                         <Car size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Plate:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          {u.licensePlate ? u.licensePlate : 'Not set'}{u.state ? ` (${u.state})` : ''}
+                          {u.licensePlate ? `${u.licensePlate}${u.state ? ` (${u.state})` : ''}` : `Not set${u.state ? ` (${u.state})` : ''}`}
                         </Text>
                       </View>
 
@@ -652,7 +652,7 @@ export default function UserManagementScreen() {
                         <Hash size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Pellets:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          {u.pelletCount ?? 0} negative / {u.positivePelletCount ?? 0} positive
+                          {`${u.pelletCount ?? 0} negative / ${u.positivePelletCount ?? 0} positive`}
                         </Text>
                       </View>
 
@@ -660,7 +660,7 @@ export default function UserManagementScreen() {
                         <Hash size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Level:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          Level {u.level ?? 1} ({u.exp ?? 0} EXP)
+                          {`Level ${u.level ?? 1} (${u.exp ?? 0} EXP)`}
                         </Text>
                       </View>
                       
