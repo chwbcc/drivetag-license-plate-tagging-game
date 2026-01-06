@@ -469,7 +469,7 @@ export const deleteUser = async (userId: string): Promise<void> => {
   const { data: pelletsData, error: pelletsError } = await adminDb
     .from('pellets')
     .delete()
-    .or(`created_by.eq.${userId},target_user_id.eq.${userId}`)
+    .or(`created_by.eq.${userId},targetuserid.eq.${userId}`)
     .select();
   
   if (pelletsError) {

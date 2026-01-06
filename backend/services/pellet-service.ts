@@ -31,7 +31,7 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
       .insert({
         id: pellet.id,
         license_plate: pellet.targetLicensePlate,
-        target_user_id: targetUserId,
+        targetuserid: targetUserId,
         created_by: pellet.createdBy,
         created_at: pellet.createdAt,
         notes: pellet.reason,
@@ -69,7 +69,7 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
   return {
     id: data.id as string,
     targetLicensePlate: data.license_plate as string,
-    targetUserId: data.target_user_id as string | undefined,
+    targetUserId: data.targetuserid as string | undefined,
     createdBy: data.created_by as string,
     createdAt: data.created_at as number,
     reason: data.notes as string,
@@ -94,7 +94,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
   const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.license_plate as string,
-    targetUserId: row.target_user_id as string | undefined,
+    targetUserId: row.targetuserid as string | undefined,
     createdBy: row.created_by as string,
     createdAt: row.created_at as number,
     reason: row.notes as string,
@@ -129,7 +129,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.license_plate as string,
-    targetUserId: row.target_user_id as string | undefined,
+    targetUserId: row.targetuserid as string | undefined,
     createdBy: row.created_by as string,
     createdAt: row.created_at as number,
     reason: row.notes as string,
@@ -162,7 +162,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
   const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
     targetLicensePlate: row.license_plate as string,
-    targetUserId: row.target_user_id as string | undefined,
+    targetUserId: row.targetuserid as string | undefined,
     createdBy: row.created_by as string,
     createdAt: row.created_at as number,
     reason: row.notes as string,

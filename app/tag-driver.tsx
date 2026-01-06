@@ -194,7 +194,7 @@ export default function TagDriverScreen() {
         .insert([{
           id: newPellet.id,
           license_plate: newPellet.targetLicensePlate,
-          target_user_id: targetUserId,
+          targetuserid: targetUserId,
           created_by: newPellet.createdBy,
           created_at: new Date(newPellet.createdAt).toISOString(),
           notes: newPellet.reason,
@@ -206,7 +206,7 @@ export default function TagDriverScreen() {
       if (pelletError) {
         console.error('[TagDriver] Error saving pellet:', pelletError.message, pelletError);
       } else {
-        console.log('[TagDriver] Pellet saved successfully with target_user_id:', targetUserId);
+        console.log('[TagDriver] Pellet saved successfully with targetuserid:', targetUserId);
         
         if (targetUserId) {
           console.log('[TagDriver] Incrementing rating count for target user...');
