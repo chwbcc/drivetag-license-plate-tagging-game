@@ -227,7 +227,7 @@ export default function UserManagementScreen() {
       const { error: badgesError } = await supabase
         .from('badges')
         .delete()
-        .eq('userId', userId);
+        .eq('userid', userId);
       
       if (badgesError) {
         console.error('[DeleteUser] Error deleting badges:', JSON.stringify(badgesError, null, 2));
@@ -236,7 +236,7 @@ export default function UserManagementScreen() {
       const { error: pelletsError } = await supabase
         .from('pellets')
         .delete()
-        .or(`createdBy.eq.${userId},targetUserId.eq.${userId}`);
+        .or(`createdby.eq.${userId},targetuserid.eq.${userId}`);
       
       if (pelletsError) {
         console.error('[DeleteUser] Error deleting pellets:', JSON.stringify(pelletsError, null, 2));
@@ -245,7 +245,7 @@ export default function UserManagementScreen() {
       const { error: activitiesError } = await supabase
         .from('activities')
         .delete()
-        .eq('userId', userId);
+        .eq('userid', userId);
       
       if (activitiesError) {
         console.error('[DeleteUser] Error deleting activities:', JSON.stringify(activitiesError, null, 2));
