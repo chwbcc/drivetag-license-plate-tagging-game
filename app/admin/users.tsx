@@ -46,30 +46,50 @@ export default function UserManagementScreen() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('users')
-        .select('*', { count: 'exact' })
+        .select('id, email, username, name, photo, license_plate, state, negative_pellet_count, positive_pellet_count, badges, experience, level, role, created_at', { count: 'exact' })
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('[UserManagement] Query error:', error);
+        throw error;
+      }
       
-      console.log('[UserManagement] Raw database data (first user):', data?.[0]);
+      console.log('[UserManagement] Raw database data (first user):', JSON.stringify(data?.[0], null, 2));
       
-      const transformedUsers: User[] = (data || []).map((row: any) => ({
-        id: row.id,
-        email: row.email,
-        name: row.name || '',
-        photo: row.photo,
-        licensePlate: row.license_plate || row.licenseplate || '',
-        state: row.state || '',
-        pelletCount: row.negative_pellet_count || 0,
-        positivePelletCount: row.positive_pellet_count || 0,
-        badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
-        exp: row.experience || 0,
-        level: row.level || 1,
-        adminRole: row.role !== 'user' ? row.role : null,
-        createdAt: new Date(row.created_at).toISOString(),
-      }));
+      const transformedUsers: User[] = (data || []).map((row: any) => {
+        const transformed = {
+          id: row.id,
+          email: row.email,
+          name: row.name || row.username || '',
+          photo: row.photo,
+          licensePlate: row.license_plate || '',
+          state: row.state || '',
+          pelletCount: typeof row.negative_pellet_count === 'number' ? row.negative_pellet_count : 0,
+          positivePelletCount: typeof row.positive_pellet_count === 'number' ? row.positive_pellet_count : 0,
+          badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
+          exp: typeof row.experience === 'number' ? row.experience : 0,
+          level: typeof row.level === 'number' ? row.level : 1,
+          adminRole: (row.role && row.role !== 'user') ? row.role : null,
+          createdAt: new Date(row.created_at).toISOString(),
+        };
+        
+        console.log(`[UserManagement] User ${row.id}:`, {
+          license_plate: row.license_plate,
+          state: row.state,
+          negative_pellet_count: row.negative_pellet_count,
+          positive_pellet_count: row.positive_pellet_count,
+          experience: row.experience,
+          transformed_licensePlate: transformed.licensePlate,
+          transformed_state: transformed.state,
+          transformed_pelletCount: transformed.pelletCount,
+          transformed_positivePelletCount: transformed.positivePelletCount,
+          transformed_exp: transformed.exp,
+        });
+        
+        return transformed;
+      });
       
-      console.log('[UserManagement] Transformed data (first user):', transformedUsers[0]);
+      console.log('[UserManagement] Transformed data (first user):', JSON.stringify(transformedUsers[0], null, 2));
       
       return { users: transformedUsers, count: count || 0 };
     },
@@ -617,7 +637,7 @@ export default function UserManagementScreen() {
                         <Car size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Plate:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          {u.licensePlate || 'Not set'}{u.state ? ` (${u.state})` : ''}
+                          {u.licensePlate ? u.licensePlate : 'Not set'}{u.state ? ` (${u.state})` : ''}
                         </Text>
                       </View>
 
@@ -625,7 +645,7 @@ export default function UserManagementScreen() {
                         <Hash size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Pellets:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          {u.pelletCount} negative / {u.positivePelletCount} positive
+                          {u.pelletCount ?? 0} negative / {u.positivePelletCount ?? 0} positive
                         </Text>
                       </View>
 
@@ -633,7 +653,7 @@ export default function UserManagementScreen() {
                         <Hash size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Level:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          Level {u.level} ({u.exp} EXP)
+                          Level {u.level ?? 1} ({u.exp ?? 0} EXP)
                         </Text>
                       </View>
                       
