@@ -125,9 +125,10 @@ export default function TagDriverScreen() {
     }
     
     const fullLicensePlate = `${state}-${licensePlate.toUpperCase()}`;
-    const userLicensePlateWithState = user?.state && !user.licensePlate.includes('-') 
-      ? `${user.state}-${user.licensePlate}` 
-      : user?.licensePlate;
+    const userLicensePlate = user?.licensePlate || '';
+    const userLicensePlateWithState = user?.state && userLicensePlate && !userLicensePlate.includes('-') 
+      ? `${user.state}-${userLicensePlate}` 
+      : userLicensePlate;
     
     if (userLicensePlateWithState?.toLowerCase() === fullLicensePlate.toLowerCase()) {
       setError("You can't tag your own vehicle");
@@ -181,7 +182,7 @@ export default function TagDriverScreen() {
         }]);
       
       if (pelletError) {
-        console.error('[TagDriver] Error saving pellet:', pelletError);
+        console.error('[TagDriver] Error saving pellet:', JSON.stringify(pelletError, null, 2));
       } else {
         console.log('[TagDriver] Pellet saved successfully');
       }
