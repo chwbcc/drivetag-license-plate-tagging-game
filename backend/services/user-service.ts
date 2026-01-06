@@ -225,8 +225,8 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
       .from('badges')
       .insert({
         id: `${userId}-${badgeId}`,
-        userId,
-        badgeId,
+        userid: userId,
+        badgeid: badgeId,
         earned_at: Date.now(),
       });
     
@@ -347,13 +347,13 @@ export const getUserBadges = async (userId: string): Promise<string[]> => {
   
   const { data, error } = await db
     .from('badges')
-    .select('badgeId')
-    .eq('userId', userId)
+    .select('badgeid')
+    .eq('userid', userId)
     .order('earned_at', { ascending: false });
   
   if (error) throw error;
   
-  return (data || []).map((row: any) => row.badgeId as string);
+  return (data || []).map((row: any) => row.badgeid as string);
 };
 
 export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User>> => {
@@ -442,7 +442,7 @@ export const deleteUser = async (userId: string): Promise<void> => {
   const { error: badgesError } = await db
     .from('badges')
     .delete()
-    .eq('userId', userId);
+    .eq('userid', userId);
   
   if (badgesError) {
     console.error('[UserService] Error deleting user badges:', badgesError);
@@ -451,7 +451,7 @@ export const deleteUser = async (userId: string): Promise<void> => {
   const { error: pelletsError } = await db
     .from('pellets')
     .delete()
-    .or(`createdBy.eq.${userId},targetUserId.eq.${userId}`);
+    .or(`createdby.eq.${userId},targetuserid.eq.${userId}`);
   
   if (pelletsError) {
     console.error('[UserService] Error deleting user pellets:', pelletsError);
@@ -460,7 +460,7 @@ export const deleteUser = async (userId: string): Promise<void> => {
   const { error: activitiesError } = await db
     .from('activities')
     .delete()
-    .eq('userId', userId);
+    .eq('userid', userId);
   
   if (activitiesError) {
     console.error('[UserService] Error deleting user activities:', activitiesError);
