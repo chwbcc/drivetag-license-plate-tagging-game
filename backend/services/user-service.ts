@@ -38,7 +38,7 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         level: newUser.level,
         name: newUser.name || '',
         photo: newUser.photo || null,
-        pellet_count: newUser.pelletCount,
+        negative_pellet_count: newUser.pelletCount,
         positive_pellet_count: newUser.positivePelletCount,
         badges: JSON.stringify(newUser.badges),
       });
@@ -89,7 +89,7 @@ export const getUserById = async (userId: string): Promise<User> => {
     photo: data.photo as string | undefined,
     licensePlate: (data.license_plate as string) || '',
     state: (data.state as string) || '',
-    pelletCount: (data.pellet_count as number) || 0,
+    pelletCount: (data.negative_pellet_count as number) || 0,
     positivePelletCount: (data.positive_pellet_count as number) || 0,
     badges: typeof data.badges === 'string' ? JSON.parse(data.badges) : (data.badges || []),
     exp: (data.experience as number) || 0,
@@ -123,7 +123,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     photo: data.photo as string | undefined,
     licensePlate: (data.license_plate as string) || '',
     state: (data.state as string) || '',
-    pelletCount: (data.pellet_count as number) || 0,
+    pelletCount: (data.negative_pellet_count as number) || 0,
     positivePelletCount: (data.positive_pellet_count as number) || 0,
     badges: typeof data.badges === 'string' ? JSON.parse(data.badges) : (data.badges || []),
     exp: (data.experience as number) || 0,
@@ -158,7 +158,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       photo: row.photo as string | undefined,
       licensePlate: (row.license_plate as string) || '',
       state: (row.state as string) || '',
-      pelletCount: (row.pellet_count as number) || 0,
+      pelletCount: (row.negative_pellet_count as number) || 0,
       positivePelletCount: (row.positive_pellet_count as number) || 0,
       badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
       exp: (row.experience as number) || 0,
@@ -194,7 +194,7 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
       state: updatedUser.state || null,
       experience: updatedUser.exp,
       level: updatedUser.level,
-      pellet_count: updatedUser.pelletCount,
+      negative_pellet_count: updatedUser.pelletCount,
       positive_pellet_count: updatedUser.positivePelletCount,
     })
     .eq('id', userId);
@@ -280,7 +280,7 @@ export const updateUserPelletCount = async (
     const { error } = await db
       .from('users')
       .update({ 
-        pellet_count: pelletCount,
+        negative_pellet_count: pelletCount,
         positive_pellet_count: positivePelletCount,
       })
       .eq('id', userId);
@@ -384,7 +384,7 @@ export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User
       photo: row.photo as string | undefined,
       licensePlate: (row.license_plate as string) || '',
       state: (row.state as string) || '',
-      pelletCount: (row.pellet_count as number) || 0,
+      pelletCount: (row.negative_pellet_count as number) || 0,
       positivePelletCount: (row.positive_pellet_count as number) || 0,
       badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
       exp: (row.experience as number) || 0,
@@ -422,7 +422,7 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
     photo: data.photo as string | undefined,
     licensePlate: (data.license_plate as string) || '',
     state: (data.state as string) || '',
-    pelletCount: (data.pellet_count as number) || 0,
+    pelletCount: (data.negative_pellet_count as number) || 0,
     positivePelletCount: (data.positive_pellet_count as number) || 0,
     badges: typeof data.badges === 'string' ? JSON.parse(data.badges) : (data.badges || []),
     exp: (data.experience as number) || 0,

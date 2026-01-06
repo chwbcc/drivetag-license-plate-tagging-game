@@ -173,7 +173,7 @@ export default function AdminAreaScreen() {
         email: testEmail,
         name: 'Test User',
         created_at: new Date().toISOString(),
-        pellet_count: 0,
+        negative_pellet_count: 0,
         experience: 0,
         level: 1,
       };

@@ -62,7 +62,7 @@ export const initDatabase = async () => {
       
       console.log('[Database] Supabase client initialized successfully');
       console.log('[Database] Make sure to create the following tables in your Supabase dashboard:');
-      console.log('[Database] - users (id, email, username, name, created_at, role, license_plate, state, experience, level, pellet_count, positive_pellet_count, badges, photo, passwordhash)');
+      console.log('[Database] - users (id, email, username, name, created_at, role, license_plate, state, experience, level, negative_pellet_count, positive_pellet_count, badges, photo, passwordhash)');
       console.log('[Database] - pellets (id, targetLicensePlate, targetUserId, createdBy, createdAt, reason, type, latitude, longitude)');
       console.log('[Database] - badges (id, userId, badgeId, earnedAt)');
       console.log('[Database] - activities (id, userId, actionType, actionData, createdAt)');

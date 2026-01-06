@@ -195,7 +195,7 @@ export default function TagDriverScreen() {
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          pellet_count: newPelletCount,
+          negative_pellet_count: newPelletCount,
           positive_pellet_count: newPositivePelletCount,
         })
         .eq('id', user.id);
