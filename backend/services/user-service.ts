@@ -433,3 +433,48 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
   
   return user;
 };
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  const db = getDatabase();
+  
+  console.log('[UserService] Deleting user:', userId);
+  
+  const { error: badgesError } = await db
+    .from('badges')
+    .delete()
+    .eq('userId', userId);
+  
+  if (badgesError) {
+    console.error('[UserService] Error deleting user badges:', badgesError);
+  }
+  
+  const { error: pelletsError } = await db
+    .from('pellets')
+    .delete()
+    .or(`createdBy.eq.${userId},targetUserId.eq.${userId}`);
+  
+  if (pelletsError) {
+    console.error('[UserService] Error deleting user pellets:', pelletsError);
+  }
+  
+  const { error: activitiesError } = await db
+    .from('activities')
+    .delete()
+    .eq('userId', userId);
+  
+  if (activitiesError) {
+    console.error('[UserService] Error deleting user activities:', activitiesError);
+  }
+  
+  const { error: userError } = await db
+    .from('users')
+    .delete()
+    .eq('id', userId);
+  
+  if (userError) {
+    console.error('[UserService] Error deleting user:', userError);
+    throw userError;
+  }
+  
+  console.log('[UserService] User deleted successfully:', userId);
+};
