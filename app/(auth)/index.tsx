@@ -111,12 +111,15 @@ export default function LoginScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           
           <Input
+            id="email"
+            name="email"
             label="Email"
             placeholder="Enter your email"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            autoComplete="email"
           />
           
 

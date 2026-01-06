@@ -178,22 +178,30 @@ export default function RegisterScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           
           <Input
+            id="name"
+            name="name"
             label="Name"
             placeholder="Enter your name"
             value={name}
             onChangeText={setName}
+            autoComplete="name"
           />
           
           <Input
+            id="email"
+            name="email"
             label="Email *"
             placeholder="Enter your email"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            autoComplete="email"
           />
           
           <Input
+            id="licensePlate"
+            name="licensePlate"
             label="License Plate *"
             placeholder="Enter your license plate"
             value={licensePlate}
@@ -202,6 +210,8 @@ export default function RegisterScreen() {
           />
           
           <Input
+            id="state"
+            name="state"
             label="State *"
             placeholder="Enter state (e.g., CA, NY)"
             value={state}

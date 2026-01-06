@@ -187,19 +187,25 @@ export default function EditProfileScreen() {
           
           <View style={styles.form}>
             <Input
+              id="name"
+              name="name"
               label="Name"
               placeholder="Enter your name"
               value={name}
               onChangeText={setName}
+              autoComplete="name"
             />
             
             <Input
+              id="email"
+              name="email"
               label="Email"
               placeholder="Enter your email"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
             />
             
             <View style={styles.currentPlateContainer}>
@@ -217,6 +223,8 @@ export default function EditProfileScreen() {
             </Text>
             
             <Input
+              id="newLicensePlate"
+              name="newLicensePlate"
               label="New License Plate"
               placeholder="Enter new license plate"
               value={newLicensePlate}
@@ -225,6 +233,8 @@ export default function EditProfileScreen() {
             />
             
             <Input
+              id="state"
+              name="state"
               label="State"
               placeholder="Select state (e.g., CA, NY)"
               value={state}

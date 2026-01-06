@@ -13,12 +13,16 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   containerStyle?: ViewStyle;
+  id?: string;
+  name?: string;
 }
 
 export default function Input({ 
   label, 
   error, 
-  containerStyle, 
+  containerStyle,
+  id,
+  name,
   ...props 
 }: InputProps) {
   return (
@@ -31,6 +35,8 @@ export default function Input({
           props.editable === false && styles.inputDisabled
         ]}
         placeholderTextColor={Colors.textSecondary}
+        nativeID={id}
+        accessibilityLabel={name || label}
         {...props}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
