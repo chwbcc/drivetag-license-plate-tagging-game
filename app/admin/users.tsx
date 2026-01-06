@@ -84,29 +84,23 @@ export default function UserManagementScreen() {
         role: data.adminRole || 'user',
       });
       
-      const stats = JSON.stringify({
-        pelletCount: data.pelletCount,
-        positivePelletCount: data.positivePelletCount,
-        badges: [],
-        name: data.name,
-        photo: null,
-        licensePlate: data.licensePlate,
-        state: data.state,
-      });
-      
       const { error: usersError } = await supabase
         .from('users')
         .insert([{
           id: userId,
           email: data.email,
           username: data.name || 'Anonymous',
+          name: data.name || '',
           created_at: Date.now(),
-          stats,
           role: data.adminRole || 'user',
           license_plate: data.licensePlate || null,
           state: data.state || null,
           experience: data.exp,
           level: data.level,
+          pellet_count: data.pelletCount,
+          positive_pellet_count: data.positivePelletCount,
+          badges: JSON.stringify([]),
+          photo: null,
         }]);
       
       if (usersError) {
@@ -130,29 +124,13 @@ export default function UserManagementScreen() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { data: userData, error: fetchError } = await supabase
-        .from('users')
-        .select('stats')
-        .eq('id', data.userId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const currentStats = JSON.parse(userData.stats as string);
-      const updatedStats = JSON.stringify({
-        ...currentStats,
-        pelletCount: data.pelletCount,
-        positivePelletCount: data.positivePelletCount,
-        name: data.name,
-        licensePlate: data.licensePlate,
-        state: data.state,
-      });
-      
       const updates: any = {
         username: data.name,
+        name: data.name,
         license_plate: data.licensePlate,
         state: data.state,
-        stats: updatedStats,
+        pellet_count: data.pelletCount,
+        positive_pellet_count: data.positivePelletCount,
         experience: data.exp,
         level: data.level,
         role: data.adminRole || 'user',

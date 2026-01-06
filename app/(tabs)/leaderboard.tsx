@@ -50,18 +50,17 @@ export default function LeaderboardScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('id, stats')
+        .select('id, name, experience, level')
         .limit(100);
       
       if (error) throw error;
       
       const parsedData = (data || []).map((row: any) => {
-        const stats = JSON.parse(row.stats);
         return {
           id: row.id,
-          name: stats.name || 'Anonymous',
-          exp: stats.exp || 0,
-          level: stats.level || 1,
+          name: row.name || 'Anonymous',
+          exp: row.experience || 0,
+          level: row.level || 1,
         };
       }).sort((a, b) => {
         return sortOrder === 'asc' ? a.exp - b.exp : b.exp - a.exp;
