@@ -22,13 +22,13 @@ SET
   positive_rating_count = (
     SELECT COUNT(*) 
     FROM pellets 
-    WHERE pellets.target_user_id = users.id 
+    WHERE pellets.targetuserid = users.id 
     AND pellets.type = 'positive'
   ),
   negative_rating_count = (
     SELECT COUNT(*) 
     FROM pellets 
-    WHERE pellets.target_user_id = users.id 
+    WHERE pellets.targetuserid = users.id 
     AND pellets.type = 'negative'
   );
 
