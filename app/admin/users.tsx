@@ -51,6 +51,8 @@ export default function UserManagementScreen() {
       
       if (error) throw error;
       
+      console.log('[UserManagement] Raw database data (first user):', data?.[0]);
+      
       const transformedUsers: User[] = (data || []).map((row: any) => ({
         id: row.id,
         email: row.email,
@@ -66,6 +68,8 @@ export default function UserManagementScreen() {
         adminRole: row.role !== 'user' ? row.role : null,
         createdAt: new Date(row.created_at).toISOString(),
       }));
+      
+      console.log('[UserManagement] Transformed data (first user):', transformedUsers[0]);
       
       return { users: transformedUsers, count: count || 0 };
     },
