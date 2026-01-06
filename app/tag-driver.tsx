@@ -207,6 +207,48 @@ export default function TagDriverScreen() {
         console.error('[TagDriver] Error saving pellet:', pelletError.message, pelletError);
       } else {
         console.log('[TagDriver] Pellet saved successfully with target_user_id:', targetUserId);
+        
+        if (targetUserId) {
+          console.log('[TagDriver] Incrementing rating count for target user...');
+          const ratingColumn = isPositive ? 'positive_rating_count' : 'negative_rating_count';
+          
+          const { error: ratingError } = await supabase.rpc('increment_rating', {
+            user_id: targetUserId,
+            column_name: ratingColumn
+          });
+          
+          if (ratingError) {
+            console.log('[TagDriver] RPC not available, using manual increment...');
+            const { data: targetUser, error: fetchError } = await supabase
+              .from('users')
+              .select('positive_rating_count, negative_rating_count')
+              .eq('id', targetUserId)
+              .single();
+            
+            if (!fetchError && targetUser) {
+              const currentCount = isPositive 
+                ? (targetUser.positive_rating_count || 0) 
+                : (targetUser.negative_rating_count || 0);
+              
+              const updateData = isPositive
+                ? { positive_rating_count: currentCount + 1 }
+                : { negative_rating_count: currentCount + 1 };
+              
+              const { error: updateError } = await supabase
+                .from('users')
+                .update(updateData)
+                .eq('id', targetUserId);
+              
+              if (updateError) {
+                console.error('[TagDriver] Error updating rating count:', updateError);
+              } else {
+                console.log('[TagDriver] Rating count incremented successfully');
+              }
+            }
+          } else {
+            console.log('[TagDriver] Rating count incremented via RPC');
+          }
+        }
       }
       
       addPellet(newPellet);
