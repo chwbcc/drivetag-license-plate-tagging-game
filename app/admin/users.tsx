@@ -241,16 +241,21 @@ export default function UserManagementScreen() {
   };
 
   const openEditModal = (u: User) => {
+    console.log('[UserManagement] Opening edit modal for user:', u);
+    console.log('[UserManagement] User exp:', u.exp);
+    console.log('[UserManagement] User licensePlate:', u.licensePlate);
+    console.log('[UserManagement] User state:', u.state);
+    
     setEditingUser(u);
     setFormData({
       email: u.email,
       name: u.name || '',
       licensePlate: u.licensePlate || '',
       state: u.state || '',
-      pelletCount: String(u.pelletCount),
-      positivePelletCount: String(u.positivePelletCount),
-      exp: String(u.exp),
-      level: String(u.level),
+      pelletCount: String(u.pelletCount || 0),
+      positivePelletCount: String(u.positivePelletCount || 0),
+      exp: String(u.exp || 0),
+      level: String(u.level || 1),
       adminRole: (u.adminRole || 'user') as any,
     });
     setShowEditModal(true);
