@@ -4,9 +4,17 @@
 ALTER TABLE users ADD COLUMN IF NOT EXISTS positive_rating_count INTEGER DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS negative_rating_count INTEGER DEFAULT 0;
 
--- Add constraints
-ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS positive_rating_count_non_negative CHECK (positive_rating_count >= 0);
-ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS negative_rating_count_non_negative CHECK (negative_rating_count >= 0);
+-- Add constraints (drop first if they exist to avoid errors)
+DO $ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'positive_rating_count_non_negative') THEN
+    ALTER TABLE users ADD CONSTRAINT positive_rating_count_non_negative CHECK (positive_rating_count >= 0);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'negative_rating_count_non_negative') THEN
+    ALTER TABLE users ADD CONSTRAINT negative_rating_count_non_negative CHECK (negative_rating_count >= 0);
+  END IF;
+END $;
 
 -- Migrate existing data from pellets table
 UPDATE users
