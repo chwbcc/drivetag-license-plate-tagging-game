@@ -22,9 +22,15 @@ initDatabase()
 app.use("*", cors({
   origin: '*',
   credentials: true,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'x-user-data'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-user-data', 'x-trpc-source'],
+  exposeHeaders: ['Content-Type', 'x-trpc-source'],
+  maxAge: 86400,
 }));
+
+app.options('*', (c) => {
+  return c.body(null, 204);
+});
 
 app.use('*', async (c, next) => {
   console.log(`[Backend] ${c.req.method} ${c.req.url}`);
