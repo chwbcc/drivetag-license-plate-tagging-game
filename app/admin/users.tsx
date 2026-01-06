@@ -222,19 +222,32 @@ export default function UserManagementScreen() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
+      console.log('[DeleteUser] Starting delete for userId:', userId);
+      
+      const { data, error } = await supabase
         .from('users')
         .delete()
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
       
-      if (error) throw error;
+      console.log('[DeleteUser] Delete response:', { data, error });
+      
+      if (error) {
+        console.error('[DeleteUser] Delete failed:', error);
+        throw error;
+      }
+      
+      console.log('[DeleteUser] User deleted successfully');
+      return data;
     },
     onSuccess: () => {
+      console.log('[DeleteUser] onSuccess triggered');
       usersQuery.refetch();
       setSelectedUser(null);
       Alert.alert('Success', 'User deleted successfully');
     },
     onError: (error: any) => {
+      console.error('[DeleteUser] onError triggered:', error);
       Alert.alert('Error', error.message || 'Failed to delete user');
     },
   });
@@ -308,15 +321,20 @@ export default function UserManagementScreen() {
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
+    console.log('[DeleteUser] handleDeleteUser called for:', { userId, userName });
+    
     Alert.alert(
       'Delete User',
       `Are you sure you want to delete ${userName}? This action cannot be undone.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => console.log('[DeleteUser] Cancelled') },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteUserMutation.mutate(userId),
+          onPress: () => {
+            console.log('[DeleteUser] Delete confirmed, calling mutation');
+            deleteUserMutation.mutate(userId);
+          },
         },
       ]
     );
