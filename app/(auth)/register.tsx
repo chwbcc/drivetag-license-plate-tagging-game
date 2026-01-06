@@ -89,18 +89,6 @@ export default function RegisterScreen() {
       console.log('[Register] Creating user in Supabase...');
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      const stats = JSON.stringify({
-        pelletCount: 10,
-        positivePelletCount: 5,
-        badges: [],
-        exp: 0,
-        level: 1,
-        name: name.trim() || 'Anonymous',
-        photo: null,
-        licensePlate: trimmedLicensePlate.toUpperCase(),
-        state: trimmedState,
-      });
-      
       console.log('[Register] Inserting into users...');
       const { data, error } = await supabase
         .from('users')
@@ -108,13 +96,17 @@ export default function RegisterScreen() {
           id: userId,
           email: trimmedEmail.toLowerCase(),
           username: name.trim() || 'Anonymous',
+          name: name.trim() || 'Anonymous',
           created_at: Date.now(),
-          stats,
           role: 'user',
           license_plate: trimmedLicensePlate.toUpperCase(),
           state: trimmedState,
           experience: 0,
           level: 1,
+          pellet_count: 10,
+          positive_pellet_count: 5,
+          badges: [],
+          photo: null,
         }])
         .select()
         .single();
@@ -129,19 +121,17 @@ export default function RegisterScreen() {
       
       console.log('[Register] Registration successful');
       
-      const userStats = JSON.parse(data.stats as string);
-      
       const newUser = {
         id: data.id,
         email: data.email,
-        name: userStats.name || '',
-        licensePlate: data.licensePlate || userStats.licensePlate || '',
-        state: data.state || userStats.state || '',
-        pelletCount: userStats.pelletCount || 10,
-        positivePelletCount: userStats.positivePelletCount || 5,
-        badges: userStats.badges || [],
-        exp: userStats.exp || 0,
-        level: userStats.level || 1,
+        name: data.name || '',
+        licensePlate: data.license_plate || '',
+        state: data.state || '',
+        pelletCount: data.pellet_count || 10,
+        positivePelletCount: data.positive_pellet_count || 5,
+        badges: data.badges || [],
+        exp: data.experience || 0,
+        level: data.level || 1,
         adminRole: data.role === 'user' ? null : data.role,
       };
       
