@@ -30,11 +30,11 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
       .from('pellets')
       .insert({
         id: pellet.id,
-        targetLicensePlate: pellet.targetLicensePlate,
-        targetUserId,
-        createdBy: pellet.createdBy,
+        license_plate: pellet.targetLicensePlate,
+        target_user_id: targetUserId,
+        created_by: pellet.createdBy,
         created_at: pellet.createdAt,
-        reason: pellet.reason,
+        notes: pellet.reason,
         type: pellet.type,
         latitude: pellet.location?.latitude || null,
         longitude: pellet.location?.longitude || null,
@@ -68,11 +68,11 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
   
   return {
     id: data.id as string,
-    targetLicensePlate: data.targetLicensePlate as string,
-    targetUserId: data.targetUserId as string | undefined,
-    createdBy: data.createdBy as string,
+    targetLicensePlate: data.license_plate as string,
+    targetUserId: data.target_user_id as string | undefined,
+    createdBy: data.created_by as string,
     createdAt: data.created_at as number,
-    reason: data.reason as string,
+    reason: data.notes as string,
     type: data.type as 'negative' | 'positive',
     location: data.latitude && data.longitude ? {
       latitude: data.latitude as number,
@@ -93,11 +93,11 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
   
   const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
-    targetLicensePlate: row.targetLicensePlate as string,
-    targetUserId: row.targetUserId as string | undefined,
-    createdBy: row.createdBy as string,
+    targetLicensePlate: row.license_plate as string,
+    targetUserId: row.target_user_id as string | undefined,
+    createdBy: row.created_by as string,
     createdAt: row.created_at as number,
-    reason: row.reason as string,
+    reason: row.notes as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
       latitude: row.latitude as number,
@@ -116,7 +116,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   let query = db
     .from('pellets')
     .select('*')
-    .ilike('targetLicensePlate', normalizedPlate);
+    .ilike('license_plate', normalizedPlate);
   
   if (type) {
     query = query.eq('type', type);
@@ -128,11 +128,11 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
   
   const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
-    targetLicensePlate: row.targetLicensePlate as string,
-    targetUserId: row.targetUserId as string | undefined,
-    createdBy: row.createdBy as string,
+    targetLicensePlate: row.license_plate as string,
+    targetUserId: row.target_user_id as string | undefined,
+    createdBy: row.created_by as string,
     createdAt: row.created_at as number,
-    reason: row.reason as string,
+    reason: row.notes as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
       latitude: row.latitude as number,
@@ -149,7 +149,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
   let query = db
     .from('pellets')
     .select('*')
-    .eq('createdBy', userId);
+    .eq('created_by', userId);
   
   if (type) {
     query = query.eq('type', type);
@@ -161,11 +161,11 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
   
   const pellets: Pellet[] = (data || []).map((row: any) => ({
     id: row.id as string,
-    targetLicensePlate: row.targetLicensePlate as string,
-    targetUserId: row.targetUserId as string | undefined,
-    createdBy: row.createdBy as string,
+    targetLicensePlate: row.license_plate as string,
+    targetUserId: row.target_user_id as string | undefined,
+    createdBy: row.created_by as string,
     createdAt: row.created_at as number,
-    reason: row.reason as string,
+    reason: row.notes as string,
     type: row.type as 'negative' | 'positive',
     location: row.latitude && row.longitude ? {
       latitude: row.latitude as number,

@@ -34,13 +34,36 @@ export default function LeaderboardScreen() {
   const pelletLeaderboardQuery = useQuery({
     queryKey: ['leaderboard', 'pellets', sortOrder, pelletType],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('pellets')
-        .select('licenseplate')
-        .order('created_at', { ascending: sortOrder === 'asc' });
+        .select('license_plate, type');
+      
+      if (pelletType !== 'all') {
+        query = query.eq('type', pelletType);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
-      return { data: data || [] };
+      
+      const plateMap = new Map<string, number>();
+      (data || []).forEach((item: any) => {
+        const plate = item.license_plate;
+        if (plate) {
+          plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
+        }
+      });
+      
+      const aggregated = Array.from(plateMap.entries()).map(([licensePlate, count]) => ({
+        licensePlate,
+        count,
+      }));
+      
+      aggregated.sort((a, b) => {
+        return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
+      });
+      
+      return { data: aggregated };
     },
     enabled: useDatabase && activeTab === 'pellets',
   });
@@ -90,8 +113,8 @@ export default function LeaderboardScreen() {
   const leaderboardData: LeaderboardItem[] = React.useMemo(() => {
     if (useDatabase && pelletLeaderboardQuery.data?.data) {
       return pelletLeaderboardQuery.data.data.map((item: any) => ({
-        licensePlate: item.licensePlate,
-        hashedId: hashLicensePlate(item.licensePlate),
+        licensePlate: item.licensePlate || item.license_plate,
+        hashedId: hashLicensePlate(item.licensePlate || item.license_plate),
         count: item.count,
       }));
     }

@@ -170,21 +170,43 @@ export default function TagDriverScreen() {
       }
       
       console.log('[TagDriver] Saving pellet to backend...');
+      
+      let targetUserId = null;
+      try {
+        const { data: targetUserData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('license_plate', newPellet.targetLicensePlate)
+          .single();
+        
+        if (!userError && targetUserData) {
+          targetUserId = targetUserData.id;
+          console.log('[TagDriver] Found target user:', targetUserId);
+        } else {
+          console.log('[TagDriver] No user found for license plate:', newPellet.targetLicensePlate);
+        }
+      } catch (err) {
+        console.log('[TagDriver] Error looking up user by license plate:', err);
+      }
+      
       const { error: pelletError } = await supabase
         .from('pellets')
         .insert([{
+          id: newPellet.id,
           license_plate: newPellet.targetLicensePlate,
+          target_user_id: targetUserId,
           created_by: newPellet.createdBy,
           created_at: new Date(newPellet.createdAt).toISOString(),
           notes: newPellet.reason,
           type: newPellet.type,
-          location: newPellet.location,
+          latitude: newPellet.location?.latitude || null,
+          longitude: newPellet.location?.longitude || null,
         }]);
       
       if (pelletError) {
         console.error('[TagDriver] Error saving pellet:', pelletError.message, pelletError);
       } else {
-        console.log('[TagDriver] Pellet saved successfully');
+        console.log('[TagDriver] Pellet saved successfully with target_user_id:', targetUserId);
       }
       
       addPellet(newPellet);
