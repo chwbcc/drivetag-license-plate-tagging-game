@@ -224,47 +224,65 @@ export default function UserManagementScreen() {
     mutationFn: async ({ userId }: { userId: string }) => {
       console.log('[DeleteUser] Starting delete for userId:', userId);
       
-      const { error: badgesError } = await supabase
+      const { data: badgesData, error: badgesError, count: badgesCount } = await supabase
         .from('badges')
         .delete()
-        .eq('userid', userId);
+        .eq('userid', userId)
+        .select();
       
+      console.log('[DeleteUser] Badges deletion:', { deleted: badgesCount || badgesData?.length || 0, error: badgesError });
       if (badgesError) {
         console.error('[DeleteUser] Error deleting badges:', JSON.stringify(badgesError, null, 2));
       }
       
-      const { error: pelletsError } = await supabase
+      const { data: pelletsData, error: pelletsError, count: pelletsCount } = await supabase
         .from('pellets')
         .delete()
-        .or(`createdby.eq.${userId},targetuserid.eq.${userId}`);
+        .or(`createdby.eq.${userId},targetuserid.eq.${userId}`)
+        .select();
       
+      console.log('[DeleteUser] Pellets deletion:', { deleted: pelletsCount || pelletsData?.length || 0, error: pelletsError });
       if (pelletsError) {
         console.error('[DeleteUser] Error deleting pellets:', JSON.stringify(pelletsError, null, 2));
       }
       
-      const { error: activitiesError } = await supabase
+      const { data: activitiesData, error: activitiesError, count: activitiesCount } = await supabase
         .from('activities')
         .delete()
-        .eq('userid', userId);
+        .eq('userid', userId)
+        .select();
       
+      console.log('[DeleteUser] Activities deletion:', { deleted: activitiesCount || activitiesData?.length || 0, error: activitiesError });
       if (activitiesError) {
         console.error('[DeleteUser] Error deleting activities:', JSON.stringify(activitiesError, null, 2));
       }
       
-      const { data, error: userError } = await supabase
+      console.log('[DeleteUser] About to delete user from users table...');
+      const { data, error: userError, count } = await supabase
         .from('users')
         .delete()
         .eq('id', userId)
         .select();
       
-      console.log('[DeleteUser] Delete response:', { data, error: userError });
+      console.log('[DeleteUser] User delete response:', { 
+        data, 
+        error: userError, 
+        count,
+        dataLength: data?.length,
+        wasDeleted: (count === 1) || (data?.length === 1)
+      });
       
       if (userError) {
         console.error('[DeleteUser] Error deleting user:', userError);
-        throw userError;
+        throw new Error(`Failed to delete user: ${userError.message}`);
       }
       
-      console.log('[DeleteUser] User deleted successfully');
+      if (!data || data.length === 0) {
+        console.error('[DeleteUser] No user was deleted - user may not exist or RLS policy blocking deletion');
+        throw new Error('User was not deleted. This may be due to permissions or the user no longer exists.');
+      }
+      
+      console.log('[DeleteUser] User deleted successfully:', data[0]);
     },
     onSuccess: () => {
       console.log('[DeleteUser] onSuccess triggered');
