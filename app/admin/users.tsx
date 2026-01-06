@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Users, Shield, Mail, Calendar, ChevronRight, Plus, Edit, Car, Hash } from 'lucide-react-native';
+import { Users, Shield, Mail, Calendar, ChevronRight, Plus, Edit, Car, Hash, Trash2 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
@@ -50,7 +50,24 @@ export default function UserManagementScreen() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return { users: data || [], count: count || 0 };
+      
+      const transformedUsers: User[] = (data || []).map((row: any) => ({
+        id: row.id,
+        email: row.email,
+        name: row.name || '',
+        photo: row.photo,
+        licensePlate: row.license_plate || '',
+        state: row.state || '',
+        pelletCount: row.negative_pellet_count || 0,
+        positivePelletCount: row.positive_pellet_count || 0,
+        badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
+        exp: row.experience || 0,
+        level: row.level || 1,
+        adminRole: row.role !== 'user' ? row.role : null,
+        createdAt: new Date(row.created_at).toISOString(),
+      }));
+      
+      return { users: transformedUsers, count: count || 0 };
     },
     enabled: !!user?.adminRole,
     refetchOnMount: true,
@@ -58,9 +75,26 @@ export default function UserManagementScreen() {
   
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, adminRole }: { userId: string; adminRole: string | null }) => {
+      const updates: any = {
+        role: adminRole || 'user',
+      };
+      
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('experience, level')
+        .eq('id', userId)
+        .single();
+      
+      if (!currentUser?.experience && currentUser?.experience !== 0) {
+        updates.experience = 0;
+      }
+      if (!currentUser?.level) {
+        updates.level = 1;
+      }
+      
       const { error } = await supabase
         .from('users')
-        .update({ role: adminRole || 'user' })
+        .update(updates)
         .eq('id', userId);
       
       if (error) throw error;
@@ -125,14 +159,14 @@ export default function UserManagementScreen() {
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
       const updates: any = {
-        username: data.name,
-        name: data.name,
-        license_plate: data.licensePlate,
-        state: data.state,
-        negative_pellet_count: data.pelletCount,
-        positive_pellet_count: data.positivePelletCount,
-        experience: data.exp,
-        level: data.level,
+        username: data.name || 'Anonymous',
+        name: data.name || '',
+        license_plate: data.licensePlate || null,
+        state: data.state || null,
+        negative_pellet_count: data.pelletCount || 0,
+        positive_pellet_count: data.positivePelletCount || 0,
+        experience: data.exp || 0,
+        level: data.level || 1,
         role: data.adminRole || 'user',
       };
       
@@ -152,6 +186,25 @@ export default function UserManagementScreen() {
     },
     onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to update user');
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      usersQuery.refetch();
+      setSelectedUser(null);
+      Alert.alert('Success', 'User deleted successfully');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to delete user');
     },
   });
   
@@ -218,18 +271,33 @@ export default function UserManagementScreen() {
     });
   };
 
+  const handleDeleteUser = (userId: string, userName: string) => {
+    Alert.alert(
+      'Delete User',
+      `Are you sure you want to delete ${userName}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteUserMutation.mutate(userId),
+        },
+      ]
+    );
+  };
+
   const handleUpdateUser = () => {
     if (!editingUser) return;
 
     const updates: any = {
       userId: editingUser.id,
-      name: formData.name || undefined,
-      licensePlate: formData.licensePlate || undefined,
-      state: formData.state || undefined,
-      pelletCount: parseInt(formData.pelletCount),
-      positivePelletCount: parseInt(formData.positivePelletCount),
-      exp: parseInt(formData.exp),
-      level: parseInt(formData.level),
+      name: formData.name || '',
+      licensePlate: formData.licensePlate || '',
+      state: formData.state || '',
+      pelletCount: parseInt(formData.pelletCount) || 0,
+      positivePelletCount: parseInt(formData.positivePelletCount) || 0,
+      exp: parseInt(formData.exp) || 0,
+      level: parseInt(formData.level) || 1,
       adminRole: formData.adminRole,
     };
 
@@ -289,7 +357,7 @@ export default function UserManagementScreen() {
         editable={!isEdit}
       />
 
-      <Text style={[styles.formLabel, { color: textColor }]}>Name</Text>
+      <Text style={[styles.formLabel, { color: textColor }]}>Display Name</Text>
       <TextInput
         style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
         value={formData.name}
@@ -297,6 +365,7 @@ export default function UserManagementScreen() {
         placeholder="John Doe"
         placeholderTextColor={textSecondary}
       />
+      <Text style={[styles.helpText, { color: textSecondary }]}>This is the user&apos;s display name shown in the app</Text>
 
       <Text style={[styles.formLabel, { color: textColor }]}>License Plate</Text>
       <TextInput
@@ -321,7 +390,7 @@ export default function UserManagementScreen() {
 
       <View style={styles.rowInputs}>
         <View style={styles.halfInput}>
-          <Text style={[styles.formLabel, { color: textColor }]}>Pellets</Text>
+          <Text style={[styles.formLabel, { color: textColor }]}>Negative Pellets</Text>
           <TextInput
             style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
             value={formData.pelletCount}
@@ -547,7 +616,7 @@ export default function UserManagementScreen() {
                         <Hash size={16} color={textSecondary} />
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>Pellets:</Text>
                         <Text style={[styles.detailValue, { color: textColor }]}>
-                          {u.pelletCount} / {u.positivePelletCount} positive
+                          {u.pelletCount} negative / {u.positivePelletCount} positive
                         </Text>
                       </View>
 
@@ -573,7 +642,7 @@ export default function UserManagementScreen() {
                           onPress={() => openEditModal(u)}
                         >
                           <Edit size={16} color="#fff" />
-                          <Text style={styles.editButtonText}>Edit User</Text>
+                          <Text style={styles.editButtonText}>Edit</Text>
                         </TouchableOpacity>
                         
                         {isAdmin && u.id !== user.id && (
@@ -585,7 +654,21 @@ export default function UserManagementScreen() {
                             {updateRoleMutation.isPending ? (
                               <ActivityIndicator size="small" color={Colors.primary} />
                             ) : (
-                              <Text style={[styles.changeRoleButtonText, { color: textColor }]}>Change Role</Text>
+                              <Text style={[styles.changeRoleButtonText, { color: textColor }]}>Role</Text>
+                            )}
+                          </TouchableOpacity>
+                        )}
+                        
+                        {isSuperAdmin && u.id !== user.id && (
+                          <TouchableOpacity
+                            style={[styles.deleteButton, { backgroundColor: '#FF3B30', borderColor: '#FF3B30' }]}
+                            onPress={() => handleDeleteUser(u.id, u.name || u.email)}
+                            disabled={deleteUserMutation.isPending}
+                          >
+                            {deleteUserMutation.isPending ? (
+                              <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                              <Trash2 size={16} color="#fff" />
                             )}
                           </TouchableOpacity>
                         )}
@@ -797,6 +880,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
   },
+  deleteButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
   emptyState: {
     margin: 16,
     padding: 48,
@@ -841,6 +932,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    marginBottom: 16,
+  },
+  helpText: {
+    fontSize: 12,
+    marginTop: -12,
     marginBottom: 16,
   },
   rowInputs: {
