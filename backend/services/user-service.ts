@@ -23,15 +23,6 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
     createdAt: new Date().toISOString(),
   };
   
-  const stats = JSON.stringify({
-    pelletCount: newUser.pelletCount,
-    positivePelletCount: newUser.positivePelletCount,
-    badges: newUser.badges,
-    name: newUser.name,
-    photo: newUser.photo,
-
-  });
-  
   try {
     const { error: userError } = await db
       .from('users')
@@ -40,12 +31,16 @@ export const createUser = async (user: Omit<User, 'pelletCount' | 'positivePelle
         email: newUser.email,
         username: newUser.name || 'Anonymous',
         created_at: Date.now(),
-        stats,
         role: adminRole || 'user',
         license_plate: newUser.licensePlate || null,
         state: newUser.state || null,
         experience: newUser.exp,
         level: newUser.level,
+        name: newUser.name || '',
+        photo: newUser.photo || null,
+        pellet_count: newUser.pelletCount,
+        positive_pellet_count: newUser.positivePelletCount,
+        badges: JSON.stringify(newUser.badges),
       });
     
     if (userError) {
@@ -87,18 +82,16 @@ export const getUserById = async (userId: string): Promise<User> => {
     throw new Error(`User not found: ${userId}`);
   }
   
-  const stats = JSON.parse(data.stats as string);
-  
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    name: stats.name || '',
-    photo: stats.photo,
-    licensePlate: (data.license_plate as string) || stats.licensePlate || '',
-    state: (data.state as string) || stats.state || '',
-    pelletCount: stats.pelletCount || 0,
-    positivePelletCount: stats.positivePelletCount || 0,
-    badges: stats.badges || [],
+    name: (data.name as string) || '',
+    photo: data.photo as string | undefined,
+    licensePlate: (data.license_plate as string) || '',
+    state: (data.state as string) || '',
+    pelletCount: (data.pellet_count as number) || 0,
+    positivePelletCount: (data.positive_pellet_count as number) || 0,
+    badges: typeof data.badges === 'string' ? JSON.parse(data.badges) : (data.badges || []),
     exp: (data.experience as number) || 0,
     level: (data.level as number) || 1,
     adminRole: (data.role as AdminRole) || null,
@@ -123,18 +116,16 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     return null;
   }
   
-  const stats = JSON.parse(data.stats as string);
-  
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    name: stats.name || '',
-    photo: stats.photo,
-    licensePlate: (data.license_plate as string) || stats.licensePlate || '',
-    state: (data.state as string) || stats.state || '',
-    pelletCount: stats.pelletCount || 0,
-    positivePelletCount: stats.positivePelletCount || 0,
-    badges: stats.badges || [],
+    name: (data.name as string) || '',
+    photo: data.photo as string | undefined,
+    licensePlate: (data.license_plate as string) || '',
+    state: (data.state as string) || '',
+    pelletCount: (data.pellet_count as number) || 0,
+    positivePelletCount: (data.positive_pellet_count as number) || 0,
+    badges: typeof data.badges === 'string' ? JSON.parse(data.badges) : (data.badges || []),
     exp: (data.experience as number) || 0,
     level: (data.level as number) || 1,
     adminRole: (data.role as AdminRole) || null,
@@ -160,18 +151,16 @@ export const getAllUsers = async (): Promise<User[]> => {
   
   console.log(`[UserService] Found ${data?.length || 0} users`);
   const users: User[] = (data || []).map((row: any) => {
-    const stats = JSON.parse(row.stats as string);
-    
     return {
       id: row.id as string,
       email: row.email as string,
-      name: stats.name || '',
-      photo: stats.photo,
-      licensePlate: (row.license_plate as string) || stats.licensePlate || '',
-      state: (row.state as string) || stats.state || '',
-      pelletCount: stats.pelletCount || 0,
-      positivePelletCount: stats.positivePelletCount || 0,
-      badges: stats.badges || [],
+      name: (row.name as string) || '',
+      photo: row.photo as string | undefined,
+      licensePlate: (row.license_plate as string) || '',
+      state: (row.state as string) || '',
+      pelletCount: (row.pellet_count as number) || 0,
+      positivePelletCount: (row.positive_pellet_count as number) || 0,
+      badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
       exp: (row.experience as number) || 0,
       level: (row.level as number) || 1,
       adminRole: (row.role as AdminRole) || null,
@@ -194,25 +183,19 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id
     email: user.email,
   };
   
-  const stats = JSON.stringify({
-    pelletCount: updatedUser.pelletCount,
-    positivePelletCount: updatedUser.positivePelletCount,
-    badges: updatedUser.badges,
-    name: updatedUser.name,
-    photo: updatedUser.photo,
-
-  });
-  
   const { error } = await db
     .from('users')
     .update({
       username: updatedUser.name,
-      stats,
+      name: updatedUser.name,
+      photo: updatedUser.photo || null,
       role: updatedUser.adminRole || 'user',
       license_plate: updatedUser.licensePlate || null,
       state: updatedUser.state || null,
       experience: updatedUser.exp,
       level: updatedUser.level,
+      pellet_count: updatedUser.pelletCount,
+      positive_pellet_count: updatedUser.positivePelletCount,
     })
     .eq('id', userId);
   
@@ -249,18 +232,9 @@ export const addBadgeToUser = async (userId: string, badgeId: string): Promise<v
     
     if (badgeError) throw badgeError;
     
-    const stats = JSON.stringify({
-      pelletCount: user.pelletCount,
-      positivePelletCount: user.positivePelletCount,
-      badges: user.badges,
-      name: user.name,
-      photo: user.photo,
-  
-    });
-    
     const { error: updateError } = await db
       .from('users')
-      .update({ stats })
+      .update({ badges: JSON.stringify(user.badges) })
       .eq('id', userId);
     
     if (updateError) throw updateError;
@@ -302,19 +276,13 @@ export const updateUserPelletCount = async (
       positivePelletCount,
     };
     
-    const stats = JSON.stringify({
-      pelletCount: updatedUser.pelletCount,
-      positivePelletCount: updatedUser.positivePelletCount,
-      badges: updatedUser.badges,
-      name: updatedUser.name,
-      photo: updatedUser.photo,
-  
-    });
-    
     console.log('[UserService] Updating user pellet counts in database...');
     const { error } = await db
       .from('users')
-      .update({ stats })
+      .update({ 
+        pellet_count: pelletCount,
+        positive_pellet_count: positivePelletCount,
+      })
       .eq('id', userId);
     
     if (error) throw error;
@@ -409,18 +377,16 @@ export const getUsersByIds = async (userIds: string[]): Promise<Map<string, User
   const userMap = new Map<string, User>();
   
   (data || []).forEach((row: any) => {
-    const stats = JSON.parse(row.stats as string);
-    
     const user: User = {
       id: row.id as string,
       email: row.email as string,
-      name: stats.name || '',
-      photo: stats.photo,
-      licensePlate: (row.license_plate as string) || stats.licensePlate || '',
-      state: (row.state as string) || stats.state || '',
-      pelletCount: stats.pelletCount || 0,
-      positivePelletCount: stats.positivePelletCount || 0,
-      badges: stats.badges || [],
+      name: (row.name as string) || '',
+      photo: row.photo as string | undefined,
+      licensePlate: (row.license_plate as string) || '',
+      state: (row.state as string) || '',
+      pelletCount: (row.pellet_count as number) || 0,
+      positivePelletCount: (row.positive_pellet_count as number) || 0,
+      badges: typeof row.badges === 'string' ? JSON.parse(row.badges) : (row.badges || []),
       exp: (row.experience as number) || 0,
       level: (row.level as number) || 1,
       adminRole: (row.role as AdminRole) || null,
@@ -449,18 +415,16 @@ export const getUserByLicensePlate = async (licensePlate: string): Promise<User 
     return null;
   }
   
-  const stats = JSON.parse(data.stats as string);
-  
   const user: User = {
     id: data.id as string,
     email: data.email as string,
-    name: stats.name || '',
-    photo: stats.photo,
-    licensePlate: (data.license_plate as string) || stats.licensePlate || '',
-    state: (data.state as string) || stats.state || '',
-    pelletCount: stats.pelletCount || 0,
-    positivePelletCount: stats.positivePelletCount || 0,
-    badges: stats.badges || [],
+    name: (data.name as string) || '',
+    photo: data.photo as string | undefined,
+    licensePlate: (data.license_plate as string) || '',
+    state: (data.state as string) || '',
+    pelletCount: (data.pellet_count as number) || 0,
+    positivePelletCount: (data.positive_pellet_count as number) || 0,
+    badges: typeof data.badges === 'string' ? JSON.parse(data.badges) : (data.badges || []),
     exp: (data.experience as number) || 0,
     level: (data.level as number) || 1,
     adminRole: (data.role as AdminRole) || null,
