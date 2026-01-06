@@ -33,18 +33,33 @@ export default function RegisterScreen() {
     return plate.length >= 3 && plate.length <= 8;
   };
 
+  const validateEmail = (email: string) => {
+    const trimmedEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(trimmedEmail);
+  };
+
   const handleRegister = async () => {
-    if (!email || !licensePlate) {
+    const trimmedEmail = email.trim();
+    const trimmedLicensePlate = licensePlate.trim();
+    const trimmedState = state.trim();
+    
+    if (!trimmedEmail || !trimmedLicensePlate) {
       setError('Please fill in all required fields');
       return;
     }
     
-    if (!validateLicensePlate(licensePlate)) {
+    if (!validateEmail(trimmedEmail)) {
+      setError('Please enter a valid email address (e.g., example@email.com)');
+      return;
+    }
+    
+    if (!validateLicensePlate(trimmedLicensePlate)) {
       setError('Please enter a valid license plate number');
       return;
     }
     
-    if (!state) {
+    if (!trimmedState) {
       setError('Please select a state for your license plate');
       return;
     }
@@ -53,14 +68,8 @@ export default function RegisterScreen() {
     setError('');
     
     try {
-      console.log('[Register] Attempting registration for:', email);
+      console.log('[Register] Attempting registration for:', trimmedEmail);
       console.log('[Register] Backend URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
-      
-      if (!email.includes('@')) {
-        setError('Invalid email format');
-        setIsLoading(false);
-        return;
-      }
       
 
       
@@ -68,7 +77,7 @@ export default function RegisterScreen() {
       const { data: existingUser } = await supabase
         .from('users')
         .select('email')
-        .eq('email', email.toLowerCase())
+        .eq('email', trimmedEmail.toLowerCase())
         .single();
       
       if (existingUser) {
@@ -86,10 +95,10 @@ export default function RegisterScreen() {
         badges: [],
         exp: 0,
         level: 1,
-        name: name || 'Anonymous',
+        name: name.trim() || 'Anonymous',
         photo: null,
-        licensePlate: licensePlate.toUpperCase(),
-        state,
+        licensePlate: trimmedLicensePlate.toUpperCase(),
+        state: trimmedState,
       });
       
       console.log('[Register] Inserting into users...');
@@ -97,13 +106,13 @@ export default function RegisterScreen() {
         .from('users')
         .insert([{
           id: userId,
-          email: email.toLowerCase(),
-          username: name || 'Anonymous',
+          email: trimmedEmail.toLowerCase(),
+          username: name.trim() || 'Anonymous',
           created_at: Date.now(),
           stats,
           role: 'user',
-          license_plate: licensePlate.toUpperCase(),
-          state,
+          license_plate: trimmedLicensePlate.toUpperCase(),
+          state: trimmedState,
           experience: 0,
           level: 1,
         }])
