@@ -56,7 +56,7 @@ export default function UserManagementScreen() {
         email: row.email,
         name: row.name || '',
         photo: row.photo,
-        licensePlate: row.license_plate || '',
+        licensePlate: row.license_plate || row.licenseplate || '',
         state: row.state || '',
         pelletCount: row.negative_pellet_count || 0,
         positivePelletCount: row.positive_pellet_count || 0,
