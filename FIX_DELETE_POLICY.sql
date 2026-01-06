@@ -15,9 +15,9 @@ FOR DELETE
 USING (
   EXISTS (
     SELECT 1 
-    FROM users AS current_user
-    WHERE current_user.id = current_setting('app.current_user_id', true)
-    AND current_user.role = 'super_admin'
+    FROM users AS auth_user
+    WHERE auth_user.id = current_setting('app.current_user_id', true)
+    AND auth_user.role = 'super_admin'
   )
 );
 
