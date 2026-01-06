@@ -9,7 +9,6 @@ import { darkMode } from '@/constants/styles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
 import { User } from '@/types';
-import { trpc } from '@/lib/trpc';
 
 type UserFormData = {
   email: string;
@@ -221,7 +220,52 @@ export default function UserManagementScreen() {
     },
   });
 
-  const deleteUserMutation = trpc.deleteUser.useMutation({
+  const deleteUserMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      console.log('[DeleteUser] Starting delete for userId:', userId);
+      
+      const { error: badgesError } = await supabase
+        .from('badges')
+        .delete()
+        .eq('userId', userId);
+      
+      if (badgesError) {
+        console.error('[DeleteUser] Error deleting badges:', badgesError);
+      }
+      
+      const { error: pelletsError } = await supabase
+        .from('pellets')
+        .delete()
+        .or(`createdBy.eq.${userId},targetUserId.eq.${userId}`);
+      
+      if (pelletsError) {
+        console.error('[DeleteUser] Error deleting pellets:', pelletsError);
+      }
+      
+      const { error: activitiesError } = await supabase
+        .from('activities')
+        .delete()
+        .eq('userId', userId);
+      
+      if (activitiesError) {
+        console.error('[DeleteUser] Error deleting activities:', activitiesError);
+      }
+      
+      const { data, error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId)
+        .select();
+      
+      console.log('[DeleteUser] Delete response:', { data, error: userError });
+      
+      if (userError) {
+        console.error('[DeleteUser] Error deleting user:', userError);
+        throw userError;
+      }
+      
+      console.log('[DeleteUser] User deleted successfully');
+    },
     onSuccess: () => {
       console.log('[DeleteUser] onSuccess triggered');
       usersQuery.refetch();
