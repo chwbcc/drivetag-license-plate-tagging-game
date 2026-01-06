@@ -55,6 +55,9 @@ export default function UserManagementScreen() {
       }
       
       console.log('[UserManagement] Raw database data (first user):', JSON.stringify(data?.[0], null, 2));
+      console.log('[UserManagement] First user license_plate value:', data?.[0]?.license_plate);
+      console.log('[UserManagement] First user license_plate type:', typeof data?.[0]?.license_plate);
+      console.log('[UserManagement] First user state value:', data?.[0]?.state);
       
       const transformedUsers: User[] = (data || []).map((row: any) => {
         const transformed = {
@@ -74,12 +77,16 @@ export default function UserManagementScreen() {
         };
         
         console.log(`[UserManagement] User ${row.id}:`, {
-          license_plate: row.license_plate,
+          raw_license_plate: row.license_plate,
+          raw_license_plate_type: typeof row.license_plate,
+          raw_license_plate_is_null: row.license_plate === null,
+          raw_license_plate_is_empty: row.license_plate === '',
           state: row.state,
           negative_pellet_count: row.negative_pellet_count,
           positive_pellet_count: row.positive_pellet_count,
           experience: row.experience,
           transformed_licensePlate: transformed.licensePlate,
+          transformed_licensePlate_truthy: !!transformed.licensePlate,
           transformed_state: transformed.state,
           transformed_pelletCount: transformed.pelletCount,
           transformed_positivePelletCount: transformed.positivePelletCount,
