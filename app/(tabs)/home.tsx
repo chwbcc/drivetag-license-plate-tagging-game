@@ -23,7 +23,9 @@ import {
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
-import { trpc } from '@/lib/trpc';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabase';
+import { Pellet } from '@/types';
 import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
 
@@ -41,34 +43,133 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const userLicensePlateWithState = user && user.state && !user.licensePlate.includes('-') 
+    ? `${user.state}-${user.licensePlate}` 
+    : user?.licensePlate || '';
+  
+  const { data: pelletsReceived = [] } = useQuery({
+    queryKey: ['pellets', 'received', userLicensePlateWithState, user],
+    queryFn: async () => {
+      if (!user || !userLicensePlateWithState) return [];
+      const { data, error } = await supabase
+        .from('pellets')
+        .select('*')
+        .ilike('license_plate', userLicensePlateWithState.toLowerCase())
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map((row: any) => ({
+        id: row.id as string,
+        targetLicensePlate: row.license_plate as string,
+        targetUserId: row.targetuserid as string | undefined,
+        createdBy: row.createdby as string,
+        createdAt: row.created_at as number,
+        reason: row.notes as string,
+        type: row.type as 'negative' | 'positive',
+        location: row.latitude && row.longitude ? {
+          latitude: row.latitude as number,
+          longitude: row.longitude as number,
+        } : undefined,
+      })) as Pellet[];
+    },
+    enabled: !!user && !!userLicensePlateWithState,
+  });
+  
+  const { data: negativePelletsReceived = [] } = useQuery({
+    queryKey: ['pellets', 'received', userLicensePlateWithState, 'negative', user],
+    queryFn: async () => {
+      if (!user || !userLicensePlateWithState) return [];
+      const { data, error } = await supabase
+        .from('pellets')
+        .select('*')
+        .ilike('license_plate', userLicensePlateWithState.toLowerCase())
+        .eq('type', 'negative')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map((row: any) => ({
+        id: row.id as string,
+        targetLicensePlate: row.license_plate as string,
+        targetUserId: row.targetuserid as string | undefined,
+        createdBy: row.createdby as string,
+        createdAt: row.created_at as number,
+        reason: row.notes as string,
+        type: row.type as 'negative' | 'positive',
+        location: row.latitude && row.longitude ? {
+          latitude: row.latitude as number,
+          longitude: row.longitude as number,
+        } : undefined,
+      })) as Pellet[];
+    },
+    enabled: !!user && !!userLicensePlateWithState,
+  });
+  
+  const { data: positivePelletsReceived = [] } = useQuery({
+    queryKey: ['pellets', 'received', userLicensePlateWithState, 'positive', user],
+    queryFn: async () => {
+      if (!user || !userLicensePlateWithState) return [];
+      const { data, error } = await supabase
+        .from('pellets')
+        .select('*')
+        .ilike('license_plate', userLicensePlateWithState.toLowerCase())
+        .eq('type', 'positive')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map((row: any) => ({
+        id: row.id as string,
+        targetLicensePlate: row.license_plate as string,
+        targetUserId: row.targetuserid as string | undefined,
+        createdBy: row.createdby as string,
+        createdAt: row.created_at as number,
+        reason: row.notes as string,
+        type: row.type as 'negative' | 'positive',
+        location: row.latitude && row.longitude ? {
+          latitude: row.latitude as number,
+          longitude: row.longitude as number,
+        } : undefined,
+      })) as Pellet[];
+    },
+    enabled: !!user && !!userLicensePlateWithState,
+  });
+  
+  const { data: pelletsGiven = [] } = useQuery({
+    queryKey: ['pellets', 'given', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('pellets')
+        .select('*')
+        .eq('createdby', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map((row: any) => ({
+        id: row.id as string,
+        targetLicensePlate: row.license_plate as string,
+        targetUserId: row.targetuserid as string | undefined,
+        createdBy: row.createdby as string,
+        createdAt: row.created_at as number,
+        reason: row.notes as string,
+        type: row.type as 'negative' | 'positive',
+        location: row.latitude && row.longitude ? {
+          latitude: row.latitude as number,
+          longitude: row.longitude as number,
+        } : undefined,
+      })) as Pellet[];
+    },
+    enabled: !!user,
+  });
+
   if (!user) {
     return null;
   }
 
   const userBadges = getUserBadges(user.id);
-  
-  const userLicensePlateWithState = user.state && !user.licensePlate.includes('-') 
-    ? `${user.state}-${user.licensePlate}` 
-    : user.licensePlate;
-  
-  const { data: pelletsReceived = [] } = trpc.getPelletsByLicensePlate.useQuery({
-    licensePlate: userLicensePlateWithState,
-  });
-  
-  const { data: negativePelletsReceived = [] } = trpc.getPelletsByLicensePlate.useQuery({
-    licensePlate: userLicensePlateWithState,
-    type: 'negative',
-  });
-  
-  const { data: positivePelletsReceived = [] } = trpc.getPelletsByLicensePlate.useQuery({
-    licensePlate: userLicensePlateWithState,
-    type: 'positive',
-  });
-  
-  const { data: pelletsGiven = [] } = trpc.getPelletsCreatedByUser.useQuery({
-    userId: user.id,
-  });
-  
   const expInfo = getExpForNextLevel();
 
 
@@ -450,6 +551,33 @@ export default function HomeScreen() {
                 color: textColor,
               }}>
                 {pelletsGiven.filter(p => p.type === 'positive').length}
+              </Text>
+            </View>
+            
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: bgColor,
+              borderRadius: 10,
+              padding: 10,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ThumbsUp size={18} color={accentRed} style={{ transform: [{ rotate: '180deg' }] }} />
+                <Text style={{
+                  fontSize: 13,
+                  color: '#cccccc',
+                  marginLeft: 10,
+                }}>
+                  Negative Given
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: 15,
+                fontWeight: '700',
+                color: textColor,
+              }}>
+                {pelletsGiven.filter(p => p.type === 'negative').length}
               </Text>
             </View>
             

@@ -10,7 +10,6 @@ import { LicensePlateGameProvider } from "@/store/license-plate-game-store";
 import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { trpc, trpcClient } from "@/lib/trpc";
 
 export const unstable_settings = {
   initialRouteName: "(auth)",
@@ -55,15 +54,13 @@ export default function RootLayout() {
   }
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <LicensePlateGameProvider>
-            <RootLayoutNav />
-          </LicensePlateGameProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <LicensePlateGameProvider>
+          <RootLayoutNav />
+        </LicensePlateGameProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
