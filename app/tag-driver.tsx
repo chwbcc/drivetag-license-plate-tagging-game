@@ -198,7 +198,7 @@ export default function TagDriverScreen() {
           license_plate: newPellet.targetLicensePlate,
           targetuserid: targetUserId,
           created_by: newPellet.createdBy,
-          created_at: new Date(newPellet.createdAt).toISOString(),
+          created_at: newPellet.createdAt,
           notes: newPellet.reason,
           type: newPellet.type,
           latitude: newPellet.location?.latitude || null,

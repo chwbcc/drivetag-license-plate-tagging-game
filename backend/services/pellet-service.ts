@@ -32,7 +32,7 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
         id: pellet.id,
         license_plate: pellet.targetLicensePlate,
         targetuserid: targetUserId,
-        createdby: pellet.createdBy,
+        created_by: pellet.createdBy,
         created_at: pellet.createdAt,
         notes: pellet.reason,
         type: pellet.type,
@@ -132,7 +132,7 @@ export const getPelletById = async (pelletId: string): Promise<Pellet | null> =>
     id: data.id as string,
     targetLicensePlate: data.license_plate as string,
     targetUserId: data.targetuserid as string | undefined,
-    createdBy: data.createdby as string,
+    createdBy: data.created_by as string,
     createdAt: data.created_at as number,
     reason: data.notes as string,
     type: data.type as 'negative' | 'positive',
@@ -157,7 +157,7 @@ export const getAllPellets = async (): Promise<Pellet[]> => {
     id: row.id as string,
     targetLicensePlate: row.license_plate as string,
     targetUserId: row.targetuserid as string | undefined,
-    createdBy: row.createdby as string,
+    createdBy: row.created_by as string,
     createdAt: row.created_at as number,
     reason: row.notes as string,
     type: row.type as 'negative' | 'positive',
@@ -192,7 +192,7 @@ export const getPelletsByLicensePlate = async (licensePlate: string, type?: 'neg
     id: row.id as string,
     targetLicensePlate: row.license_plate as string,
     targetUserId: row.targetuserid as string | undefined,
-    createdBy: row.createdby as string,
+    createdBy: row.created_by as string,
     createdAt: row.created_at as number,
     reason: row.notes as string,
     type: row.type as 'negative' | 'positive',
@@ -211,7 +211,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
   let query = db
     .from('pellets')
     .select('*')
-    .eq('createdby', userId);
+    .eq('created_by', userId);
   
   if (type) {
     query = query.eq('type', type);
@@ -225,7 +225,7 @@ export const getPelletsCreatedByUser = async (userId: string, type?: 'negative' 
     id: row.id as string,
     targetLicensePlate: row.license_plate as string,
     targetUserId: row.targetuserid as string | undefined,
-    createdBy: row.createdby as string,
+    createdBy: row.created_by as string,
     createdAt: row.created_at as number,
     reason: row.notes as string,
     type: row.type as 'negative' | 'positive',
