@@ -43,6 +43,56 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
     if (error) throw error;
     
     console.log('[PelletService] Created pellet successfully:', pellet.id);
+    
+    if (targetUserId) {
+      const ratingColumn = pellet.type === 'positive' ? 'positive_rating_count' : 'negative_rating_count';
+      const { error: updateError } = await db.rpc('increment', {
+        table_name: 'users',
+        row_id: targetUserId,
+        column_name: ratingColumn
+      });
+      
+      if (updateError) {
+        console.warn('[PelletService] Could not update rating count:', updateError);
+        
+        const { data: userData } = await db
+          .from('users')
+          .select(ratingColumn)
+          .eq('id', targetUserId)
+          .single();
+        
+        if (userData) {
+          const currentValue = (userData as any)[ratingColumn] || 0;
+          await db
+            .from('users')
+            .update({ [ratingColumn]: currentValue + 1 })
+            .eq('id', targetUserId);
+        }
+      }
+    }
+    
+    const { error: giverUpdateError } = await db.rpc('increment', {
+      table_name: 'users',
+      row_id: pellet.createdBy,
+      column_name: 'pellets_given_count'
+    });
+    
+    if (giverUpdateError) {
+      console.warn('[PelletService] Could not update pellets given count:', giverUpdateError);
+      
+      const { data: giverData } = await db
+        .from('users')
+        .select('pellets_given_count')
+        .eq('id', pellet.createdBy)
+        .single();
+      
+      if (giverData) {
+        await db
+          .from('users')
+          .update({ pellets_given_count: (giverData.pellets_given_count || 0) + 1 })
+          .eq('id', pellet.createdBy);
+      }
+    }
   } catch (error: any) {
     console.error('[PelletService] Error creating pellet:', error);
     console.error('[PelletService] Error details:', {

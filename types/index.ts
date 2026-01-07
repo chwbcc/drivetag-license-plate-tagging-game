@@ -11,6 +11,7 @@ export interface User {
   positivePelletCount: number; // Number of positive pellets the user has available
   positiveRatingCount?: number; // Number of positive ratings received
   negativeRatingCount?: number; // Number of negative ratings received
+  pelletsGivenCount?: number; // Number of pellets given by the user
   badges: string[]; // IDs of badges earned by the user
   exp: number; // Experience points earned by the user
   level: number; // User level based on experience

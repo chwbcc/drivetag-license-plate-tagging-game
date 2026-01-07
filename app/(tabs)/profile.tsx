@@ -5,6 +5,7 @@ import { Plus, Target, ThumbsUp, Moon, Sun, Award } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import BadgeCard from '@/components/BadgeCard';
+import CircularGauge from '@/components/CircularGauge';
 import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
 import { useTheme } from '@/store/theme-store';
@@ -123,7 +124,7 @@ export default function ProfileScreen() {
 
       <View style={styles.header}>
         <View>
-          <Text style={[styles.greeting, { color: textColor }]}>Tag a Driver</Text>
+          <Text style={[styles.greeting, { color: textColor }]}>Driver Score</Text>
           <Text style={[styles.licensePlate, { color: textSecondary }]}>{user?.licensePlate || 'No License Plate'}</Text>
         </View>
         
@@ -138,6 +139,36 @@ export default function ProfileScreen() {
               {user?.positivePelletCount || 0}
             </Text>
           </View>
+        </View>
+      </View>
+      
+      <View style={[styles.driverScoreSection, { backgroundColor: cardColor, borderColor }]}>
+        <Text style={[styles.sectionTitle, { color: textColor }]}>Ratings Received</Text>
+        <View style={styles.gaugesContainer}>
+          <CircularGauge
+            value={user?.positiveRatingCount || 0}
+            maxValue={Math.max(100, (user?.positiveRatingCount || 0) + 20)}
+            size={120}
+            strokeWidth={12}
+            color={Colors.success}
+            label="Positive"
+          />
+          <CircularGauge
+            value={user?.negativeRatingCount || 0}
+            maxValue={Math.max(100, (user?.negativeRatingCount || 0) + 20)}
+            size={120}
+            strokeWidth={12}
+            color={Colors.primary}
+            label="Negative"
+          />
+        </View>
+      </View>
+      
+      <View style={[styles.activitySection, { backgroundColor: cardColor, borderColor }]}>
+        <Text style={[styles.sectionTitle, { color: textColor }]}>Activity</Text>
+        <View style={styles.activityItem}>
+          <Text style={[styles.activityLabel, { color: textSecondary }]}>Pellets Given:</Text>
+          <Text style={[styles.activityValue, { color: textColor }]}>{user?.pelletsGivenCount || 0}</Text>
         </View>
       </View>
       
@@ -504,5 +535,41 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: Colors.secondary,
     zIndex: 1,
+  },
+  driverScoreSection: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  gaugesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  activitySection: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  activityLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  activityValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
