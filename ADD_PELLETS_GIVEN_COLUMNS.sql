@@ -20,7 +20,7 @@ UPDATE users
 SET negative_pellets_given_count = (
     SELECT COUNT(*) 
     FROM pellets 
-    WHERE pellets.created_by = users.id 
+    WHERE pellets.createdby = users.id 
     AND pellets.type = 'negative'
 );
 
@@ -28,6 +28,6 @@ UPDATE users
 SET positive_pellets_given_count = (
     SELECT COUNT(*) 
     FROM pellets 
-    WHERE pellets.created_by = users.id 
+    WHERE pellets.createdby = users.id 
     AND pellets.type = 'positive'
 );
