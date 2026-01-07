@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Shield, Users, Target, Activity, Settings, ChevronRight, AlertCircle, Database, CheckCircle, XCircle, WifiOff } from 'lucide-react-native';
+import { Shield, Users, Target, Activity, Settings, ChevronRight, AlertCircle, Database, CheckCircle, XCircle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
@@ -107,22 +107,6 @@ export default function AdminAreaScreen() {
       accessLevel: 'admin' as const,
     },
     {
-      id: 'backend-check',
-      title: 'Backend Status',
-      description: 'Check backend connectivity',
-      icon: WifiOff,
-      color: '#F39C12',
-      accessLevel: 'moderator' as const,
-    },
-    {
-      id: 'database-fix',
-      title: 'Database Fix',
-      description: 'Fix database schema issues',
-      icon: Database,
-      color: '#9B59B6',
-      accessLevel: 'super_admin' as const,
-    },
-    {
       id: 'settings',
       title: 'Admin Settings',
       description: 'Configure admin roles',
@@ -149,12 +133,6 @@ export default function AdminAreaScreen() {
         break;
       case 'activity':
         router.push('/admin/activity' as any);
-        break;
-      case 'backend-check':
-        router.push('/backend-check');
-        break;
-      case 'database-fix':
-        router.push('/database-fix');
         break;
       case 'settings':
         router.push('/admin/settings');
