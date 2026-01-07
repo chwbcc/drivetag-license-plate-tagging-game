@@ -9,7 +9,6 @@ import { darkMode } from '@/constants/styles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
 import { User } from '@/types';
-import { trpc } from '@/lib/trpc';
 
 type UserFormData = {
   email: string;
@@ -221,7 +220,15 @@ export default function UserManagementScreen() {
     },
   });
 
-  const deleteUserMutation = trpc.deleteUser.useMutation({
+  const deleteUserMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
     onSuccess: () => {
       console.log('[DeleteUser] User deleted successfully');
       usersQuery.refetch();

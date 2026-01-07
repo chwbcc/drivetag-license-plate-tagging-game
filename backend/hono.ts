@@ -1,8 +1,5 @@
 import { Hono } from "hono";
-import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
-import { appRouter } from "./trpc/app-router";
-import { createContext } from "./trpc/create-context";
 import { initDatabase } from "./database";
 
 const app = new Hono();
@@ -23,8 +20,8 @@ app.use("*", cors({
   origin: '*',
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-  allowHeaders: ['Content-Type', 'Authorization', 'x-user-data', 'x-trpc-source'],
-  exposeHeaders: ['Content-Type', 'x-trpc-source'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-user-data'],
+  exposeHeaders: ['Content-Type'],
   maxAge: 86400,
 }));
 
@@ -38,19 +35,6 @@ app.use('*', async (c, next) => {
 });
 
 
-
-
-
-app.use(
-  "/trpc/*",
-  trpcServer({
-    router: appRouter,
-    createContext,
-    onError: ({ error, path }) => {
-      console.error(`[tRPC Error] ${path}:`, error.message);
-    },
-  })
-);
 
 app.get("/", (c) => {
   console.log('[Backend] Root endpoint hit');
@@ -90,13 +74,7 @@ app.get("/health", (c) => {
   });
 });
 
-app.get("/debug/routes", (c) => {
-  console.log('[Backend] Available tRPC procedures:', Object.keys(appRouter._def.procedures || {}));
-  return c.json({
-    message: "Check backend logs for available routes",
-    timestamp: new Date().toISOString(),
-  });
-});
+
 
 app.notFound((c) => {
   console.error('[Backend] 404 Not Found:', c.req.url);
