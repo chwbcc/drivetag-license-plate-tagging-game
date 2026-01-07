@@ -63,7 +63,7 @@ export default function HomeScreen() {
         id: row.id as string,
         targetLicensePlate: row.license_plate as string,
         targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.createdby as string,
+        createdBy: row.created_by as string,
         createdAt: row.created_at as number,
         reason: row.notes as string,
         type: row.type as 'negative' | 'positive',
@@ -93,7 +93,7 @@ export default function HomeScreen() {
         id: row.id as string,
         targetLicensePlate: row.license_plate as string,
         targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.createdby as string,
+        createdBy: row.created_by as string,
         createdAt: row.created_at as number,
         reason: row.notes as string,
         type: row.type as 'negative' | 'positive',
@@ -123,7 +123,7 @@ export default function HomeScreen() {
         id: row.id as string,
         targetLicensePlate: row.license_plate as string,
         targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.createdby as string,
+        createdBy: row.created_by as string,
         createdAt: row.created_at as number,
         reason: row.notes as string,
         type: row.type as 'negative' | 'positive',
@@ -143,7 +143,7 @@ export default function HomeScreen() {
       const { data, error } = await supabase
         .from('pellets')
         .select('*')
-        .eq('createdby', user.id)
+        .eq('created_by', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -152,7 +152,7 @@ export default function HomeScreen() {
         id: row.id as string,
         targetLicensePlate: row.license_plate as string,
         targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.createdby as string,
+        createdBy: row.created_by as string,
         createdAt: row.created_at as number,
         reason: row.notes as string,
         type: row.type as 'negative' | 'positive',

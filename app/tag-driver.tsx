@@ -21,6 +21,7 @@ import useAuthStore from '@/store/auth-store';
 import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
 import { supabase } from '@/utils/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Experience points awarded for different actions
 const US_STATES = [
@@ -80,6 +81,7 @@ export default function TagDriverScreen() {
   const { user, removePellets, addExp } = useAuthStore();
   const { addPellet } = usePelletStore();
   const { checkAndAwardBadges } = useBadgeStore();
+  const queryClient = useQueryClient();
   
   const isPositive = pelletType === 'positive';
   const reasons = isPositive ? POSITIVE_REASONS : NEGATIVE_REASONS;
@@ -336,6 +338,11 @@ export default function TagDriverScreen() {
           }, 1000);
         }
       }
+      
+      console.log('[TagDriver] Invalidating queries to refresh home page...');
+      await queryClient.invalidateQueries({ queryKey: ['pellets'] });
+      
+      console.log('[TagDriver] Tag submitted successfully!');
       
       // Show success message with exp gained
       Alert.alert(
