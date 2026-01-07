@@ -22,8 +22,8 @@ import {
   Target,
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
-import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
+import { trpc } from '@/lib/trpc';
 import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
 
@@ -33,7 +33,6 @@ import { useTheme } from '@/store/theme-store';
 
 export default function HomeScreen() {
   const { user, logout, getExpForNextLevel, syncAdminRole } = useAuthStore();
-  const { getPelletsByLicensePlate, getPelletsCreatedByUser } = usePelletStore();
   const { getUserBadges } = useBadgeStore();
   const { isDark, toggleTheme } = useTheme();
   
@@ -52,10 +51,24 @@ export default function HomeScreen() {
     ? `${user.state}-${user.licensePlate}` 
     : user.licensePlate;
   
-  const pelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState);
-  const negativePelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState, 'negative');
-  const positivePelletsReceived = getPelletsByLicensePlate(userLicensePlateWithState, 'positive');
-  const pelletsGiven = getPelletsCreatedByUser(user.id);
+  const { data: pelletsReceived = [] } = trpc.getPelletsByLicensePlate.useQuery({
+    licensePlate: userLicensePlateWithState,
+  });
+  
+  const { data: negativePelletsReceived = [] } = trpc.getPelletsByLicensePlate.useQuery({
+    licensePlate: userLicensePlateWithState,
+    type: 'negative',
+  });
+  
+  const { data: positivePelletsReceived = [] } = trpc.getPelletsByLicensePlate.useQuery({
+    licensePlate: userLicensePlateWithState,
+    type: 'positive',
+  });
+  
+  const { data: pelletsGiven = [] } = trpc.getPelletsCreatedByUser.useQuery({
+    userId: user.id,
+  });
+  
   const expInfo = getExpForNextLevel();
 
 
