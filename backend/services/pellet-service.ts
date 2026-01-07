@@ -71,27 +71,39 @@ export const createPellet = async (pellet: Pellet): Promise<void> => {
       }
     }
     
+    const pelletsGivenColumn = pellet.type === 'positive' ? 'positive_pellets_given_count' : 'negative_pellets_given_count';
     const { error: giverUpdateError } = await db.rpc('increment', {
       table_name: 'users',
       row_id: pellet.createdBy,
-      column_name: 'pellets_given_count'
+      column_name: pelletsGivenColumn
     });
     
     if (giverUpdateError) {
-      console.warn('[PelletService] Could not update pellets given count:', giverUpdateError);
+      console.warn(`[PelletService] Could not update ${pelletsGivenColumn}:`, giverUpdateError);
       
       const { data: giverData } = await db
         .from('users')
-        .select('pellets_given_count')
+        .select(`pellets_given_count, ${pelletsGivenColumn}`)
         .eq('id', pellet.createdBy)
         .single();
       
       if (giverData) {
+        const currentTypeCount = (giverData as any)[pelletsGivenColumn] || 0;
+        const currentTotalCount = giverData.pellets_given_count || 0;
         await db
           .from('users')
-          .update({ pellets_given_count: (giverData.pellets_given_count || 0) + 1 })
+          .update({ 
+            [pelletsGivenColumn]: currentTypeCount + 1,
+            pellets_given_count: currentTotalCount + 1
+          })
           .eq('id', pellet.createdBy);
       }
+    } else {
+      await db.rpc('increment', {
+        table_name: 'users',
+        row_id: pellet.createdBy,
+        column_name: 'pellets_given_count'
+      });
     }
   } catch (error: any) {
     console.error('[PelletService] Error creating pellet:', error);

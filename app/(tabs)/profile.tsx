@@ -167,8 +167,12 @@ export default function ProfileScreen() {
       <View style={[styles.activitySection, { backgroundColor: cardColor, borderColor }]}>
         <Text style={[styles.sectionTitle, { color: textColor }]}>Activity</Text>
         <View style={styles.activityItem}>
-          <Text style={[styles.activityLabel, { color: textSecondary }]}>Pellets Given:</Text>
-          <Text style={[styles.activityValue, { color: textColor }]}>{user?.pelletsGivenCount || 0}</Text>
+          <Text style={[styles.activityLabel, { color: textSecondary }]}>Positive Given:</Text>
+          <Text style={[styles.activityValue, { color: Colors.success }]}>{user?.positivePelletsGivenCount || 0}</Text>
+        </View>
+        <View style={styles.activityItem}>
+          <Text style={[styles.activityLabel, { color: textSecondary }]}>Negative Given:</Text>
+          <Text style={[styles.activityValue, { color: Colors.primary }]}>{user?.negativePelletsGivenCount || 0}</Text>
         </View>
       </View>
       
