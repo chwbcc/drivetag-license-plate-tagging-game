@@ -30,7 +30,7 @@ SET
   pellets_given_count = (
     SELECT COUNT(*) 
     FROM pellets 
-    WHERE pellets.created_by = users.id
+    WHERE pellets.createdby = users.id
   );
 
 -- Verify the update
