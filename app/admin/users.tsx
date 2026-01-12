@@ -46,8 +46,7 @@ export default function UserManagementScreen() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('users')
-        .select('id, email, username, name, photo, license_plate, state, negative_pellet_count, positive_pellet_count, badges, experience, level, role, created_at, deleted_at', { count: 'exact' })
-        .is('deleted_at', null)
+        .select('id, email, username, name, photo, license_plate, state, negative_pellet_count, positive_pellet_count, badges, experience, level, role, created_at', { count: 'exact' })
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -223,34 +222,31 @@ export default function UserManagementScreen() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
-      console.log('[DeleteUser] Soft deleting user:', userId);
+      console.log('[DeleteUser] Hard deleting user:', userId);
       
-      // Soft delete: Update user with deleted_at timestamp and clear sensitive data
-      const { error: updateError, data: updateData } = await supabase
+      // First delete any pellets created by this user
+      const { error: pelletsError } = await supabase
+        .from('pellets')
+        .delete()
+        .eq('created_by', userId);
+      
+      if (pelletsError) {
+        console.error('[DeleteUser] Error deleting user pellets:', JSON.stringify(pelletsError, null, 2));
+        // Continue with user deletion even if pellets fail
+      }
+      
+      // Hard delete the user
+      const { error: deleteError } = await supabase
         .from('users')
-        .update({
-          deleted_at: new Date().toISOString(),
-          email: `deleted_${userId}@deleted.local`,
-          username: 'Deleted User',
-          name: 'Deleted User',
-          license_plate: null,
-          state: null,
-          photo: null,
-        })
-        .eq('id', userId)
-        .select();
+        .delete()
+        .eq('id', userId);
       
-      if (updateError) {
-        console.error('[DeleteUser] Error soft deleting user:', JSON.stringify(updateError, null, 2));
-        throw new Error(updateError.message || 'Failed to delete user');
+      if (deleteError) {
+        console.error('[DeleteUser] Error deleting user:', JSON.stringify(deleteError, null, 2));
+        throw new Error(deleteError.message || 'Failed to delete user');
       }
       
-      if (!updateData || updateData.length === 0) {
-        console.error('[DeleteUser] No rows updated - user may not exist');
-        throw new Error('User not found or could not be deleted.');
-      }
-      
-      console.log('[DeleteUser] User soft deleted successfully:', userId);
+      console.log('[DeleteUser] User deleted successfully:', userId);
       return { success: true };
     },
     onSuccess: () => {
