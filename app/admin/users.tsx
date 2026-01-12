@@ -222,12 +222,25 @@ export default function UserManagementScreen() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
+      console.log('[DeleteUser] Calling backend API to delete user:', userId);
       
-      if (error) throw error;
+      const backendUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || '';
+      const response = await fetch(`${backendUrl}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('[DeleteUser] Backend error:', data);
+        throw new Error(data.message || data.error || 'Failed to delete user');
+      }
+      
+      console.log('[DeleteUser] Backend response:', data);
+      return data;
     },
     onSuccess: () => {
       console.log('[DeleteUser] User deleted successfully');

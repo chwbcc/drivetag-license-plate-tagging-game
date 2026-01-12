@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { initDatabase } from "./database";
+import { deleteUser } from "./services/user-service";
 
 const app = new Hono();
 
@@ -75,6 +76,32 @@ app.get("/health", (c) => {
 });
 
 
+
+app.delete("/api/users/:userId", async (c) => {
+  const userId = c.req.param('userId');
+  
+  console.log('[Backend] Delete user request for:', userId);
+  
+  if (!dbInitialized) {
+    return c.json({ error: 'Database not initialized' }, 503);
+  }
+  
+  if (!userId) {
+    return c.json({ error: 'User ID is required' }, 400);
+  }
+  
+  try {
+    await deleteUser(userId);
+    console.log('[Backend] User deleted successfully:', userId);
+    return c.json({ success: true, message: 'User deleted successfully' });
+  } catch (error: any) {
+    console.error('[Backend] Error deleting user:', error);
+    return c.json({ 
+      error: 'Failed to delete user', 
+      message: error.message 
+    }, 500);
+  }
+});
 
 app.notFound((c) => {
   console.error('[Backend] 404 Not Found:', c.req.url);
