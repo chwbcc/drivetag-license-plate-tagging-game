@@ -222,25 +222,66 @@ export default function UserManagementScreen() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
-      console.log('[DeleteUser] Calling backend API to delete user:', userId);
+      console.log('[DeleteUser] Deleting user directly from Supabase:', userId);
       
-      const backendUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || '';
-      const response = await fetch(`${backendUrl}/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Delete user's badges first
+      const { error: badgesError } = await supabase
+        .from('badges')
+        .delete()
+        .eq('userid', userId);
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        console.error('[DeleteUser] Backend error:', data);
-        throw new Error(data.message || data.error || 'Failed to delete user');
+      if (badgesError) {
+        console.error('[DeleteUser] Error deleting badges:', badgesError);
       }
       
-      console.log('[DeleteUser] Backend response:', data);
-      return data;
+      // Delete user's pellets (both created by and targeted at user)
+      const { error: pelletsCreatedError } = await supabase
+        .from('pellets')
+        .delete()
+        .eq('created_by', userId);
+      
+      if (pelletsCreatedError) {
+        console.error('[DeleteUser] Error deleting created pellets:', pelletsCreatedError);
+      }
+      
+      const { error: pelletsTargetedError } = await supabase
+        .from('pellets')
+        .delete()
+        .eq('targetuserid', userId);
+      
+      if (pelletsTargetedError) {
+        console.error('[DeleteUser] Error deleting targeted pellets:', pelletsTargetedError);
+      }
+      
+      // Delete user's activities
+      const { error: activitiesError } = await supabase
+        .from('activities')
+        .delete()
+        .eq('userid', userId);
+      
+      if (activitiesError) {
+        console.error('[DeleteUser] Error deleting activities:', activitiesError);
+      }
+      
+      // Finally delete the user
+      const { data, error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId)
+        .select();
+      
+      if (userError) {
+        console.error('[DeleteUser] Error deleting user:', userError);
+        throw new Error(userError.message || 'Failed to delete user');
+      }
+      
+      if (!data || data.length === 0) {
+        console.error('[DeleteUser] User was not deleted - may not exist or RLS policy blocking');
+        throw new Error('User was not deleted. Check database permissions.');
+      }
+      
+      console.log('[DeleteUser] User deleted successfully:', userId);
+      return { success: true };
     },
     onSuccess: () => {
       console.log('[DeleteUser] User deleted successfully');
