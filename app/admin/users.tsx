@@ -228,7 +228,7 @@ export default function UserManagementScreen() {
       const { error: pelletsError } = await supabase
         .from('pellets')
         .delete()
-        .eq('created_by', userId);
+        .eq('createdby', userId);
       
       if (pelletsError) {
         console.error('[DeleteUser] Error deleting user pellets:', JSON.stringify(pelletsError, null, 2));
