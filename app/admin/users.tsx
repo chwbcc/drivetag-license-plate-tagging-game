@@ -46,7 +46,8 @@ export default function UserManagementScreen() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('users')
-        .select('id, email, username, name, photo, license_plate, state, negative_pellet_count, positive_pellet_count, badges, experience, level, role, created_at', { count: 'exact' })
+        .select('id, email, username, name, photo, license_plate, state, negative_pellet_count, positive_pellet_count, badges, experience, level, role, created_at, deleted_at', { count: 'exact' })
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -222,95 +223,34 @@ export default function UserManagementScreen() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
-      console.log('[DeleteUser] Deleting user directly from Supabase:', userId);
+      console.log('[DeleteUser] Soft deleting user:', userId);
       
-      // Delete user's badges first (ignore errors - table may not have data)
-      try {
-        const { error: badgesError } = await supabase
-          .from('badges')
-          .delete()
-          .eq('userid', userId);
-        
-        if (badgesError) {
-          console.log('[DeleteUser] Badges delete result:', JSON.stringify(badgesError, null, 2));
-        } else {
-          console.log('[DeleteUser] Badges deleted successfully');
-        }
-      } catch (e) {
-        console.log('[DeleteUser] Badges delete exception:', e);
-      }
-      
-      // Delete user's pellets (both created by and targeted at user)
-      try {
-        const { error: pelletsCreatedError } = await supabase
-          .from('pellets')
-          .delete()
-          .eq('created_by', userId);
-        
-        if (pelletsCreatedError) {
-          console.log('[DeleteUser] Created pellets delete result:', JSON.stringify(pelletsCreatedError, null, 2));
-        } else {
-          console.log('[DeleteUser] Created pellets deleted successfully');
-        }
-      } catch (e) {
-        console.log('[DeleteUser] Created pellets delete exception:', e);
-      }
-      
-      try {
-        const { error: pelletsTargetedError } = await supabase
-          .from('pellets')
-          .delete()
-          .eq('targetuserid', userId);
-        
-        if (pelletsTargetedError) {
-          console.log('[DeleteUser] Targeted pellets delete result:', JSON.stringify(pelletsTargetedError, null, 2));
-        } else {
-          console.log('[DeleteUser] Targeted pellets deleted successfully');
-        }
-      } catch (e) {
-        console.log('[DeleteUser] Targeted pellets delete exception:', e);
-      }
-      
-      // Delete user's activities
-      try {
-        const { error: activitiesError } = await supabase
-          .from('activities')
-          .delete()
-          .eq('userid', userId);
-        
-        if (activitiesError) {
-          console.log('[DeleteUser] Activities delete result:', JSON.stringify(activitiesError, null, 2));
-        } else {
-          console.log('[DeleteUser] Activities deleted successfully');
-        }
-      } catch (e) {
-        console.log('[DeleteUser] Activities delete exception:', e);
-      }
-      
-      // Finally delete the user
-      const { error: userError } = await supabase
+      // Soft delete: Update user with deleted_at timestamp and clear sensitive data
+      const { error: updateError, data: updateData } = await supabase
         .from('users')
-        .delete()
-        .eq('id', userId);
-      
-      if (userError) {
-        console.error('[DeleteUser] Error deleting user:', JSON.stringify(userError, null, 2));
-        throw new Error(userError.message || 'Failed to delete user');
-      }
-      
-      // Verify user was deleted by trying to fetch them
-      const { data: checkUser } = await supabase
-        .from('users')
-        .select('id')
+        .update({
+          deleted_at: new Date().toISOString(),
+          email: `deleted_${userId}@deleted.local`,
+          username: 'Deleted User',
+          name: 'Deleted User',
+          license_plate: null,
+          state: null,
+          photo: null,
+        })
         .eq('id', userId)
-        .single();
+        .select();
       
-      if (checkUser) {
-        console.error('[DeleteUser] User still exists after delete - RLS policy may be blocking');
-        throw new Error('User was not deleted. Check database RLS policies.');
+      if (updateError) {
+        console.error('[DeleteUser] Error soft deleting user:', JSON.stringify(updateError, null, 2));
+        throw new Error(updateError.message || 'Failed to delete user');
       }
       
-      console.log('[DeleteUser] User deleted successfully:', userId);
+      if (!updateData || updateData.length === 0) {
+        console.error('[DeleteUser] No rows updated - user may not exist');
+        throw new Error('User not found or could not be deleted.');
+      }
+      
+      console.log('[DeleteUser] User soft deleted successfully:', userId);
       return { success: true };
     },
     onSuccess: () => {
