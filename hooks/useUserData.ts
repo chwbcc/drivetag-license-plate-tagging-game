@@ -57,7 +57,10 @@ export const useCurrentUser = () => {
       }
       
       const user = mapDatabaseUserToUser(data);
-      console.log('[useCurrentUser] Fetched user:', user.email, 'Level:', user.level, 'Exp:', user.exp);
+      console.log('[useCurrentUser] Fetched user:', user.email);
+      console.log('[useCurrentUser] Stats - Level:', user.level, 'Exp:', user.exp);
+      console.log('[useCurrentUser] Stats - Pellets Given:', user.pelletsGivenCount, 'Positive Given:', user.positivePelletsGivenCount, 'Negative Given:', user.negativePelletsGivenCount);
+      console.log('[useCurrentUser] Stats - Positive Received:', user.positiveRatingCount, 'Negative Received:', user.negativeRatingCount);
       
       updateLocalUser(user);
       
@@ -69,51 +72,26 @@ export const useCurrentUser = () => {
   });
 };
 
-export const useUserPelletsActivity = (userId: string | undefined, licensePlate: string | undefined) => {
-  return useQuery({
-    queryKey: ['pelletsActivity', userId, licensePlate],
-    queryFn: async () => {
-      if (!userId || !licensePlate) return null;
-      
-      console.log('[useUserPelletsActivity] Fetching pellet activity for:', userId, licensePlate);
-      
-      const [givenResult, receivedResult] = await Promise.all([
-        supabase
-          .from('pellets')
-          .select('id, type')
-          .eq('created_by', userId),
-        supabase
-          .from('pellets')
-          .select('id, type')
-          .ilike('license_plate', licensePlate.toLowerCase()),
-      ]);
-      
-      if (givenResult.error) {
-        console.error('[useUserPelletsActivity] Error fetching given pellets:', givenResult.error);
-      }
-      if (receivedResult.error) {
-        console.error('[useUserPelletsActivity] Error fetching received pellets:', receivedResult.error);
-      }
-      
-      const givenPellets = givenResult.data || [];
-      const receivedPellets = receivedResult.data || [];
-      
-      const activity = {
-        totalGiven: givenPellets.length,
-        positiveGiven: givenPellets.filter((p: any) => p.type === 'positive').length,
-        negativeGiven: givenPellets.filter((p: any) => p.type === 'negative').length,
-        totalReceived: receivedPellets.length,
-        positiveReceived: receivedPellets.filter((p: any) => p.type === 'positive').length,
-        negativeReceived: receivedPellets.filter((p: any) => p.type === 'negative').length,
-      };
-      
-      console.log('[useUserPelletsActivity] Activity:', activity);
-      
-      return activity;
-    },
-    enabled: !!userId && !!licensePlate,
-    staleTime: 10000,
-  });
+export const getUserStats = (user: User | null | undefined) => {
+  if (!user) {
+    return {
+      totalGiven: 0,
+      positiveGiven: 0,
+      negativeGiven: 0,
+      totalReceived: 0,
+      positiveReceived: 0,
+      negativeReceived: 0,
+    };
+  }
+  
+  return {
+    totalGiven: user.pelletsGivenCount ?? 0,
+    positiveGiven: user.positivePelletsGivenCount ?? 0,
+    negativeGiven: user.negativePelletsGivenCount ?? 0,
+    totalReceived: (user.positiveRatingCount ?? 0) + (user.negativeRatingCount ?? 0),
+    positiveReceived: user.positiveRatingCount ?? 0,
+    negativeReceived: user.negativeRatingCount ?? 0,
+  };
 };
 
 export const useLeaderboardPellets = (sortOrder: 'asc' | 'desc', pelletType: 'negative' | 'positive' | 'all') => {
@@ -222,7 +200,6 @@ export const useCreatePellet = () => {
     mutationFn: async ({
       id,
       licensePlate,
-      targetUserId,
       createdBy,
       createdAt,
       reason,
@@ -232,7 +209,6 @@ export const useCreatePellet = () => {
     }: {
       id: string;
       licensePlate: string;
-      targetUserId: string | null;
       createdBy: string;
       createdAt: number;
       reason: string;
@@ -242,11 +218,20 @@ export const useCreatePellet = () => {
     }) => {
       console.log('[useCreatePellet] Creating pellet:', { id, licensePlate, type, createdBy });
       
+      const { data: targetUser } = await supabase
+        .from('users')
+        .select('id')
+        .ilike('license_plate', licensePlate.toLowerCase())
+        .single();
+      
+      const targetUserId = targetUser?.id || null;
+      console.log('[useCreatePellet] Target user ID:', targetUserId);
+      
       const { error } = await supabase
         .from('pellets')
         .insert([{
           id,
-          license_plate: licensePlate,
+          license_plate: licensePlate.toLowerCase(),
           targetuserid: targetUserId,
           created_by: createdBy,
           created_at: createdAt,
@@ -256,14 +241,17 @@ export const useCreatePellet = () => {
           longitude: longitude || null,
         }]);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[useCreatePellet] Error inserting pellet:', error);
+        throw error;
+      }
       
-      return { id, licensePlate, type };
+      return { id, licensePlate, type, targetUserId };
     },
     onSuccess: () => {
       console.log('[useCreatePellet] Success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['pellets'] });
-      queryClient.invalidateQueries({ queryKey: ['pelletsActivity'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       queryClient.invalidateQueries({ queryKey: ['allPellets'] });
     },
@@ -293,7 +281,10 @@ export const useUpdateUserAfterTag = () => {
         .eq('id', userId)
         .single();
       
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('[useUpdateUserAfterTag] Error fetching user:', fetchError);
+        throw fetchError;
+      }
       
       const pelletColumn = pelletType === 'positive' ? 'positive_pellet_count' : 'negative_pellet_count';
       const givenColumn = pelletType === 'positive' ? 'positive_pellets_given_count' : 'negative_pellets_given_count';
@@ -318,14 +309,16 @@ export const useUpdateUserAfterTag = () => {
         .update(updateData)
         .eq('id', userId);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('[useUpdateUserAfterTag] Error updating user:', updateError);
+        throw updateError;
+      }
       
       return { userId, updateData };
     },
     onSuccess: () => {
       console.log('[useUpdateUserAfterTag] Success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      queryClient.invalidateQueries({ queryKey: ['pelletsActivity'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
     },
   });
@@ -366,11 +359,15 @@ export const useUpdateTargetUserRating = () => {
         .update({ [ratingColumn]: currentCount + 1 })
         .eq('id', targetUserId);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('[useUpdateTargetUserRating] Error updating target:', updateError);
+        throw updateError;
+      }
       
       return { targetUserId, pelletType };
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
     },
   });

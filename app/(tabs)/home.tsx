@@ -23,7 +23,7 @@ import {
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
-import { useCurrentUser, useUserPelletsActivity, getUserLicensePlateWithState } from '@/hooks/useUserData';
+import { useCurrentUser, getUserStats } from '@/hooks/useUserData';
 import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
 
@@ -65,20 +65,18 @@ export default function HomeScreen() {
     syncAdminRole();
   }, [syncAdminRole]);
 
-  const userLicensePlateWithState = getUserLicensePlateWithState(user);
-  
-  const { data: pelletsActivity } = useUserPelletsActivity(user?.id, userLicensePlateWithState);
+  const userStats = getUserStats(user);
 
   if (!user) {
     return null;
   }
 
-  const positiveReceived = pelletsActivity?.positiveReceived ?? 0;
-  const negativeReceived = pelletsActivity?.negativeReceived ?? 0;
-  const positiveGiven = pelletsActivity?.positiveGiven ?? 0;
-  const negativeGiven = pelletsActivity?.negativeGiven ?? 0;
-  const totalGiven = pelletsActivity?.totalGiven ?? 0;
-  const totalReceived = pelletsActivity?.totalReceived ?? 0;
+  const positiveReceived = userStats.positiveReceived;
+  const negativeReceived = userStats.negativeReceived;
+  const positiveGiven = userStats.positiveGiven;
+  const negativeGiven = userStats.negativeGiven;
+  const totalGiven = userStats.totalGiven;
+  const totalReceived = userStats.totalReceived;
   
   const userBadgeIds = user?.badges || [];
   const userBadges = allBadges.filter(b => userBadgeIds.includes(b.id));

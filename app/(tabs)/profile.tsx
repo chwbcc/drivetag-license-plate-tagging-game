@@ -10,7 +10,7 @@ import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
-import { useCurrentUser, useUserPelletsActivity, getUserLicensePlateWithState } from '@/hooks/useUserData';
+import { useCurrentUser, getUserStats } from '@/hooks/useUserData';
 
 export default function ProfileScreen() {
   const { user: localUser } = useAuthStore();
@@ -22,9 +22,7 @@ export default function ProfileScreen() {
   const { data: dbUser, isLoading: userLoading } = useCurrentUser();
   const user = dbUser || localUser;
   
-  const userLicensePlateWithState = getUserLicensePlateWithState(user);
-  
-  const { data: pelletsActivity, isLoading: activityLoading } = useUserPelletsActivity(user?.id, userLicensePlateWithState);
+  const userStats = getUserStats(user);
   
   useEffect(() => {
     if (user) {
@@ -82,10 +80,10 @@ export default function ProfileScreen() {
   
   const negativePelletCount = user?.pelletCount ?? 0;
   const positivePelletCount = user?.positivePelletCount ?? 0;
-  const positiveRatingCount = pelletsActivity?.positiveReceived ?? 0;
-  const negativeRatingCount = pelletsActivity?.negativeReceived ?? 0;
-  const positiveGivenCount = pelletsActivity?.positiveGiven ?? 0;
-  const negativeGivenCount = pelletsActivity?.negativeGiven ?? 0;
+  const positiveRatingCount = userStats.positiveReceived;
+  const negativeRatingCount = userStats.negativeReceived;
+  const positiveGivenCount = userStats.positiveGiven;
+  const negativeGivenCount = userStats.negativeGiven;
   
   const handleBadgePress = (badge: any) => {
     Alert.alert(
@@ -109,7 +107,7 @@ export default function ProfileScreen() {
     );
   };
 
-  if (userLoading || activityLoading) {
+  if (userLoading) {
     return (
       <View style={[styles.container, { backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
