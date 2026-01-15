@@ -321,7 +321,13 @@ export default function TagDriverScreen() {
       });
       
       console.log('[TagDriver] Step 5: Checking for new badges...');
-      const newBadges = checkAndAwardBadges(localUser.id);
+      const newBadges = checkAndAwardBadges(localUser.id, {
+        negativePelletsReceived: 0,
+        positivePelletsReceived: 0,
+        pelletsGiven: currentPelletsGiven + 1,
+        positivePelletsGiven: isPositive ? currentPositiveGiven + 1 : currentPositiveGiven,
+        expEarned: newExp,
+      });
       
       if (newBadges.length > 0) {
         console.log('[TagDriver] New badges earned:', newBadges);

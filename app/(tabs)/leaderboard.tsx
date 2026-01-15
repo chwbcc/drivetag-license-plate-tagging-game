@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Trophy, ArrowUp, ArrowDown, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, BarChart, Award } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import usePelletStore from '@/store/pellet-store';
-import useAuthStore from '@/store/auth-store';
-import { hashLicensePlate, calculateStatistics } from '@/utils/hash';
+import { hashLicensePlate } from '@/utils/hash';
 import { useTheme } from '@/store/theme-store';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/utils/supabase';
+import { useLeaderboardPellets, useLeaderboardExperience, useAllPelletsForStats } from '@/hooks/useUserData';
 
 type LeaderboardItem = {
   licensePlate: string;
@@ -24,149 +21,62 @@ type ExpLeaderboardItem = {
 
 export default function LeaderboardScreen() {
   const { theme } = useTheme();
-  const { pellets } = usePelletStore();
-  const { getAllUsers } = useAuthStore();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [pelletType, setPelletType] = useState<'negative' | 'positive' | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'pellets' | 'experience'>('pellets');
-  const [useDatabase, setUseDatabase] = useState(true);
   
-  const pelletLeaderboardQuery = useQuery({
-    queryKey: ['leaderboard', 'pellets', sortOrder, pelletType],
-    queryFn: async () => {
-      let query = supabase
-        .from('pellets')
-        .select('license_plate, type');
-      
-      if (pelletType !== 'all') {
-        query = query.eq('type', pelletType);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      const plateMap = new Map<string, number>();
-      (data || []).forEach((item: any) => {
-        const plate = item.license_plate;
-        if (plate) {
-          plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
-        }
-      });
-      
-      const aggregated = Array.from(plateMap.entries()).map(([licensePlate, count]) => ({
-        licensePlate,
-        count,
-      }));
-      
-      aggregated.sort((a, b) => {
-        return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
-      });
-      
-      return { data: aggregated };
-    },
-    enabled: useDatabase && activeTab === 'pellets',
-  });
-  
-  const expLeaderboardQuery = useQuery({
-    queryKey: ['leaderboard', 'experience', sortOrder],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, experience, level')
-        .limit(100);
-      
-      if (error) throw error;
-      
-      const parsedData = (data || []).map((row: any) => {
-        return {
-          id: row.id,
-          name: row.name || 'Anonymous',
-          exp: row.experience || 0,
-          level: row.level || 1,
-        };
-      }).sort((a, b) => {
-        return sortOrder === 'asc' ? a.exp - b.exp : b.exp - a.exp;
-      });
-      
-      return { data: parsedData };
-    },
-    enabled: useDatabase && activeTab === 'experience',
-  });
+  const { data: pelletData = [], isLoading: pelletsLoading } = useLeaderboardPellets(sortOrder, pelletType);
+  const { data: expData = [], isLoading: expLoading } = useLeaderboardExperience(sortOrder);
+  const { data: allPellets = [] } = useAllPelletsForStats();
   
   const styles = getStyles(theme);
   const iconColor = theme === 'dark' ? '#9CA3AF' : Colors.textSecondary;
   const textColor = theme === 'dark' ? '#F9FAFB' : Colors.text;
   
-  // Fallback to local data if database fetch fails
-  useEffect(() => {
-    if (pelletLeaderboardQuery.isError || expLeaderboardQuery.isError) {
-      console.log('[Leaderboard] Database fetch failed, using local data');
-      setUseDatabase(false);
-    }
-  }, [pelletLeaderboardQuery.isError, expLeaderboardQuery.isError]);
-  
-  const filteredPellets = pelletType === 'all' 
-    ? pellets 
-    : pellets.filter(pellet => pellet.type === pelletType);
-  
   const leaderboardData: LeaderboardItem[] = React.useMemo(() => {
-    if (useDatabase && pelletLeaderboardQuery.data?.data) {
-      return pelletLeaderboardQuery.data.data.map((item: any) => ({
-        licensePlate: item.licensePlate || item.license_plate,
-        hashedId: hashLicensePlate(item.licensePlate || item.license_plate),
-        count: item.count,
-      }));
-    }
-    
-    // Fallback to local data
-    const plateMap = new Map<string, number>();
-    
-    filteredPellets.forEach(pellet => {
-      const plate = pellet.targetLicensePlate;
-      plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
-    });
-    
-    return Array.from(plateMap.entries()).map(([licensePlate, count]) => ({
-      licensePlate,
-      hashedId: hashLicensePlate(licensePlate),
-      count,
+    return pelletData.map((item: any) => ({
+      licensePlate: item.licensePlate,
+      hashedId: hashLicensePlate(item.licensePlate),
+      count: item.count,
     }));
-  }, [filteredPellets, useDatabase, pelletLeaderboardQuery.data]);
+  }, [pelletData]);
   
   const expLeaderboardData: ExpLeaderboardItem[] = React.useMemo(() => {
-    if (useDatabase && expLeaderboardQuery.data?.data) {
-      return expLeaderboardQuery.data.data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        exp: item.exp,
-        level: item.level,
-      }));
-    }
-    
-    // Fallback to local data
-    const users = getAllUsers();
-    return users.map(user => ({
-      id: user.id,
-      name: user.name || user.email.split('@')[0],
-      exp: user.exp || 0,
-      level: user.level || 1
+    return expData.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      exp: item.exp,
+      level: item.level,
     }));
-  }, [getAllUsers, useDatabase, expLeaderboardQuery.data]);
+  }, [expData]);
   
-  const sortedPelletData = useDatabase && pelletLeaderboardQuery.data?.data 
-    ? leaderboardData 
-    : [...leaderboardData].sort((a, b) => {
-        return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
-      });
-  
-  const sortedExpData = useDatabase && expLeaderboardQuery.data?.data
-    ? expLeaderboardData
-    : [...expLeaderboardData].sort((a, b) => {
-        return sortOrder === 'desc' ? b.exp - a.exp : a.exp - b.exp;
-      });
-  
-  const statistics = calculateStatistics(pellets);
+  const statistics = React.useMemo(() => {
+    if (allPellets.length === 0) return null;
+    
+    const total = allPellets.length;
+    const positive = allPellets.filter((p: any) => p.type === 'positive').length;
+    const negative = allPellets.filter((p: any) => p.type === 'negative').length;
+    
+    const reasonCounts = new Map<string, number>();
+    allPellets.forEach((p: any) => {
+      if (p.notes) {
+        reasonCounts.set(p.notes, (reasonCounts.get(p.notes) || 0) + 1);
+      }
+    });
+    
+    const topReasons = Array.from(reasonCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([reason, count]) => ({ reason, count }));
+    
+    return {
+      positivePercentage: total > 0 ? Math.round((positive / total) * 100) : 0,
+      negativePercentage: total > 0 ? Math.round((negative / total) * 100) : 0,
+      positiveChange: 0,
+      negativeChange: 0,
+      topReasons,
+    };
+  }, [allPellets]);
   
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
@@ -334,7 +244,7 @@ export default function LeaderboardScreen() {
       
       {activeTab === 'pellets' && (
         <>
-          {useDatabase && pelletLeaderboardQuery.isLoading && (
+          {pelletsLoading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
               <Text style={styles.loadingText}>Loading leaderboard data...</Text>
@@ -390,7 +300,7 @@ export default function LeaderboardScreen() {
             License plates are anonymized for privacy
           </Text>
           
-          {sortedPelletData.length === 0 ? (
+          {leaderboardData.length === 0 && !pelletsLoading ? (
             <View style={styles.emptyState}>
               <Trophy size={48} color={iconColor} />
               <Text style={styles.emptyStateText}>No data yet</Text>
@@ -400,7 +310,7 @@ export default function LeaderboardScreen() {
             </View>
           ) : (
             <FlatList
-              data={sortedPelletData}
+              data={leaderboardData}
               keyExtractor={(item) => item.licensePlate}
               renderItem={renderPelletItem}
               scrollEnabled={false}
@@ -413,12 +323,19 @@ export default function LeaderboardScreen() {
       
       {activeTab === 'experience' && (
         <>
+          {expLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.loadingText}>Loading experience data...</Text>
+            </View>
+          )}
+          
           <Text style={styles.sectionTitle}>Experience Rankings</Text>
           <Text style={styles.sectionSubtitle}>
             Top reporters ranked by experience points
           </Text>
           
-          {sortedExpData.length === 0 ? (
+          {expLeaderboardData.length === 0 && !expLoading ? (
             <View style={styles.emptyState}>
               <Award size={48} color={iconColor} />
               <Text style={styles.emptyStateText}>No data yet</Text>
@@ -428,7 +345,7 @@ export default function LeaderboardScreen() {
             </View>
           ) : (
             <FlatList
-              data={sortedExpData}
+              data={expLeaderboardData}
               keyExtractor={(item) => item.id}
               renderItem={renderExpItem}
               scrollEnabled={false}

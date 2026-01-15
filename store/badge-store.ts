@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Badge, BadgeState } from '@/types';
 import useAuthStore from './auth-store';
-import usePelletStore from './pellet-store';
 
 // Default badges
 const DEFAULT_BADGES: Badge[] = [
@@ -186,10 +185,18 @@ const DEFAULT_BADGES: Badge[] = [
   }
 ];
 
+type BadgeCounts = {
+  negativePelletsReceived: number;
+  positivePelletsReceived: number;
+  pelletsGiven: number;
+  positivePelletsGiven: number;
+  expEarned: number;
+};
+
 type BadgeStore = BadgeState & {
   initializeBadges: () => void;
   getBadgeById: (id: string) => Badge | undefined;
-  checkAndAwardBadges: (userId: string) => string[]; // Returns array of newly awarded badge IDs
+  checkAndAwardBadges: (userId: string, counts?: BadgeCounts) => string[];
   getUserBadges: (userId: string) => Badge[];
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
@@ -207,24 +214,29 @@ const useBadgeStore = create<BadgeStore>()(
       getBadgeById: (id) => {
         return get().badges.find(badge => badge.id === id);
       },
-      checkAndAwardBadges: (userId) => {
+      checkAndAwardBadges: (userId, counts) => {
         const user = useAuthStore.getState().user;
         if (!user || user.id !== userId) return [];
         
-        const pelletStore = usePelletStore.getState();
         const userBadges = user.badges || [];
         const newBadges: string[] = [];
         
-        // Get counts for different criteria
-        const negativePelletsReceived = pelletStore.getPelletsByLicensePlate(user.licensePlate, 'negative').length;
-        const positivePelletsReceived = pelletStore.getPelletsByLicensePlate(user.licensePlate, 'positive').length;
-        const pelletsGiven = pelletStore.getPelletsCreatedByUser(userId).length;
-        const positivePelletsGiven = pelletStore.getPelletsCreatedByUser(userId, 'positive').length;
-        const expEarned = user.exp || 0;
+        const negativePelletsReceived = counts?.negativePelletsReceived ?? user.negativeRatingCount ?? 0;
+        const positivePelletsReceived = counts?.positivePelletsReceived ?? user.positiveRatingCount ?? 0;
+        const pelletsGiven = counts?.pelletsGiven ?? user.pelletsGivenCount ?? 0;
+        const positivePelletsGiven = counts?.positivePelletsGiven ?? user.positivePelletsGivenCount ?? 0;
+        const expEarned = counts?.expEarned ?? user.exp ?? 0;
         
-        // Check each badge
+        console.log('[BadgeStore] Checking badges with counts:', {
+          negativePelletsReceived,
+          positivePelletsReceived,
+          pelletsGiven,
+          positivePelletsGiven,
+          expEarned,
+        });
+        
         get().badges.forEach(badge => {
-          if (userBadges.includes(badge.id)) return; // Skip if already awarded
+          if (userBadges.includes(badge.id)) return;
           
           let meetsThreshold = false;
           
@@ -246,7 +258,6 @@ const useBadgeStore = create<BadgeStore>()(
               break;
           }
           
-          // Special case for balanced driver badge
           if (badge.id === 'balanced-driver') {
             meetsThreshold = negativePelletsReceived >= badge.criteria.threshold && 
                             positivePelletsReceived >= badge.criteria.threshold &&
@@ -256,6 +267,7 @@ const useBadgeStore = create<BadgeStore>()(
           if (meetsThreshold) {
             useAuthStore.getState().addBadge(badge.id);
             newBadges.push(badge.id);
+            console.log('[BadgeStore] New badge earned:', badge.id);
           }
         });
         

@@ -23,9 +23,7 @@ import {
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/utils/supabase';
-import { useCurrentUser, useUserStats } from '@/hooks/useUserData';
+import { useCurrentUser, useUserPelletsActivity, getUserLicensePlateWithState } from '@/hooks/useUserData';
 import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
 
@@ -67,68 +65,26 @@ export default function HomeScreen() {
     syncAdminRole();
   }, [syncAdminRole]);
 
-  const userLicensePlateWithState = user && user.state && user.licensePlate && !user.licensePlate.includes('-') 
-    ? `${user.state}-${user.licensePlate}` 
-    : user?.licensePlate || '';
+  const userLicensePlateWithState = getUserLicensePlateWithState(user);
   
-  const { data: userStats } = useUserStats(user?.id, userLicensePlateWithState);
-  
-  const { data: pelletsGiven = [] } = useQuery({
-    queryKey: ['pellets', 'given', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      console.log('[Home] Fetching pellets given by user:', user.id);
-      const { data, error } = await supabase
-        .from('pellets')
-        .select('id, type')
-        .eq('created_by', user.id);
-      
-      if (error) {
-        console.error('[Home] Error fetching pellets given:', error);
-        throw error;
-      }
-      
-      console.log('[Home] Pellets given:', data?.length || 0);
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
-  
-  const { data: pelletsReceived = [] } = useQuery({
-    queryKey: ['pellets', 'received', userLicensePlateWithState],
-    queryFn: async () => {
-      if (!userLicensePlateWithState) return [];
-      console.log('[Home] Fetching pellets received for:', userLicensePlateWithState);
-      const { data, error } = await supabase
-        .from('pellets')
-        .select('id, type')
-        .ilike('license_plate', userLicensePlateWithState.toLowerCase());
-      
-      if (error) {
-        console.error('[Home] Error fetching pellets received:', error);
-        throw error;
-      }
-      
-      console.log('[Home] Pellets received:', data?.length || 0);
-      return data || [];
-    },
-    enabled: !!userLicensePlateWithState,
-  });
+  const { data: pelletsActivity } = useUserPelletsActivity(user?.id, userLicensePlateWithState);
 
   if (!user) {
     return null;
   }
 
-  const positiveReceived = pelletsReceived.filter((p: any) => p.type === 'positive').length;
-  const negativeReceived = pelletsReceived.filter((p: any) => p.type === 'negative').length;
-  const positiveGiven = pelletsGiven.filter((p: any) => p.type === 'positive').length;
-  const negativeGiven = pelletsGiven.filter((p: any) => p.type === 'negative').length;
+  const positiveReceived = pelletsActivity?.positiveReceived ?? 0;
+  const negativeReceived = pelletsActivity?.negativeReceived ?? 0;
+  const positiveGiven = pelletsActivity?.positiveGiven ?? 0;
+  const negativeGiven = pelletsActivity?.negativeGiven ?? 0;
+  const totalGiven = pelletsActivity?.totalGiven ?? 0;
+  const totalReceived = pelletsActivity?.totalReceived ?? 0;
   
-  const userBadgeIds = userStats?.badges || user.badges || [];
+  const userBadgeIds = user?.badges || [];
   const userBadges = allBadges.filter(b => userBadgeIds.includes(b.id));
   
-  const currentExp = userStats?.exp ?? user.exp ?? 0;
-  const currentLevel = userStats?.level ?? user.level ?? 1;
+  const currentExp = user?.exp ?? 0;
+  const currentLevel = user?.level ?? 1;
   const expInfo = getExpForNextLevel(currentExp, currentLevel);
 
   const handleLogout = () => {
@@ -489,7 +445,7 @@ export default function HomeScreen() {
                 fontWeight: '700' as const,
                 color: textColor,
               }}>
-                {pelletsGiven.length}
+                {totalGiven}
               </Text>
             </View>
             
@@ -570,7 +526,7 @@ export default function HomeScreen() {
                 fontWeight: '700' as const,
                 color: textColor,
               }}>
-                {pelletsReceived.length}
+                {totalReceived}
               </Text>
             </View>
           </View>
