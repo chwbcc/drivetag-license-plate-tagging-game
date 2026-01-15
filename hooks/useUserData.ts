@@ -47,7 +47,12 @@ export const useCurrentUser = () => {
         .single();
       
       if (error) {
-        console.error('[useCurrentUser] Error fetching user:', error);
+        console.error('[useCurrentUser] Error fetching user:', JSON.stringify({
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        }));
         throw error;
       }
       
@@ -111,7 +116,11 @@ export const useLeaderboardPellets = (sortOrder: 'asc' | 'desc', pelletType: 'ne
       const { data, error } = await query;
       
       if (error) {
-        console.error('[useLeaderboardPellets] Error:', error);
+        console.error('[useLeaderboardPellets] Error:', JSON.stringify({
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }));
         throw error;
       }
       
@@ -153,7 +162,11 @@ export const useLeaderboardExperience = (sortOrder: 'asc' | 'desc') => {
         .limit(100);
       
       if (error) {
-        console.error('[useLeaderboardExperience] Error:', error);
+        console.error('[useLeaderboardExperience] Error:', JSON.stringify({
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }));
         throw error;
       }
       
@@ -183,7 +196,11 @@ export const useAllPelletsForStats = () => {
         .select('type, notes, created_at');
       
       if (error) {
-        console.error('[useAllPelletsForStats] Error:', error);
+        console.error('[useAllPelletsForStats] Error:', JSON.stringify({
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }));
         throw error;
       }
       
@@ -242,7 +259,11 @@ export const useCreatePellet = () => {
         }]);
       
       if (error) {
-        console.error('[useCreatePellet] Error inserting pellet:', error);
+        console.error('[useCreatePellet] Error inserting pellet:', JSON.stringify({
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }));
         throw error;
       }
       
@@ -282,7 +303,11 @@ export const useUpdateUserAfterTag = () => {
         .single();
       
       if (fetchError) {
-        console.error('[useUpdateUserAfterTag] Error fetching user:', fetchError);
+        console.error('[useUpdateUserAfterTag] Error fetching user:', JSON.stringify({
+          code: fetchError.code,
+          message: fetchError.message,
+          details: fetchError.details
+        }));
         throw fetchError;
       }
       
@@ -310,7 +335,11 @@ export const useUpdateUserAfterTag = () => {
         .eq('id', userId);
       
       if (updateError) {
-        console.error('[useUpdateUserAfterTag] Error updating user:', updateError);
+        console.error('[useUpdateUserAfterTag] Error updating user:', JSON.stringify({
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details
+        }));
         throw updateError;
       }
       
@@ -346,7 +375,11 @@ export const useUpdateTargetUserRating = () => {
         .single();
       
       if (fetchError) {
-        console.error('[useUpdateTargetUserRating] Error fetching target:', fetchError);
+        console.error('[useUpdateTargetUserRating] Error fetching target:', JSON.stringify({
+          code: fetchError.code,
+          message: fetchError.message,
+          details: fetchError.details
+        }));
         throw fetchError;
       }
       
@@ -360,7 +393,11 @@ export const useUpdateTargetUserRating = () => {
         .eq('id', targetUserId);
       
       if (updateError) {
-        console.error('[useUpdateTargetUserRating] Error updating target:', updateError);
+        console.error('[useUpdateTargetUserRating] Error updating target:', JSON.stringify({
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details
+        }));
         throw updateError;
       }
       
@@ -385,7 +422,11 @@ export const useFindUserByLicensePlate = () => {
         .single();
       
       if (error && error.code !== 'PGRST116') {
-        console.error('[useFindUserByLicensePlate] Error:', error);
+        console.error('[useFindUserByLicensePlate] Error:', JSON.stringify({
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }));
       }
       
       return data?.id || null;
