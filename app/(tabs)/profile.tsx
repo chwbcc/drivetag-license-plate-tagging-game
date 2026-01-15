@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch, ScrollView, FlatList, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, Target, ThumbsUp, Moon, Sun, Award } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import BadgeCard from '@/components/BadgeCard';
@@ -10,13 +11,86 @@ import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
+import { supabase } from '@/utils/supabase';
+import { useCurrentUser } from '@/hooks/useUserData';
 
 export default function ProfileScreen() {
-  const { user } = useAuthStore();
+  const { user: localUser } = useAuthStore();
   const { isDark, toggleTheme } = useTheme();
-  const { badges, getUserBadges, checkAndAwardBadges } = useBadgeStore();
+  const { badges, checkAndAwardBadges } = useBadgeStore();
   const [pelletType, setPelletType] = useState<'negative' | 'positive'>('negative');
   const [newBadges, setNewBadges] = useState<string[]>([]);
+  
+  const { data: dbUser, isLoading: userLoading } = useCurrentUser();
+  const user = dbUser || localUser;
+  
+  const userLicensePlateWithState = user && user.state && user.licensePlate && !user.licensePlate.includes('-') 
+    ? `${user.state}-${user.licensePlate}` 
+    : user?.licensePlate || '';
+  
+  const { data: userCounts, isLoading: countsLoading } = useQuery({
+    queryKey: ['userCounts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      console.log('[Profile] Fetching user counts from database:', user.id);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('negative_pellet_count, positive_pellet_count, positive_rating_count, negative_rating_count, pellets_given_count, positive_pellets_given_count, negative_pellets_given_count, badges')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('[Profile] Error fetching user counts:', error);
+        throw error;
+      }
+      
+      console.log('[Profile] User counts:', data);
+      return {
+        negativePelletCount: (data?.negative_pellet_count as number) || 0,
+        positivePelletCount: (data?.positive_pellet_count as number) || 0,
+        positiveRatingCount: (data?.positive_rating_count as number) || 0,
+        negativeRatingCount: (data?.negative_rating_count as number) || 0,
+        pelletsGivenCount: (data?.pellets_given_count as number) || 0,
+        positivePelletsGivenCount: (data?.positive_pellets_given_count as number) || 0,
+        negativePelletsGivenCount: (data?.negative_pellets_given_count as number) || 0,
+        badges: typeof data?.badges === 'string' ? JSON.parse(data.badges) : (data?.badges || []),
+      };
+    },
+    enabled: !!user?.id,
+    staleTime: 10000,
+  });
+  
+  const { data: pelletsActivity } = useQuery({
+    queryKey: ['pelletsActivity', user?.id, userLicensePlateWithState],
+    queryFn: async () => {
+      if (!user?.id || !userLicensePlateWithState) return null;
+      console.log('[Profile] Fetching pellets activity from database');
+      
+      const [givenResult, receivedResult] = await Promise.all([
+        supabase
+          .from('pellets')
+          .select('type')
+          .eq('created_by', user.id),
+        supabase
+          .from('pellets')
+          .select('type')
+          .ilike('license_plate', userLicensePlateWithState.toLowerCase()),
+      ]);
+      
+      const givenPellets = givenResult.data || [];
+      const receivedPellets = receivedResult.data || [];
+      
+      return {
+        positiveGiven: givenPellets.filter((p: any) => p.type === 'positive').length,
+        negativeGiven: givenPellets.filter((p: any) => p.type === 'negative').length,
+        positiveReceived: receivedPellets.filter((p: any) => p.type === 'positive').length,
+        negativeReceived: receivedPellets.filter((p: any) => p.type === 'negative').length,
+      };
+    },
+    enabled: !!user?.id && !!userLicensePlateWithState,
+    staleTime: 10000,
+  });
   
   useEffect(() => {
     if (user) {
@@ -39,8 +113,8 @@ export default function ProfileScreen() {
     }
     
     const pelletCount = pelletType === 'positive' 
-      ? (user.positivePelletCount || 0) 
-      : user.pelletCount;
+      ? (userCounts?.positivePelletCount ?? user.positivePelletCount ?? 0)
+      : (userCounts?.negativePelletCount ?? user.pelletCount ?? 0);
     
     if (pelletCount <= 0) {
       Alert.alert(
@@ -69,7 +143,15 @@ export default function ProfileScreen() {
   const textSecondary = isDark ? darkMode.textSecondary : Colors.textSecondary;
   const borderColor = isDark ? darkMode.border : Colors.border;
   
-  const userBadges = user ? getUserBadges(user.id) : [];
+  const userBadgeIds = userCounts?.badges || user?.badges || [];
+  const userBadges = badges.filter(b => userBadgeIds.includes(b.id));
+  
+  const negativePelletCount = userCounts?.negativePelletCount ?? user?.pelletCount ?? 0;
+  const positivePelletCount = userCounts?.positivePelletCount ?? user?.positivePelletCount ?? 0;
+  const positiveRatingCount = pelletsActivity?.positiveReceived ?? userCounts?.positiveRatingCount ?? user?.positiveRatingCount ?? 0;
+  const negativeRatingCount = pelletsActivity?.negativeReceived ?? userCounts?.negativeRatingCount ?? user?.negativeRatingCount ?? 0;
+  const positiveGivenCount = pelletsActivity?.positiveGiven ?? userCounts?.positivePelletsGivenCount ?? user?.positivePelletsGivenCount ?? 0;
+  const negativeGivenCount = pelletsActivity?.negativeGiven ?? userCounts?.negativePelletsGivenCount ?? user?.negativePelletsGivenCount ?? 0;
   
   const handleBadgePress = (badge: any) => {
     Alert.alert(
@@ -92,6 +174,15 @@ export default function ProfileScreen() {
       </View>
     );
   };
+
+  if (userLoading || countsLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={{ color: textSecondary, marginTop: 10 }}>Loading profile...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
@@ -131,12 +222,12 @@ export default function ProfileScreen() {
         <View style={[styles.pelletCountContainer, { backgroundColor: cardColor, borderColor }]}>
           <View style={styles.pelletCount}>
             <Text style={[styles.pelletCountLabel, { color: textSecondary }]}>Negative:</Text>
-            <Text style={styles.pelletCountValue}>{user?.pelletCount || 0}</Text>
+            <Text style={styles.pelletCountValue}>{negativePelletCount}</Text>
           </View>
           <View style={styles.pelletCount}>
             <Text style={[styles.pelletCountLabel, { color: textSecondary }]}>Positive:</Text>
             <Text style={[styles.pelletCountValue, styles.positivePelletCount]}>
-              {user?.positivePelletCount || 0}
+              {positivePelletCount}
             </Text>
           </View>
         </View>
@@ -146,16 +237,16 @@ export default function ProfileScreen() {
         <Text style={[styles.sectionTitle, { color: textColor }]}>Ratings Received</Text>
         <View style={styles.gaugesContainer}>
           <CircularGauge
-            value={user?.positiveRatingCount || 0}
-            maxValue={Math.max(100, (user?.positiveRatingCount || 0) + 20)}
+            value={positiveRatingCount}
+            maxValue={Math.max(100, positiveRatingCount + 20)}
             size={120}
             strokeWidth={12}
             color={Colors.success}
             label="Positive"
           />
           <CircularGauge
-            value={user?.negativeRatingCount || 0}
-            maxValue={Math.max(100, (user?.negativeRatingCount || 0) + 20)}
+            value={negativeRatingCount}
+            maxValue={Math.max(100, negativeRatingCount + 20)}
             size={120}
             strokeWidth={12}
             color={Colors.primary}
@@ -168,11 +259,11 @@ export default function ProfileScreen() {
         <Text style={[styles.sectionTitle, { color: textColor }]}>Activity</Text>
         <View style={styles.activityItem}>
           <Text style={[styles.activityLabel, { color: textSecondary }]}>Positive Given:</Text>
-          <Text style={[styles.activityValue, { color: Colors.success }]}>{user?.positivePelletsGivenCount || 0}</Text>
+          <Text style={[styles.activityValue, { color: Colors.success }]}>{positiveGivenCount}</Text>
         </View>
         <View style={styles.activityItem}>
           <Text style={[styles.activityLabel, { color: textSecondary }]}>Negative Given:</Text>
-          <Text style={[styles.activityValue, { color: Colors.primary }]}>{user?.negativePelletsGivenCount || 0}</Text>
+          <Text style={[styles.activityValue, { color: Colors.primary }]}>{negativeGivenCount}</Text>
         </View>
       </View>
       
@@ -325,7 +416,6 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: 2,
   },
   settingSubtitle: {
     fontSize: 12,
@@ -339,7 +429,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 3,
   },
   licensePlate: {
     fontSize: 14,
@@ -500,31 +589,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  badgeList: {
-    paddingBottom: 16,
-  },
-  allBadgesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    marginTop: 8,
-  },
   allBadgesList: {
     paddingBottom: 8,
-    alignItems: 'center',
-  },
-  lockedBadgeContainer: {
-    position: 'relative',
-  },
-  lockedOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 12,
-    justifyContent: 'center',
     alignItems: 'center',
   },
   newBadgeContainer: {

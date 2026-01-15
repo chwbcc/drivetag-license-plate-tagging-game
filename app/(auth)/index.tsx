@@ -5,12 +5,12 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { supabase } from '@/utils/supabase';
+import { AdminRole } from '@/types';
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
-
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -53,35 +53,53 @@ export default function LoginScreen() {
         return;
       }
       
-      const { data: users, error } = await supabase
+      console.log('[Login] Fetching user from database:', email.toLowerCase());
+      
+      const { data: users, error: fetchError } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email.toLowerCase())
+        .ilike('email', email.toLowerCase())
         .limit(1);
       
-      if (error) throw error;
+      if (fetchError) {
+        console.error('[Login] Database error:', fetchError);
+        throw fetchError;
+      }
       
       if (users && users.length > 0) {
         const user = users[0];
-        const userStats = JSON.parse(user.stats as string);
-        login({
-          id: user.id,
-          email: user.email,
-          name: userStats.name || '',
-          licensePlate: user.license_plate || userStats.licensePlate || '',
-          state: user.state || userStats.state || '',
-          pelletCount: userStats.pelletCount || 10,
-          positivePelletCount: userStats.positivePelletCount || 5,
-          badges: userStats.badges || [],
-          exp: user.experience || 0,
-          level: user.level || 1,
-          adminRole: user.role === 'user' ? null : user.role,
-        });
+        console.log('[Login] User found:', user.email);
+        
+        const mappedUser = {
+          id: user.id as string,
+          email: user.email as string,
+          name: (user.name as string) || '',
+          photo: user.photo as string | undefined,
+          licensePlate: (user.license_plate as string) || '',
+          state: (user.state as string) || '',
+          pelletCount: (user.negative_pellet_count as number) || 0,
+          positivePelletCount: (user.positive_pellet_count as number) || 0,
+          positiveRatingCount: (user.positive_rating_count as number) || 0,
+          negativeRatingCount: (user.negative_rating_count as number) || 0,
+          pelletsGivenCount: (user.pellets_given_count as number) || 0,
+          positivePelletsGivenCount: (user.positive_pellets_given_count as number) || 0,
+          negativePelletsGivenCount: (user.negative_pellets_given_count as number) || 0,
+          badges: typeof user.badges === 'string' ? JSON.parse(user.badges) : (user.badges || []),
+          exp: (user.experience as number) || 0,
+          level: (user.level as number) || 1,
+          adminRole: (user.role === 'user' ? null : user.role) as AdminRole,
+        };
+        
+        console.log('[Login] Mapped user:', mappedUser.email, 'Level:', mappedUser.level, 'Exp:', mappedUser.exp);
+        
+        login(mappedUser);
         router.replace('/(tabs)/home' as any);
       } else {
+        console.log('[Login] User not found:', email);
         setError('Invalid email - user not found');
       }
     } catch (error) {
+      console.error('[Login] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';
       setError(errorMessage);
     } finally {
@@ -122,16 +140,12 @@ export default function LoginScreen() {
             autoComplete="email"
           />
           
-
-          
           <Button
             title="Login"
             onPress={handleLogin}
             loading={isLoading}
             style={styles.button}
           />
-          
-
           
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don&apos;t have an account?</Text>
@@ -201,13 +215,6 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
-  },
-  forgotPasswordContainer: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  forgotPasswordButton: {
-    width: '100%',
   },
   footer: {
     marginTop: 32,

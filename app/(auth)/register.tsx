@@ -105,7 +105,12 @@ export default function RegisterScreen() {
           level: 1,
           negative_pellet_count: 10,
           positive_pellet_count: 5,
-          badges: [],
+          positive_rating_count: 0,
+          negative_rating_count: 0,
+          pellets_given_count: 0,
+          positive_pellets_given_count: 0,
+          negative_pellets_given_count: 0,
+          badges: JSON.stringify([]),
           photo: null,
         }])
         .select()

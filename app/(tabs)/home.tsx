@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-
+  ActivityIndicator,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { 
@@ -25,154 +25,111 @@ import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
-import { Pellet } from '@/types';
+import { useCurrentUser, useUserStats } from '@/hooks/useUserData';
 import ExperienceBar from '@/components/ExperienceBar';
 import CircularGauge from '@/components/CircularGauge';
 
 import colors from '@/constants/colors';
 import { useTheme } from '@/store/theme-store';
 
+const EXP_LEVELS = [
+  0, 100, 250, 500, 1000, 2000, 3500, 5000, 7500, 10000, 15000, 20000, 30000, 50000, 75000,
+];
+
+const getExpForNextLevel = (exp: number, level: number) => {
+  const currentExp = exp || 0;
+  const currentLevel = level || 1;
+  
+  if (currentLevel >= EXP_LEVELS.length) {
+    const maxLevelExp = EXP_LEVELS[EXP_LEVELS.length - 1];
+    return { current: currentExp - maxLevelExp, next: 0, progress: 100 };
+  }
+  
+  const currentLevelExp = EXP_LEVELS[currentLevel - 1];
+  const nextLevelExp = EXP_LEVELS[currentLevel];
+  const expNeeded = nextLevelExp - currentLevelExp;
+  const expProgress = currentExp - currentLevelExp;
+  const progress = Math.min(100, Math.max(0, Math.round((expProgress / expNeeded) * 100)));
+  
+  return { current: expProgress, next: expNeeded, progress };
+};
 
 export default function HomeScreen() {
-  const { user, logout, getExpForNextLevel, syncAdminRole } = useAuthStore();
-  const { getUserBadges } = useBadgeStore();
+  const { user: localUser, logout, syncAdminRole } = useAuthStore();
+  const { badges: allBadges } = useBadgeStore();
   const { isDark, toggleTheme } = useTheme();
+  
+  const { data: dbUser, isLoading: userLoading } = useCurrentUser();
+  
+  const user = dbUser || localUser;
   
   useEffect(() => {
     syncAdminRole();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [syncAdminRole]);
 
-  const userLicensePlateWithState = user && user.state && !user.licensePlate.includes('-') 
+  const userLicensePlateWithState = user && user.state && user.licensePlate && !user.licensePlate.includes('-') 
     ? `${user.state}-${user.licensePlate}` 
     : user?.licensePlate || '';
   
-  const { data: pelletsReceived = [] } = useQuery({
-    queryKey: ['pellets', 'received', userLicensePlateWithState, user],
-    queryFn: async () => {
-      if (!user || !userLicensePlateWithState) return [];
-      const { data, error } = await supabase
-        .from('pellets')
-        .select('*')
-        .ilike('license_plate', userLicensePlateWithState.toLowerCase())
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return (data || []).map((row: any) => ({
-        id: row.id as string,
-        targetLicensePlate: row.license_plate as string,
-        targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.created_by as string,
-        createdAt: row.created_at as number,
-        reason: row.notes as string,
-        type: row.type as 'negative' | 'positive',
-        location: row.latitude && row.longitude ? {
-          latitude: row.latitude as number,
-          longitude: row.longitude as number,
-        } : undefined,
-      })) as Pellet[];
-    },
-    enabled: !!user && !!userLicensePlateWithState,
-  });
-  
-  const { data: negativePelletsReceived = [] } = useQuery({
-    queryKey: ['pellets', 'received', userLicensePlateWithState, 'negative', user],
-    queryFn: async () => {
-      if (!user || !userLicensePlateWithState) return [];
-      const { data, error } = await supabase
-        .from('pellets')
-        .select('*')
-        .ilike('license_plate', userLicensePlateWithState.toLowerCase())
-        .eq('type', 'negative')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return (data || []).map((row: any) => ({
-        id: row.id as string,
-        targetLicensePlate: row.license_plate as string,
-        targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.created_by as string,
-        createdAt: row.created_at as number,
-        reason: row.notes as string,
-        type: row.type as 'negative' | 'positive',
-        location: row.latitude && row.longitude ? {
-          latitude: row.latitude as number,
-          longitude: row.longitude as number,
-        } : undefined,
-      })) as Pellet[];
-    },
-    enabled: !!user && !!userLicensePlateWithState,
-  });
-  
-  const { data: positivePelletsReceived = [] } = useQuery({
-    queryKey: ['pellets', 'received', userLicensePlateWithState, 'positive', user],
-    queryFn: async () => {
-      if (!user || !userLicensePlateWithState) return [];
-      const { data, error } = await supabase
-        .from('pellets')
-        .select('*')
-        .ilike('license_plate', userLicensePlateWithState.toLowerCase())
-        .eq('type', 'positive')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return (data || []).map((row: any) => ({
-        id: row.id as string,
-        targetLicensePlate: row.license_plate as string,
-        targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.created_by as string,
-        createdAt: row.created_at as number,
-        reason: row.notes as string,
-        type: row.type as 'negative' | 'positive',
-        location: row.latitude && row.longitude ? {
-          latitude: row.latitude as number,
-          longitude: row.longitude as number,
-        } : undefined,
-      })) as Pellet[];
-    },
-    enabled: !!user && !!userLicensePlateWithState,
-  });
+  const { data: userStats } = useUserStats(user?.id, userLicensePlateWithState);
   
   const { data: pelletsGiven = [] } = useQuery({
     queryKey: ['pellets', 'given', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      console.log('[Home] Fetching pellets given by user:', user.id);
       const { data, error } = await supabase
         .from('pellets')
-        .select('*')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
+        .select('id, type')
+        .eq('created_by', user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[Home] Error fetching pellets given:', error);
+        throw error;
+      }
       
-      return (data || []).map((row: any) => ({
-        id: row.id as string,
-        targetLicensePlate: row.license_plate as string,
-        targetUserId: row.targetuserid as string | undefined,
-        createdBy: row.created_by as string,
-        createdAt: row.created_at as number,
-        reason: row.notes as string,
-        type: row.type as 'negative' | 'positive',
-        location: row.latitude && row.longitude ? {
-          latitude: row.latitude as number,
-          longitude: row.longitude as number,
-        } : undefined,
-      })) as Pellet[];
+      console.log('[Home] Pellets given:', data?.length || 0);
+      return data || [];
     },
-    enabled: !!user,
+    enabled: !!user?.id,
+  });
+  
+  const { data: pelletsReceived = [] } = useQuery({
+    queryKey: ['pellets', 'received', userLicensePlateWithState],
+    queryFn: async () => {
+      if (!userLicensePlateWithState) return [];
+      console.log('[Home] Fetching pellets received for:', userLicensePlateWithState);
+      const { data, error } = await supabase
+        .from('pellets')
+        .select('id, type')
+        .ilike('license_plate', userLicensePlateWithState.toLowerCase());
+      
+      if (error) {
+        console.error('[Home] Error fetching pellets received:', error);
+        throw error;
+      }
+      
+      console.log('[Home] Pellets received:', data?.length || 0);
+      return data || [];
+    },
+    enabled: !!userLicensePlateWithState,
   });
 
   if (!user) {
     return null;
   }
 
-  const userBadges = getUserBadges(user.id);
-  const expInfo = getExpForNextLevel();
-
-
+  const positiveReceived = pelletsReceived.filter((p: any) => p.type === 'positive').length;
+  const negativeReceived = pelletsReceived.filter((p: any) => p.type === 'negative').length;
+  const positiveGiven = pelletsGiven.filter((p: any) => p.type === 'positive').length;
+  const negativeGiven = pelletsGiven.filter((p: any) => p.type === 'negative').length;
+  
+  const userBadgeIds = userStats?.badges || user.badges || [];
+  const userBadges = allBadges.filter(b => userBadgeIds.includes(b.id));
+  
+  const currentExp = userStats?.exp ?? user.exp ?? 0;
+  const currentLevel = userStats?.level ?? user.level ?? 1;
+  const expInfo = getExpForNextLevel(currentExp, currentLevel);
 
   const handleLogout = () => {
     Alert.alert(
@@ -199,6 +156,15 @@ export default function HomeScreen() {
   const accentGreen = '#00ff9d' as const;
   const accentRed = '#ff3366' as const;
   const accentYellow = '#ffd700' as const;
+
+  if (userLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: textSecondary, marginTop: 10 }}>Loading your data...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: bgColor }}>
@@ -262,7 +228,7 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{
                     fontSize: 15,
-                    fontWeight: '700',
+                    fontWeight: '700' as const,
                     color: textColor,
                     marginBottom: 2,
                   }}>
@@ -331,10 +297,10 @@ export default function HomeScreen() {
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{
                 fontSize: 18,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: accentYellow,
               }}>
-                {user.level}
+                {currentLevel}
               </Text>
               <Text style={{
                 fontSize: 10,
@@ -349,10 +315,10 @@ export default function HomeScreen() {
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{
                 fontSize: 18,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: accentGreen,
               }}>
-                {user.exp || 0}
+                {currentExp}
               </Text>
               <Text style={{
                 fontSize: 10,
@@ -367,7 +333,7 @@ export default function HomeScreen() {
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{
                 fontSize: 18,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: colors.primary,
               }}>
                 {userBadges.length}
@@ -393,7 +359,7 @@ export default function HomeScreen() {
         }}>
           <Text style={{
             fontSize: 11,
-            fontWeight: '600',
+            fontWeight: '600' as const,
             color: textColor,
             marginBottom: 6,
             textTransform: 'uppercase',
@@ -412,7 +378,7 @@ export default function HomeScreen() {
               fontSize: 10,
               color: '#888',
             }}>
-              Level {user.level}
+              Level {currentLevel}
             </Text>
             <Text style={{
               fontSize: 10,
@@ -423,7 +389,7 @@ export default function HomeScreen() {
           </View>
           
           <ExperienceBar 
-            level={user.level}
+            level={currentLevel}
             currentExp={expInfo.current}
             nextLevelExp={expInfo.next}
             progress={expInfo.progress}
@@ -447,7 +413,7 @@ export default function HomeScreen() {
         }}>
           <Text style={{
             fontSize: 13,
-            fontWeight: '600',
+            fontWeight: '600' as const,
             color: textColor,
             marginBottom: 12,
             textAlign: 'center',
@@ -463,8 +429,8 @@ export default function HomeScreen() {
             marginBottom: 8,
           }}>
             <CircularGauge
-              value={positivePelletsReceived.length}
-              maxValue={Math.max(positivePelletsReceived.length + 10, 50)}
+              value={positiveReceived}
+              maxValue={Math.max(positiveReceived + 10, 50)}
               size={100}
               strokeWidth={10}
               color={accentGreen}
@@ -472,8 +438,8 @@ export default function HomeScreen() {
             />
             
             <CircularGauge
-              value={negativePelletsReceived.length}
-              maxValue={Math.max(negativePelletsReceived.length + 10, 50)}
+              value={negativeReceived}
+              maxValue={Math.max(negativeReceived + 10, 50)}
               size={100}
               strokeWidth={10}
               color={accentRed}
@@ -490,7 +456,7 @@ export default function HomeScreen() {
         }}>
           <Text style={{
             fontSize: 12,
-            fontWeight: '600',
+            fontWeight: '600' as const,
             color: textColor,
             marginBottom: 8,
             textTransform: 'uppercase',
@@ -520,7 +486,7 @@ export default function HomeScreen() {
               </View>
               <Text style={{
                 fontSize: 15,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: textColor,
               }}>
                 {pelletsGiven.length}
@@ -547,10 +513,10 @@ export default function HomeScreen() {
               </View>
               <Text style={{
                 fontSize: 15,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: textColor,
               }}>
-                {pelletsGiven.filter(p => p.type === 'positive').length}
+                {positiveGiven}
               </Text>
             </View>
             
@@ -574,10 +540,10 @@ export default function HomeScreen() {
               </View>
               <Text style={{
                 fontSize: 15,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: textColor,
               }}>
-                {pelletsGiven.filter(p => p.type === 'negative').length}
+                {negativeGiven}
               </Text>
             </View>
             
@@ -601,7 +567,7 @@ export default function HomeScreen() {
               </View>
               <Text style={{
                 fontSize: 15,
-                fontWeight: '700',
+                fontWeight: '700' as const,
                 color: textColor,
               }}>
                 {pelletsReceived.length}
@@ -619,7 +585,7 @@ export default function HomeScreen() {
           }}>
             <Text style={{
               fontSize: 12,
-              fontWeight: '600',
+              fontWeight: '600' as const,
               color: '#ffffff',
               marginBottom: 8,
               textTransform: 'uppercase',
@@ -646,7 +612,7 @@ export default function HomeScreen() {
                     </Text>
                     <Text style={{
                       fontSize: 9,
-                      fontWeight: '600',
+                      fontWeight: '600' as const,
                       color: textColor,
                       textAlign: 'center',
                     }}>
@@ -677,7 +643,7 @@ export default function HomeScreen() {
           <Text style={{
             color: textColor,
             fontSize: 14,
-            fontWeight: '600',
+            fontWeight: '600' as const,
             marginLeft: 8,
           }}>
             Logout

@@ -18,12 +18,10 @@ import Colors from '@/constants/colors';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
-import usePelletStore from '@/store/pellet-store';
 import useBadgeStore from '@/store/badge-store';
 import { supabase } from '@/utils/supabase';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
-// Experience points awarded for different actions
 const US_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -37,7 +35,23 @@ const EXP_REWARDS = {
   TAG_DRIVER: 25,
   POSITIVE_TAG: 30,
   LOCATION_BONUS: 5,
-  DETAILED_REASON_BONUS: 10, // For longer, more detailed reasons
+  DETAILED_REASON_BONUS: 10,
+};
+
+const EXP_LEVELS = [
+  0, 100, 250, 500, 1000, 2000, 3500, 5000, 7500, 10000, 15000, 20000, 30000, 50000, 75000,
+];
+
+const calculateLevel = (exp: number): number => {
+  let level = 1;
+  for (let i = 1; i < EXP_LEVELS.length; i++) {
+    if (exp >= EXP_LEVELS[i]) {
+      level = i + 1;
+    } else {
+      break;
+    }
+  }
+  return level;
 };
 
 const NEGATIVE_REASONS = [
@@ -78,13 +92,46 @@ export default function TagDriverScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { user, removePellets, addExp } = useAuthStore();
-  const { addPellet } = usePelletStore();
+  const { user: localUser, updateUser } = useAuthStore();
   const { checkAndAwardBadges } = useBadgeStore();
   const queryClient = useQueryClient();
   
+  const { data: dbUserCounts } = useQuery({
+    queryKey: ['userPelletCounts', localUser?.id],
+    queryFn: async () => {
+      if (!localUser?.id) return null;
+      console.log('[TagDriver] Fetching current pellet counts from database');
+      const { data, error } = await supabase
+        .from('users')
+        .select('negative_pellet_count, positive_pellet_count, experience, level, pellets_given_count, positive_pellets_given_count, negative_pellets_given_count')
+        .eq('id', localUser.id)
+        .single();
+      
+      if (error) {
+        console.error('[TagDriver] Error fetching user counts:', error);
+        throw error;
+      }
+      
+      return {
+        negativePelletCount: (data?.negative_pellet_count as number) || 0,
+        positivePelletCount: (data?.positive_pellet_count as number) || 0,
+        experience: (data?.experience as number) || 0,
+        level: (data?.level as number) || 1,
+        pelletsGivenCount: (data?.pellets_given_count as number) || 0,
+        positivePelletsGivenCount: (data?.positive_pellets_given_count as number) || 0,
+        negativePelletsGivenCount: (data?.negative_pellets_given_count as number) || 0,
+      };
+    },
+    enabled: !!localUser?.id,
+    staleTime: 5000,
+  });
+  
   const isPositive = pelletType === 'positive';
   const reasons = isPositive ? POSITIVE_REASONS : NEGATIVE_REASONS;
+  
+  const currentPelletCount = isPositive 
+    ? (dbUserCounts?.positivePelletCount ?? localUser?.positivePelletCount ?? 0)
+    : (dbUserCounts?.negativePelletCount ?? localUser?.pelletCount ?? 0);
   
   useEffect(() => {
     (async () => {
@@ -101,7 +148,6 @@ export default function TagDriverScreen() {
   }, []);
   
   const validateLicensePlate = (plate: string) => {
-    // This is a simple validation - in a real app, you'd want to validate based on your region's format
     return plate.length >= 3 && plate.length <= 8;
   };
   
@@ -127,9 +173,9 @@ export default function TagDriverScreen() {
     }
     
     const fullLicensePlate = `${state}-${licensePlate.toUpperCase()}`;
-    const userLicensePlate = user?.licensePlate || '';
-    const userLicensePlateWithState = user?.state && userLicensePlate && !userLicensePlate.includes('-') 
-      ? `${user.state}-${userLicensePlate}` 
+    const userLicensePlate = localUser?.licensePlate || '';
+    const userLicensePlateWithState = localUser?.state && userLicensePlate && !userLicensePlate.includes('-') 
+      ? `${localUser.state}-${userLicensePlate}` 
       : userLicensePlate;
     
     if (userLicensePlateWithState?.toLowerCase() === fullLicensePlate.toLowerCase()) {
@@ -137,11 +183,7 @@ export default function TagDriverScreen() {
       return;
     }
     
-    const pelletCount = isPositive 
-      ? (user?.positivePelletCount || 0) 
-      : (user?.pelletCount || 0);
-    
-    if (!user || pelletCount <= 0) {
+    if (!localUser || currentPelletCount <= 0) {
       setError(`You don't have any ${isPositive ? 'positive' : 'negative'} pellets left. Purchase more in the shop.`);
       return;
     }
@@ -150,201 +192,175 @@ export default function TagDriverScreen() {
     setError('');
     
     try {
-      // Create a new pellet
-      const newPellet = {
-        id: Date.now().toString(),
-        targetLicensePlate: fullLicensePlate,
-        createdBy: user?.id || 'anonymous',
-        createdAt: Date.now(),
-        reason,
-        type: pelletType,
-        location: location ? {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        } : undefined,
-      };
+      const pelletId = Date.now().toString();
+      const createdAt = Date.now();
       
-      // Deduct a pellet from the user's count
-      const success = removePellets(1, pelletType);
-      
-      if (!success) {
-        throw new Error(`Failed to use pellet. You may not have enough ${isPositive ? 'positive' : 'negative'} pellets.`);
-      }
-      
-      console.log('[TagDriver] Saving pellet to backend...');
-      
-      let targetUserId = null;
+      console.log('[TagDriver] Step 1: Looking up target user by license plate...');
+      let targetUserId: string | null = null;
       try {
         const { data: targetUserData, error: userError } = await supabase
           .from('users')
           .select('id')
-          .eq('license_plate', newPellet.targetLicensePlate)
+          .ilike('license_plate', fullLicensePlate.toLowerCase())
           .single();
         
         if (!userError && targetUserData) {
           targetUserId = targetUserData.id;
           console.log('[TagDriver] Found target user:', targetUserId);
         } else {
-          console.log('[TagDriver] No user found for license plate:', newPellet.targetLicensePlate);
+          console.log('[TagDriver] No user found for license plate:', fullLicensePlate);
         }
       } catch (err) {
         console.log('[TagDriver] Error looking up user by license plate:', err);
       }
       
+      console.log('[TagDriver] Step 2: Creating pellet in database...');
       const { error: pelletError } = await supabase
         .from('pellets')
         .insert([{
-          id: newPellet.id,
-          license_plate: newPellet.targetLicensePlate,
+          id: pelletId,
+          license_plate: fullLicensePlate,
           targetuserid: targetUserId,
-          created_by: newPellet.createdBy,
-          created_at: newPellet.createdAt,
-          notes: newPellet.reason,
-          type: newPellet.type,
-          latitude: newPellet.location?.latitude || null,
-          longitude: newPellet.location?.longitude || null,
+          created_by: localUser.id,
+          created_at: createdAt,
+          notes: reason,
+          type: pelletType,
+          latitude: location?.coords.latitude || null,
+          longitude: location?.coords.longitude || null,
         }]);
       
       if (pelletError) {
-        console.error('[TagDriver] Error saving pellet:', pelletError.message, pelletError);
-      } else {
-        console.log('[TagDriver] Pellet saved successfully with targetuserid:', targetUserId);
+        console.error('[TagDriver] Error creating pellet:', pelletError);
+        throw new Error(`Failed to create pellet: ${pelletError.message}`);
+      }
+      console.log('[TagDriver] Pellet created successfully');
+      
+      console.log('[TagDriver] Step 3: Updating target user rating count...');
+      if (targetUserId) {
+        const ratingColumn = isPositive ? 'positive_rating_count' : 'negative_rating_count';
         
-        if (targetUserId) {
-          console.log('[TagDriver] Incrementing rating count for target user...');
-          const ratingColumn = isPositive ? 'positive_rating_count' : 'negative_rating_count';
+        const { data: targetUser, error: fetchError } = await supabase
+          .from('users')
+          .select('positive_rating_count, negative_rating_count')
+          .eq('id', targetUserId)
+          .single();
+        
+        if (!fetchError && targetUser) {
+          const currentRatingCount = isPositive 
+            ? ((targetUser.positive_rating_count as number) || 0)
+            : ((targetUser.negative_rating_count as number) || 0);
           
-          const { error: ratingError } = await supabase.rpc('increment_rating', {
-            user_id: targetUserId,
-            column_name: ratingColumn
-          });
+          const { error: ratingUpdateError } = await supabase
+            .from('users')
+            .update({ [ratingColumn]: currentRatingCount + 1 })
+            .eq('id', targetUserId);
           
-          if (ratingError) {
-            console.log('[TagDriver] RPC not available, using manual increment...');
-            const { data: targetUser, error: fetchError } = await supabase
-              .from('users')
-              .select('positive_rating_count, negative_rating_count')
-              .eq('id', targetUserId)
-              .single();
-            
-            if (!fetchError && targetUser) {
-              const currentCount = isPositive 
-                ? (targetUser.positive_rating_count || 0) 
-                : (targetUser.negative_rating_count || 0);
-              
-              const updateData = isPositive
-                ? { positive_rating_count: currentCount + 1 }
-                : { negative_rating_count: currentCount + 1 };
-              
-              const { error: updateError } = await supabase
-                .from('users')
-                .update(updateData)
-                .eq('id', targetUserId);
-              
-              if (updateError) {
-                console.error('[TagDriver] Error updating rating count:', updateError);
-              } else {
-                console.log('[TagDriver] Rating count incremented successfully');
-              }
-            }
+          if (ratingUpdateError) {
+            console.error('[TagDriver] Error updating target user rating:', ratingUpdateError);
           } else {
-            console.log('[TagDriver] Rating count incremented via RPC');
+            console.log('[TagDriver] Target user rating updated successfully');
           }
         }
       }
       
-      addPellet(newPellet);
-      
-      const newPelletCount = user!.pelletCount - (pelletType === 'negative' ? 1 : 0);
-      const newPositivePelletCount = user!.positivePelletCount - (pelletType === 'positive' ? 1 : 0);
-      
-      console.log('[TagDriver] Updating pellet count...');
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          negative_pellet_count: newPelletCount,
-          positive_pellet_count: newPositivePelletCount,
-        })
-        .eq('id', user.id);
-      
-      if (updateError) {
-        console.error('[TagDriver] Error updating pellet count:', updateError);
-      } else {
-        console.log('[TagDriver] Pellet count updated successfully');
-      }
-      
-      // Calculate and award experience points
+      console.log('[TagDriver] Step 4: Updating tagger user stats...');
       let expGained = isPositive ? EXP_REWARDS.POSITIVE_TAG : EXP_REWARDS.TAG_DRIVER;
-      
-      // Bonus for including location
       if (location) {
         expGained += EXP_REWARDS.LOCATION_BONUS;
       }
-      
-      // Bonus for detailed reason (more than 20 characters)
       if (reason.length > 20) {
         expGained += EXP_REWARDS.DETAILED_REASON_BONUS;
       }
       
-      // Add experience to user
-      const leveledUp = addExp(expGained);
+      const currentExp = dbUserCounts?.experience ?? localUser.exp ?? 0;
+      const currentNegativePellets = dbUserCounts?.negativePelletCount ?? localUser.pelletCount ?? 0;
+      const currentPositivePellets = dbUserCounts?.positivePelletCount ?? localUser.positivePelletCount ?? 0;
+      const currentPelletsGiven = dbUserCounts?.pelletsGivenCount ?? 0;
+      const currentPositiveGiven = dbUserCounts?.positivePelletsGivenCount ?? 0;
+      const currentNegativeGiven = dbUserCounts?.negativePelletsGivenCount ?? 0;
       
-      console.log('[TagDriver] Updating experience...');
-      const { error: expError } = await supabase
-        .from('users')
-        .update({
-          experience: user!.exp + expGained,
-          level: user!.level,
-        })
-        .eq('id', user.id);
+      const newExp = currentExp + expGained;
+      const newLevel = calculateLevel(newExp);
+      const leveledUp = newLevel > (dbUserCounts?.level ?? localUser.level ?? 1);
       
-      if (expError) {
-        console.error('[TagDriver] Error updating exp:', expError);
+      const updateData: Record<string, number> = {
+        experience: newExp,
+        level: newLevel,
+        pellets_given_count: currentPelletsGiven + 1,
+      };
+      
+      if (isPositive) {
+        updateData.positive_pellet_count = Math.max(0, currentPositivePellets - 1);
+        updateData.positive_pellets_given_count = currentPositiveGiven + 1;
       } else {
-        console.log('[TagDriver] Experience updated successfully');
+        updateData.negative_pellet_count = Math.max(0, currentNegativePellets - 1);
+        updateData.negative_pellets_given_count = currentNegativeGiven + 1;
       }
       
-      // Check for new badges
-      if (user) {
-        const newBadges = checkAndAwardBadges(user.id);
+      console.log('[TagDriver] Update data for tagger:', updateData);
+      
+      const { error: userUpdateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', localUser.id);
+      
+      if (userUpdateError) {
+        console.error('[TagDriver] Error updating user stats:', userUpdateError);
+        throw new Error(`Failed to update user stats: ${userUpdateError.message}`);
+      }
+      console.log('[TagDriver] User stats updated successfully');
+      
+      updateUser({
+        pelletCount: isPositive ? currentNegativePellets : Math.max(0, currentNegativePellets - 1),
+        positivePelletCount: isPositive ? Math.max(0, currentPositivePellets - 1) : currentPositivePellets,
+        exp: newExp,
+        level: newLevel,
+        pelletsGivenCount: currentPelletsGiven + 1,
+        positivePelletsGivenCount: isPositive ? currentPositiveGiven + 1 : currentPositiveGiven,
+        negativePelletsGivenCount: isPositive ? currentNegativeGiven : currentNegativeGiven + 1,
+      });
+      
+      console.log('[TagDriver] Step 5: Checking for new badges...');
+      const newBadges = checkAndAwardBadges(localUser.id);
+      
+      if (newBadges.length > 0) {
+        console.log('[TagDriver] New badges earned:', newBadges);
+        const { data: userData } = await supabase
+          .from('users')
+          .select('badges')
+          .eq('id', localUser.id)
+          .single();
         
-        if (newBadges.length > 0) {
-          console.log('[TagDriver] Awarding new badges...');
-          const { data: userData } = await supabase
-            .from('users')
-            .select('badges')
-            .eq('id', user.id)
-            .single();
-          
-          const currentBadges = userData?.badges || [];
-          const updatedBadges = [...new Set([...currentBadges, ...newBadges])];
-          
-          const { error: badgeError } = await supabase
-            .from('users')
-            .update({ badges: updatedBadges })
-            .eq('id', user.id);
-          
-          if (badgeError) {
-            console.error('[TagDriver] Failed to sync badges:', badgeError);
-          }
-          
-          // Show badge notification after the tag success message
-          setTimeout(() => {
-            Alert.alert(
-              'New Badges Earned!',
-              `Congratulations! You've earned ${newBadges.length} new badge${newBadges.length > 1 ? 's' : ''}.`,
-              [{ text: 'View', onPress: () => router.push('/(tabs)/badges') }]
-            );
-          }, 1000);
-        }
+        const currentBadges = typeof userData?.badges === 'string' 
+          ? JSON.parse(userData.badges) 
+          : (userData?.badges || []);
+        const updatedBadges = [...new Set([...currentBadges, ...newBadges])];
+        
+        await supabase
+          .from('users')
+          .update({ badges: JSON.stringify(updatedBadges) })
+          .eq('id', localUser.id);
+        
+        setTimeout(() => {
+          Alert.alert(
+            'New Badges Earned!',
+            `Congratulations! You've earned ${newBadges.length} new badge${newBadges.length > 1 ? 's' : ''}.`,
+            [{ text: 'View', onPress: () => router.push('/(tabs)/badges') }]
+          );
+        }, 1000);
       }
       
-      console.log('[TagDriver] Invalidating queries to refresh home page...');
+      console.log('[TagDriver] Step 6: Invalidating queries...');
       await queryClient.invalidateQueries({ queryKey: ['pellets'] });
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.invalidateQueries({ queryKey: ['userStats'] });
+      await queryClient.invalidateQueries({ queryKey: ['userPelletCounts'] });
+      await queryClient.invalidateQueries({ queryKey: ['userCounts'] });
+      await queryClient.invalidateQueries({ queryKey: ['pelletsActivity'] });
+      await queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       
       console.log('[TagDriver] Tag submitted successfully!');
       
-      // Show success message with exp gained
       Alert.alert(
         'Success',
         `Driver ${isPositive ? 'praised' : 'tagged'} successfully!\n\n+${expGained} EXP${leveledUp ? '\n\nLevel Up!' : ''}`,
@@ -440,7 +456,7 @@ export default function TagDriverScreen() {
             styles.pelletInfoText,
             isPositive && styles.positivePelletInfoText
           ]}>
-            This will use 1 {isPositive ? 'positive' : 'negative'} pellet. You have {isPositive ? user?.positivePelletCount || 0 : user?.pelletCount || 0} pellets remaining.
+            This will use 1 {isPositive ? 'positive' : 'negative'} pellet. You have {currentPelletCount} pellets remaining.
           </Text>
         </View>
         
@@ -487,7 +503,7 @@ export default function TagDriverScreen() {
             <Text style={styles.expInfoText}>• Location Bonus: +{EXP_REWARDS.LOCATION_BONUS} EXP {location ? '✓' : '✗'}</Text>
           </View>
           
-          {(isPositive ? (user?.positivePelletCount || 0) : (user?.pelletCount || 0)) <= 0 && (
+          {currentPelletCount <= 0 && (
             <View style={styles.noPelletsNotice}>
               <Text style={styles.noPelletsText}>
                 You don&apos;t have any {isPositive ? 'positive' : 'negative'} pellets.
@@ -509,7 +525,7 @@ export default function TagDriverScreen() {
               styles.submitButton,
               isPositive && styles.positiveSubmitButton
             ]}
-            disabled={(isPositive ? (user?.positivePelletCount || 0) : (user?.pelletCount || 0)) <= 0}
+            disabled={currentPelletCount <= 0}
           />
           
           <Button
@@ -650,12 +666,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   pelletInfo: {
-    backgroundColor: Colors.primary + '15', // 15% opacity
+    backgroundColor: Colors.primary + '15',
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.primary + '30', // 30% opacity
+    borderColor: Colors.primary + '30',
   },
   positivePelletInfo: {
     backgroundColor: Colors.success + '15',
