@@ -44,7 +44,7 @@ export const useCurrentUser = () => {
         .from('users')
         .select('*')
         .eq('id', localUser.id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('[useCurrentUser] Error fetching user:', JSON.stringify({
@@ -107,7 +107,7 @@ export const useLeaderboardPellets = (sortOrder: 'asc' | 'desc', pelletType: 'ne
       
       let query = supabase
         .from('pellets')
-        .select('license_plate, type');
+        .select('*');
       
       if (pelletType !== 'all') {
         query = query.eq('type', pelletType);
@@ -126,7 +126,7 @@ export const useLeaderboardPellets = (sortOrder: 'asc' | 'desc', pelletType: 'ne
       
       const plateMap = new Map<string, number>();
       (data || []).forEach((item: any) => {
-        const plate = item.license_plate;
+        const plate = item.license_plate || item.targetlicenseplate || item.targetLicensePlate;
         if (plate) {
           plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
         }
@@ -193,7 +193,7 @@ export const useAllPelletsForStats = () => {
       
       const { data, error } = await supabase
         .from('pellets')
-        .select('type, notes, created_at');
+        .select('*');
       
       if (error) {
         console.error('[useAllPelletsForStats] Error:', JSON.stringify({
@@ -204,7 +204,13 @@ export const useAllPelletsForStats = () => {
         throw error;
       }
       
-      return data || [];
+      const pellets = (data || []).map((item: any) => ({
+        type: item.type,
+        notes: item.notes || item.reason || '',
+        created_at: item.created_at || item.createdAt || item.createdat
+      }));
+      
+      return pellets;
     },
     staleTime: 60000,
   });
