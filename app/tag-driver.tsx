@@ -468,7 +468,7 @@ export default function TagDriverScreen() {
         </View>
         
         <View style={styles.form}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>State *</Text>

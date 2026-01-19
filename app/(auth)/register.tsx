@@ -181,7 +181,7 @@ export default function RegisterScreen() {
         </View>
         
         <View style={styles.form}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}
           
           <Input
             id="name"

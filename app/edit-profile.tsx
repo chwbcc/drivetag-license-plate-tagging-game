@@ -183,7 +183,7 @@ export default function EditProfileScreen() {
             />
           </View>
           
-          {error ? <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text> : null}
+          {Boolean(error) && <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text>}
           
           <View style={styles.form}>
             <Input

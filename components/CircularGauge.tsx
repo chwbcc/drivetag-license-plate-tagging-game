@@ -82,7 +82,7 @@ export default function CircularGauge({
           <Text style={[styles.value, { color }]}>
             {value}
           </Text>
-          {suffix && (
+          {Boolean(suffix) && (
             <Text style={[styles.suffix, { color }]}>
               {suffix}
             </Text>

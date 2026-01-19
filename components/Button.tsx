@@ -60,11 +60,11 @@ export default function Button({
         />
       ) : (
         <View style={styles.contentContainer}>
-          {icon ? (
+          {icon && (
             <View style={styles.iconContainer}>
               {React.createElement(icon, { size: 20, color: variant === 'outline' ? Colors.primary : '#fff' })}
             </View>
-          ) : null}
+          )}
           <Text style={textStyles}>{title}</Text>
         </View>
       )}

@@ -73,12 +73,12 @@ export default function ForgotPasswordScreen() {
         </View>
         
         <View style={styles.form}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {emailSent ? (
+          {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}
+          {emailSent && (
             <Text style={styles.successText}>
               Account found! Redirecting to reset password...
             </Text>
-          ) : null}
+          )}
           
           <Input
             label="Email"

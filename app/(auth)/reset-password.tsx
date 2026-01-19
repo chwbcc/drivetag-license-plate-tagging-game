@@ -92,8 +92,8 @@ export default function ResetPasswordScreen() {
         </View>
         
         <View style={styles.form}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
+          {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}
+          {Boolean(success) && <Text style={styles.successText}>{success}</Text>}
           
           <Input
             label="Email"

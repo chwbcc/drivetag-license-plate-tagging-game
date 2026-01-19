@@ -27,7 +27,7 @@ export default function Input({
 }: InputProps) {
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {Boolean(label) && <Text style={styles.label}>{label}</Text>}
       <TextInput 
         style={[
           styles.input, 
@@ -39,7 +39,7 @@ export default function Input({
         accessibilityLabel={name || label}
         {...props}
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
