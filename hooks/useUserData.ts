@@ -57,8 +57,41 @@ export const useCurrentUser = () => {
       }
       
       if (!data) {
-        console.log('[useCurrentUser] No user found in database');
-        return null;
+        console.log('[useCurrentUser] No user found in database, creating user...');
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: localUser.id,
+            email: localUser.email,
+            name: localUser.name || '',
+            photo: localUser.photo,
+            license_plate: localUser.licensePlate?.toLowerCase() || '',
+            state: localUser.state || '',
+            created_at: Date.now(),
+            role: localUser.adminRole || 'user',
+            experience: localUser.exp || 0,
+            level: localUser.level || 1,
+            negative_pellet_count: localUser.pelletCount || 10,
+            positive_pellet_count: localUser.positivePelletCount || 5,
+            positive_rating_count: localUser.positiveRatingCount || 0,
+            negative_rating_count: localUser.negativeRatingCount || 0,
+            pellets_given_count: localUser.pelletsGivenCount || 0,
+            positive_pellets_given_count: localUser.positivePelletsGivenCount || 0,
+            negative_pellets_given_count: localUser.negativePelletsGivenCount || 0,
+            badges: JSON.stringify(localUser.badges || []),
+          }]);
+        
+        if (insertError) {
+          console.error('[useCurrentUser] Error creating user:', JSON.stringify({
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details
+          }));
+          return localUser;
+        }
+        
+        console.log('[useCurrentUser] User created successfully');
+        return localUser;
       }
       
       const user = mapDatabaseUserToUser(data);

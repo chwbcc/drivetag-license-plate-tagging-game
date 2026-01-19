@@ -27,6 +27,12 @@ CREATE TABLE users (
 );
 ```
 
+**Key Points:**
+- All column names use snake_case (e.g., `license_plate`, not `licensePlate`)
+- `badges` is stored as JSON string
+- Default pellet counts: 10 negative, 5 positive
+- All rating and given counts default to 0
+
 ## Pellets Table
 ```sql
 CREATE TABLE pellets (
@@ -41,6 +47,13 @@ CREATE TABLE pellets (
   longitude REAL
 );
 ```
+
+**Key Points:**
+- `license_plate` stores the target's license plate
+- `targetuserid` is NULL if the user is not registered
+- `created_by` is the user ID who created the pellet
+- `notes` stores the reason/description
+- `type` is either 'positive' or 'negative'
 
 ## Badges Table
 ```sql
