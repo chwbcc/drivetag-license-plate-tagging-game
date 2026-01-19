@@ -1,11 +1,15 @@
 -- Database Migration Script
 -- Run this in your Supabase SQL Editor to fix schema issues
 
--- Drop existing pellets table if it exists (be careful with production data!)
--- DROP TABLE IF EXISTS pellets;
+-- Step 1: Drop existing tables (WARNING: This deletes all data!)
+-- If you need to preserve data, backup first
+DROP TABLE IF EXISTS pellets CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS badges CASCADE;
+DROP TABLE IF EXISTS activities CASCADE;
 
--- Create or replace pellets table with correct schema
-CREATE TABLE IF NOT EXISTS pellets (
+-- Step 2: Create pellets table with correct schema
+CREATE TABLE pellets (
   id TEXT PRIMARY KEY,
   license_plate TEXT NOT NULL,
   targetuserid TEXT,
@@ -17,8 +21,8 @@ CREATE TABLE IF NOT EXISTS pellets (
   longitude REAL
 );
 
--- Create or replace users table with correct schema
-CREATE TABLE IF NOT EXISTS users (
+-- Step 3: Create users table with correct schema
+CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   username TEXT,
@@ -40,16 +44,16 @@ CREATE TABLE IF NOT EXISTS users (
   badges TEXT DEFAULT '[]'
 );
 
--- Create or replace badges table
-CREATE TABLE IF NOT EXISTS badges (
+-- Step 4: Create badges table
+CREATE TABLE badges (
   id TEXT PRIMARY KEY,
   userid TEXT NOT NULL,
   badgeid TEXT NOT NULL,
   earned_at BIGINT NOT NULL
 );
 
--- Create or replace activities table
-CREATE TABLE IF NOT EXISTS activities (
+-- Step 5: Create activities table
+CREATE TABLE activities (
   id TEXT PRIMARY KEY,
   userid TEXT NOT NULL,
   actiontype TEXT NOT NULL,
@@ -57,20 +61,20 @@ CREATE TABLE IF NOT EXISTS activities (
   created_at BIGINT NOT NULL
 );
 
--- Add indexes for better performance
+-- Step 6: Add indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_pellets_license_plate ON pellets(license_plate);
 CREATE INDEX IF NOT EXISTS idx_pellets_created_by ON pellets(created_by);
 CREATE INDEX IF NOT EXISTS idx_pellets_targetuserid ON pellets(targetuserid);
 CREATE INDEX IF NOT EXISTS idx_users_license_plate ON users(license_plate);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
--- Enable Row Level Security (RLS)
+-- Step 7: Enable Row Level Security (RLS)
 ALTER TABLE pellets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if they exist
+-- Step 8: Create RLS policies
 DROP POLICY IF EXISTS "Allow public read access to pellets" ON pellets;
 DROP POLICY IF EXISTS "Allow authenticated insert to pellets" ON pellets;
 DROP POLICY IF EXISTS "Allow public read access to users" ON users;
@@ -81,7 +85,7 @@ DROP POLICY IF EXISTS "Allow public read access to badges" ON badges;
 DROP POLICY IF EXISTS "Allow public read access to activities" ON activities;
 DROP POLICY IF EXISTS "Allow authenticated insert to activities" ON activities;
 
--- Create RLS policies for pellets
+-- Pellets policies
 CREATE POLICY "Allow public read access to pellets"
   ON pellets FOR SELECT
   USING (true);
@@ -94,7 +98,7 @@ CREATE POLICY "Allow authenticated delete to pellets"
   ON pellets FOR DELETE
   USING (true);
 
--- Create RLS policies for users
+-- Users policies
 CREATE POLICY "Allow public read access to users"
   ON users FOR SELECT
   USING (true);
@@ -111,7 +115,7 @@ CREATE POLICY "Allow users to delete their own data"
   ON users FOR DELETE
   USING (true);
 
--- Create RLS policies for badges
+-- Badges policies
 CREATE POLICY "Allow public read access to badges"
   ON badges FOR SELECT
   USING (true);
@@ -120,7 +124,7 @@ CREATE POLICY "Allow authenticated insert to badges"
   ON badges FOR INSERT
   WITH CHECK (true);
 
--- Create RLS policies for activities
+-- Activities policies
 CREATE POLICY "Allow public read access to activities"
   ON activities FOR SELECT
   USING (true);
