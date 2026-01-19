@@ -7,6 +7,7 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { supabase } from '@/utils/supabase';
+import { generateUserId } from '@/utils/generate-id';
 
 
 
@@ -87,7 +88,7 @@ export default function RegisterScreen() {
       }
       
       console.log('[Register] Creating user in Supabase...');
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const userId = generateUserId();
       
       console.log('[Register] Inserting into users...');
       const { data, error } = await supabase

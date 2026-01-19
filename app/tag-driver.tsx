@@ -21,6 +21,7 @@ import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
 import { supabase } from '@/utils/supabase';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { generatePelletId } from '@/utils/generate-id';
 
 const US_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -192,7 +193,7 @@ export default function TagDriverScreen() {
     setError('');
     
     try {
-      const pelletId = Date.now().toString();
+      const pelletId = generatePelletId();
       const createdAt = Date.now();
       
       console.log('[TagDriver] Step 1: Looking up target user by license plate...');

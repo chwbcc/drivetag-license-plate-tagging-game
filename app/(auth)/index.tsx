@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabase';
 import { AdminRole } from '@/types';
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
+const SUPER_ADMIN_ID = 'usr_super_admin_1';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -33,24 +34,87 @@ export default function LoginScreen() {
       }
       
       if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        console.log('[Login] Super Admin bypass activated');
-        const superAdminUser = {
-          id: 'super_admin_1',
-          email: SUPER_ADMIN_EMAIL,
-          name: 'Super Admin',
-          licensePlate: 'ADMIN1',
-          state: 'CA',
-          pelletCount: 999999,
-          positivePelletCount: 999999,
-          badges: ['first-tag', 'first-positive', 'tag-master'],
-          exp: 100000,
-          level: 15,
-          adminRole: 'super_admin' as const,
-        };
+        console.log('[Login] Super Admin bypass - checking database first');
         
-        login(superAdminUser);
-        router.replace('/(tabs)/home' as any);
-        return;
+        const { data: existingSuperAdmin } = await supabase
+          .from('users')
+          .select('*')
+          .ilike('email', SUPER_ADMIN_EMAIL.toLowerCase())
+          .single();
+        
+        if (existingSuperAdmin) {
+          console.log('[Login] Super Admin found in database');
+          const mappedUser = {
+            id: existingSuperAdmin.id as string,
+            email: existingSuperAdmin.email as string,
+            name: (existingSuperAdmin.name as string) || 'Super Admin',
+            photo: existingSuperAdmin.photo as string | undefined,
+            licensePlate: (existingSuperAdmin.license_plate as string) || 'ADMIN1',
+            state: (existingSuperAdmin.state as string) || 'CA',
+            pelletCount: (existingSuperAdmin.negative_pellet_count as number) || 999999,
+            positivePelletCount: (existingSuperAdmin.positive_pellet_count as number) || 999999,
+            positiveRatingCount: (existingSuperAdmin.positive_rating_count as number) || 0,
+            negativeRatingCount: (existingSuperAdmin.negative_rating_count as number) || 0,
+            pelletsGivenCount: (existingSuperAdmin.pellets_given_count as number) || 0,
+            positivePelletsGivenCount: (existingSuperAdmin.positive_pellets_given_count as number) || 0,
+            negativePelletsGivenCount: (existingSuperAdmin.negative_pellets_given_count as number) || 0,
+            badges: typeof existingSuperAdmin.badges === 'string' ? JSON.parse(existingSuperAdmin.badges) : (existingSuperAdmin.badges || []),
+            exp: (existingSuperAdmin.experience as number) || 100000,
+            level: (existingSuperAdmin.level as number) || 15,
+            adminRole: 'super_admin' as const,
+          };
+          login(mappedUser);
+          router.replace('/(tabs)/home' as any);
+          return;
+        } else {
+          console.log('[Login] Creating Super Admin in database');
+          const superAdminUser = {
+            id: SUPER_ADMIN_ID,
+            email: SUPER_ADMIN_EMAIL,
+            name: 'Super Admin',
+            licensePlate: 'ADMIN1',
+            state: 'CA',
+            pelletCount: 999999,
+            positivePelletCount: 999999,
+            positiveRatingCount: 0,
+            negativeRatingCount: 0,
+            pelletsGivenCount: 0,
+            positivePelletsGivenCount: 0,
+            negativePelletsGivenCount: 0,
+            badges: ['first-tag', 'first-positive', 'tag-master'],
+            exp: 100000,
+            level: 15,
+            adminRole: 'super_admin' as const,
+          };
+          
+          await supabase
+            .from('users')
+            .insert([{
+              id: SUPER_ADMIN_ID,
+              email: SUPER_ADMIN_EMAIL.toLowerCase(),
+              username: 'Super Admin',
+              name: 'Super Admin',
+              created_at: Date.now(),
+              role: 'super_admin',
+              license_plate: 'ADMIN1',
+              state: 'CA',
+              experience: 100000,
+              level: 15,
+              negative_pellet_count: 999999,
+              positive_pellet_count: 999999,
+              positive_rating_count: 0,
+              negative_rating_count: 0,
+              pellets_given_count: 0,
+              positive_pellets_given_count: 0,
+              negative_pellets_given_count: 0,
+              badges: JSON.stringify(['first-tag', 'first-positive', 'tag-master']),
+              photo: null,
+            }]);
+          
+          login(superAdminUser);
+          router.replace('/(tabs)/home' as any);
+          return;
+        }
       }
       
       console.log('[Login] Fetching user from database:', email.toLowerCase());
