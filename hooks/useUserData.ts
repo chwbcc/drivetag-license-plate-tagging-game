@@ -40,20 +40,35 @@ export const useCurrentUser = () => {
       
       console.log('[useCurrentUser] Fetching user from database:', localUser.id);
       
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', localUser.id)
-        .maybeSingle();
+      let data = null;
+      let error = null;
+      
+      try {
+        const result = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', localUser.id)
+          .maybeSingle();
+        
+        data = result.data;
+        error = result.error;
+      } catch (fetchError: any) {
+        console.warn('[useCurrentUser] Network error, using local data:', fetchError?.message || 'Unknown error');
+        return localUser;
+      }
       
       if (error) {
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+          console.warn('[useCurrentUser] Network error, using local data');
+          return localUser;
+        }
         console.error('[useCurrentUser] Error fetching user:', JSON.stringify({
           code: error.code,
           message: error.message,
           details: error.details,
           hint: error.hint
         }));
-        throw error;
+        return localUser;
       }
       
       if (!data) {
