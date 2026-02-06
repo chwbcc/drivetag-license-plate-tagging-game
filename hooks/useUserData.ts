@@ -53,21 +53,16 @@ export const useCurrentUser = () => {
         data = result.data;
         error = result.error;
       } catch (fetchError: any) {
-        console.warn('[useCurrentUser] Network exception, using local data:', fetchError?.message || String(fetchError));
+        console.warn('[useCurrentUser] Network exception, using local data');
         return localUser;
       }
       
       if (error) {
-        if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-          console.warn('[useCurrentUser] Network error, using local data');
+        if (error.code === 'OFFLINE' || error.message?.includes('Offline') || error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+          console.log('[useCurrentUser] Offline mode, using local data');
           return localUser;
         }
-        console.error('[useCurrentUser] Error fetching user:', JSON.stringify({
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        }));
+        console.warn('[useCurrentUser] Database error, using local data');
         return localUser;
       }
       

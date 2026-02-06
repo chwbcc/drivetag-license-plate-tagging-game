@@ -20,24 +20,38 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
+  const [queryClient] = useState(() => {
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 60 * 1000,
+          gcTime: 5 * 60 * 1000,
+          retry: false,
+          refetchOnWindowFocus: false,
+          refetchOnMount: false,
+          refetchOnReconnect: false,
+          throwOnError: false,
+          networkMode: 'offlineFirst',
+        },
+        mutations: {
+          throwOnError: false,
+          networkMode: 'offlineFirst',
+          retry: false,
+        },
+      },
+    });
+    
+    client.setDefaultOptions({
       queries: {
-        staleTime: 60 * 1000,
-        gcTime: 5 * 60 * 1000,
-        retry: false,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false,
-        refetchOnReconnect: false,
-        throwOnError: false,
-        networkMode: 'offlineFirst',
+        queryFn: async ({ queryKey }) => {
+          console.log('[QueryClient] Default query handler for:', queryKey);
+          return null;
+        },
       },
-      mutations: {
-        throwOnError: false,
-        networkMode: 'offlineFirst',
-      },
-    },
-  }));
+    });
+    
+    return client;
+  });
   const [loaded, error] = useFonts({
     ...FontAwesome.font,
   });

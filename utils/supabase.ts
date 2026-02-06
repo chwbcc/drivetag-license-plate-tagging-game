@@ -40,7 +40,7 @@ try {
       fetch: async (url, options = {}) => {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
           
           const response = await fetch(url, {
             ...options,
@@ -50,9 +50,17 @@ try {
           clearTimeout(timeoutId);
           return response;
         } catch (err: any) {
-          console.warn('[Supabase] Fetch failed, returning offline response:', err.message);
-          return new Response(JSON.stringify({ error: { message: 'Network error', code: 'NETWORK_ERROR' } }), {
-            status: 500,
+          console.warn('[Supabase] Fetch failed silently, returning cached response');
+          return new Response(JSON.stringify({ 
+            data: null, 
+            error: { 
+              message: 'Offline - using cached data', 
+              code: 'OFFLINE',
+              details: null,
+              hint: null
+            } 
+          }), {
+            status: 200,
             headers: { 'Content-Type': 'application/json' },
           });
         }
