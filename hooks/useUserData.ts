@@ -53,7 +53,7 @@ export const useCurrentUser = () => {
         data = result.data;
         error = result.error;
       } catch (fetchError: any) {
-        console.warn('[useCurrentUser] Caught exception, using local data:', fetchError?.message || String(fetchError));
+        console.warn('[useCurrentUser] Network exception, using local data:', fetchError?.message || String(fetchError));
         return localUser;
       }
       

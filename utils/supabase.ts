@@ -37,14 +37,25 @@ try {
       headers: {
         'x-client-info': 'rork-app',
       },
-      fetch: (url, options = {}) => {
-        return fetch(url, {
-          ...options,
-          signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : options.signal,
-        }).catch((err) => {
-          console.warn('[Supabase] Fetch error:', err.message);
-          throw err;
-        });
+      fetch: async (url, options = {}) => {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          return response;
+        } catch (err: any) {
+          console.warn('[Supabase] Fetch failed, returning offline response:', err.message);
+          return new Response(JSON.stringify({ error: { message: 'Network error', code: 'NETWORK_ERROR' } }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
       },
     },
   });
