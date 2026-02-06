@@ -23,16 +23,42 @@ const finalKey = getValidKey(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 console.log('[Supabase] Using URL:', finalUrl);
 console.log('[Supabase] Key configured:', finalKey ? '✓' : '✗');
 
-export const supabase = createClient(finalUrl, finalKey, {
-  auth: {
-    storage: localStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-  global: {
-    headers: {
-      'x-client-info': 'rork-app',
+let supabaseClient;
+
+try {
+  supabaseClient = createClient(finalUrl, finalKey, {
+    auth: {
+      storage: localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
     },
-  },
-});
+    global: {
+      headers: {
+        'x-client-info': 'rork-app',
+      },
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : options.signal,
+        }).catch((err) => {
+          console.warn('[Supabase] Fetch error:', err.message);
+          throw err;
+        });
+      },
+    },
+  });
+  console.log('[Supabase] Client created successfully');
+} catch (error: any) {
+  console.error('[Supabase] Failed to create client:', error?.message || String(error));
+  supabaseClient = createClient(finalUrl, finalKey, {
+    auth: {
+      storage: localStorage,
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+export const supabase = supabaseClient;

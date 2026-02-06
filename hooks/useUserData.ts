@@ -53,7 +53,7 @@ export const useCurrentUser = () => {
         data = result.data;
         error = result.error;
       } catch (fetchError: any) {
-        console.warn('[useCurrentUser] Network error, using local data:', fetchError?.message || 'Unknown error');
+        console.warn('[useCurrentUser] Caught exception, using local data:', fetchError?.message || String(fetchError));
         return localUser;
       }
       
@@ -126,8 +126,12 @@ export const useCurrentUser = () => {
     enabled: !!localUser?.id,
     staleTime: 10000,
     refetchOnWindowFocus: true,
-    retry: false,
+    retry: (failureCount, error) => {
+      console.log('[useCurrentUser] Query failed, not retrying:', error);
+      return false;
+    },
     throwOnError: false,
+    gcTime: 60000,
   });
 };
 

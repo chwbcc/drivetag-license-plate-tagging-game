@@ -30,6 +30,21 @@ export default function RootLayout() {
         refetchOnMount: false,
         refetchOnReconnect: false,
         throwOnError: false,
+        useErrorBoundary: false,
+        suspense: false,
+        networkMode: 'offlineFirst',
+      },
+      mutations: {
+        throwOnError: false,
+        useErrorBoundary: false,
+        networkMode: 'offlineFirst',
+      },
+    },
+    logger: {
+      log: () => {},
+      warn: () => {},
+      error: (error) => {
+        console.warn('[QueryClient] Suppressed error:', error);
       },
     },
   }));
