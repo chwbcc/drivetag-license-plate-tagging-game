@@ -73,39 +73,43 @@ export const useCurrentUser = () => {
       
       if (!data) {
         console.log('[useCurrentUser] No user found in database, creating user...');
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([{
-            id: localUser.id,
-            email: localUser.email,
-            name: localUser.name || '',
-            photo: localUser.photo,
-            license_plate: localUser.licensePlate?.toLowerCase() || '',
-            state: localUser.state || '',
-            created_at: Date.now(),
-            role: localUser.adminRole || 'user',
-            experience: localUser.exp || 0,
-            level: localUser.level || 1,
-            negative_pellet_count: localUser.pelletCount || 10,
-            positive_pellet_count: localUser.positivePelletCount || 5,
-            positive_rating_count: localUser.positiveRatingCount || 0,
-            negative_rating_count: localUser.negativeRatingCount || 0,
-            pellets_given_count: localUser.pelletsGivenCount || 0,
-            positive_pellets_given_count: localUser.positivePelletsGivenCount || 0,
-            negative_pellets_given_count: localUser.negativePelletsGivenCount || 0,
-            badges: JSON.stringify(localUser.badges || []),
-          }]);
-        
-        if (insertError) {
-          console.error('[useCurrentUser] Error creating user:', JSON.stringify({
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details
-          }));
-          return localUser;
+        try {
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert([{
+              id: localUser.id,
+              email: localUser.email,
+              name: localUser.name || '',
+              photo: localUser.photo,
+              license_plate: localUser.licensePlate?.toLowerCase() || '',
+              state: localUser.state || '',
+              created_at: Date.now(),
+              role: localUser.adminRole || 'user',
+              experience: localUser.exp || 0,
+              level: localUser.level || 1,
+              negative_pellet_count: localUser.pelletCount || 10,
+              positive_pellet_count: localUser.positivePelletCount || 5,
+              positive_rating_count: localUser.positiveRatingCount || 0,
+              negative_rating_count: localUser.negativeRatingCount || 0,
+              pellets_given_count: localUser.pelletsGivenCount || 0,
+              positive_pellets_given_count: localUser.positivePelletsGivenCount || 0,
+              negative_pellets_given_count: localUser.negativePelletsGivenCount || 0,
+              badges: JSON.stringify(localUser.badges || []),
+            }]);
+          
+          if (insertError) {
+            console.error('[useCurrentUser] Error creating user:', JSON.stringify({
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details
+            }));
+            return localUser;
+          }
+          
+          console.log('[useCurrentUser] User created successfully');
+        } catch (insertErr: any) {
+          console.warn('[useCurrentUser] Network error creating user:', insertErr?.message);
         }
-        
-        console.log('[useCurrentUser] User created successfully');
         return localUser;
       }
       
@@ -122,6 +126,8 @@ export const useCurrentUser = () => {
     enabled: !!localUser?.id,
     staleTime: 10000,
     refetchOnWindowFocus: true,
+    retry: false,
+    throwOnError: false,
   });
 };
 
@@ -153,47 +159,54 @@ export const useLeaderboardPellets = (sortOrder: 'asc' | 'desc', pelletType: 'ne
     queryFn: async () => {
       console.log('[useLeaderboardPellets] Fetching leaderboard data');
       
-      let query = supabase
-        .from('pellets')
-        .select('*');
-      
-      if (pelletType !== 'all') {
-        query = query.eq('type', pelletType);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('[useLeaderboardPellets] Error:', JSON.stringify({
-          code: error.code,
-          message: error.message,
-          details: error.details
-        }));
-        throw error;
-      }
-      
-      const plateMap = new Map<string, number>();
-      (data || []).forEach((item: any) => {
-        const plate = item.license_plate || item.targetlicenseplate || item.targetLicensePlate;
-        if (plate) {
-          plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
+      try {
+        let query = supabase
+          .from('pellets')
+          .select('*');
+        
+        if (pelletType !== 'all') {
+          query = query.eq('type', pelletType);
         }
-      });
-      
-      const aggregated = Array.from(plateMap.entries()).map(([licensePlate, count]) => ({
-        licensePlate,
-        count,
-      }));
-      
-      aggregated.sort((a, b) => {
-        return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
-      });
-      
-      console.log('[useLeaderboardPellets] Found', aggregated.length, 'entries');
-      
-      return aggregated;
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('[useLeaderboardPellets] Error:', JSON.stringify({
+            code: error.code,
+            message: error.message,
+            details: error.details
+          }));
+          return [];
+        }
+        
+        const plateMap = new Map<string, number>();
+        (data || []).forEach((item: any) => {
+          const plate = item.license_plate || item.targetlicenseplate || item.targetLicensePlate;
+          if (plate) {
+            plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
+          }
+        });
+        
+        const aggregated = Array.from(plateMap.entries()).map(([licensePlate, count]) => ({
+          licensePlate,
+          count,
+        }));
+        
+        aggregated.sort((a, b) => {
+          return sortOrder === 'desc' ? b.count - a.count : a.count - b.count;
+        });
+        
+        console.log('[useLeaderboardPellets] Found', aggregated.length, 'entries');
+        
+        return aggregated;
+      } catch (err: any) {
+        console.error('[useLeaderboardPellets] Network error:', err?.message);
+        return [];
+      }
     },
     staleTime: 30000,
+    retry: false,
+    throwOnError: false,
   });
 };
 
@@ -203,33 +216,40 @@ export const useLeaderboardExperience = (sortOrder: 'asc' | 'desc') => {
     queryFn: async () => {
       console.log('[useLeaderboardExperience] Fetching experience leaderboard');
       
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, experience, level')
-        .order('experience', { ascending: sortOrder === 'asc' })
-        .limit(100);
-      
-      if (error) {
-        console.error('[useLeaderboardExperience] Error:', JSON.stringify({
-          code: error.code,
-          message: error.message,
-          details: error.details
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, experience, level')
+          .order('experience', { ascending: sortOrder === 'asc' })
+          .limit(100);
+        
+        if (error) {
+          console.error('[useLeaderboardExperience] Error:', JSON.stringify({
+            code: error.code,
+            message: error.message,
+            details: error.details
+          }));
+          return [];
+        }
+        
+        const parsedData = (data || []).map((row: any) => ({
+          id: row.id,
+          name: row.name || 'Anonymous',
+          exp: row.experience || 0,
+          level: row.level || 1,
         }));
-        throw error;
+        
+        console.log('[useLeaderboardExperience] Found', parsedData.length, 'users');
+        
+        return parsedData;
+      } catch (err: any) {
+        console.error('[useLeaderboardExperience] Network error:', err?.message);
+        return [];
       }
-      
-      const parsedData = (data || []).map((row: any) => ({
-        id: row.id,
-        name: row.name || 'Anonymous',
-        exp: row.experience || 0,
-        level: row.level || 1,
-      }));
-      
-      console.log('[useLeaderboardExperience] Found', parsedData.length, 'users');
-      
-      return parsedData;
     },
     staleTime: 30000,
+    retry: false,
+    throwOnError: false,
   });
 };
 
@@ -239,28 +259,35 @@ export const useAllPelletsForStats = () => {
     queryFn: async () => {
       console.log('[useAllPelletsForStats] Fetching all pellets for statistics');
       
-      const { data, error } = await supabase
-        .from('pellets')
-        .select('*');
-      
-      if (error) {
-        console.error('[useAllPelletsForStats] Error:', JSON.stringify({
-          code: error.code,
-          message: error.message,
-          details: error.details
+      try {
+        const { data, error } = await supabase
+          .from('pellets')
+          .select('*');
+        
+        if (error) {
+          console.error('[useAllPelletsForStats] Error:', JSON.stringify({
+            code: error.code,
+            message: error.message,
+            details: error.details
+          }));
+          return [];
+        }
+        
+        const pellets = (data || []).map((item: any) => ({
+          type: item.type,
+          notes: item.notes || item.reason || '',
+          created_at: item.created_at || item.createdAt || item.createdat
         }));
-        throw error;
+        
+        return pellets;
+      } catch (err: any) {
+        console.error('[useAllPelletsForStats] Network error:', err?.message);
+        return [];
       }
-      
-      const pellets = (data || []).map((item: any) => ({
-        type: item.type,
-        notes: item.notes || item.reason || '',
-        created_at: item.created_at || item.createdAt || item.createdat
-      }));
-      
-      return pellets;
     },
     staleTime: 60000,
+    retry: false,
+    throwOnError: false,
   });
 };
 

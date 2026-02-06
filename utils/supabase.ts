@@ -30,4 +30,9 @@ export const supabase = createClient(finalUrl, finalKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  global: {
+    headers: {
+      'x-client-info': 'rork-app',
+    },
+  },
 });
