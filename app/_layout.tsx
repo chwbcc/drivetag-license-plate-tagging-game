@@ -37,13 +37,6 @@ export default function RootLayout() {
         networkMode: 'offlineFirst',
       },
     },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: (error) => {
-        console.warn('[QueryClient] Suppressed error:', error);
-      },
-    },
   }));
   const [loaded, error] = useFonts({
     ...FontAwesome.font,
