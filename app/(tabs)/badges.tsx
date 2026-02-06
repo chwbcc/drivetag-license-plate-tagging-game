@@ -1,54 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { MapPin, Trophy, RotateCcw } from 'lucide-react-native';
-import { Stack } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { MapPin, Car, Gamepad2 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import { useLicensePlateGame } from '@/store/license-plate-game-store';
 import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
+import { useLicensePlateGame } from '@/store/license-plate-game-store';
+import { useCarSpotterGame } from '@/store/car-spotter-game-store';
 
-export default function BadgesScreen() {
+export default function GamesScreen() {
   const { isDark } = useTheme();
-  const {
-    states,
-    spottedPlates,
-    spotPlate,
-    unspotPlate,
-    resetGame,
-    isPlateSpotted,
-    getSpottedCount,
-    getProgress,
-    totalStates,
-  } = useLicensePlateGame();
-
-  const handlePlateToggle = (stateCode: string) => {
-    if (isPlateSpotted(stateCode)) {
-      unspotPlate(stateCode);
-    } else {
-      spotPlate(stateCode);
-    }
-  };
-
-  const handleResetGame = () => {
-    Alert.alert(
-      'Reset Game',
-      'Are you sure you want to reset all spotted plates? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
-          style: 'destructive',
-          onPress: resetGame
-        }
-      ]
-    );
-  };
+  const { getSpottedCount, totalStates } = useLicensePlateGame();
+  const { getSpottedCount: getCarSpottedCount, totalCars } = useCarSpotterGame();
 
   const bgColor = isDark ? darkMode.background : Colors.background;
   const cardColor = isDark ? darkMode.card : Colors.card;
   const textColor = isDark ? darkMode.text : Colors.text;
   const textSecondary = isDark ? darkMode.textSecondary : Colors.textSecondary;
-  const borderColor = isDark ? darkMode.border : Colors.border;
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
@@ -63,82 +31,81 @@ export default function BadgesScreen() {
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>License Plate Spotter</Text>
-          <TouchableOpacity onPress={handleResetGame} style={[styles.resetButton, { backgroundColor: cardColor, borderColor }]}>
-            <RotateCcw size={18} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={[styles.statsCard, { backgroundColor: cardColor }]}>
-          <View style={styles.statItem}>
-            <MapPin size={24} color={Colors.primary} />
-            <Text style={[styles.statValue, { color: textColor }]}>{getSpottedCount()}</Text>
-            <Text style={[styles.statLabel, { color: textSecondary }]}>States Spotted</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Trophy size={24} color={Colors.success} />
-            <Text style={[styles.statValue, { color: textColor }]}>{getProgress().toFixed(0)}%</Text>
-            <Text style={[styles.statLabel, { color: textSecondary }]}>Completed</Text>
-          </View>
-        </View>
-
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBackground}>
-            <View style={[styles.progressBarFill, { width: `${getProgress()}%` }]} />
-          </View>
-          <Text style={[styles.progressText, { color: textSecondary }]}>
-            {getSpottedCount()} of {totalStates} states
+          <Gamepad2 size={48} color={Colors.primary} />
+          <Text style={[styles.title, { color: textColor }]}>Passenger Games</Text>
+          <Text style={[styles.subtitle, { color: textSecondary }]}>
+            Fun games to play while on the road
           </Text>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: textColor }]}>State License Plates</Text>
-        <Text style={[styles.sectionSubtitle, { color: textSecondary }]}>
-          Tap a state when you spot its license plate while driving
-        </Text>
-        <View style={styles.statesGrid}>
-          {states.map((state) => {
-            const isSpotted = isPlateSpotted(state.code);
-            const spotData = spottedPlates[state.code];
-            
-            return (
-              <TouchableOpacity
-                key={state.code}
-                style={[
-                  styles.stateCard,
-                  { backgroundColor: cardColor, borderColor },
-                  isSpotted && styles.stateCardSpotted,
-                ]}
-                onPress={() => handlePlateToggle(state.code)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.stateCardContent}>
-                  <Text style={[
-                    styles.stateCode,
-                    { color: isSpotted ? '#fff' : textColor }
-                  ]}>
-                    {state.code}
-                  </Text>
-                  <Text style={[
-                    styles.stateName,
-                    { color: isSpotted ? '#fff' : textSecondary }
-                  ]} numberOfLines={1}>
-                    {state.name}
-                  </Text>
-                  {isSpotted && spotData && (
-                    <View style={styles.checkmarkContainer}>
-                      <Text style={styles.checkmark}>✓</Text>
-                      {spotData.count > 1 && (
-                        <View style={styles.countBadge}>
-                          <Text style={styles.countText}>{spotData.count}</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+        <View style={styles.gamesContainer}>
+          <TouchableOpacity
+            style={[styles.gameCard, { backgroundColor: cardColor }]}
+            onPress={() => router.push('/license-plate-game' as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.gameIconContainer, { backgroundColor: Colors.primary + '20' }]}>
+              <MapPin size={32} color={Colors.primary} />
+            </View>
+            <View style={styles.gameInfo}>
+              <Text style={[styles.gameName, { color: textColor }]}>License Plate Spotter</Text>
+              <Text style={[styles.gameDescription, { color: textSecondary }]}>
+                Spot all 50 US state license plates while traveling
+              </Text>
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { width: `${(getSpottedCount() / totalStates) * 100}%` }
+                    ]} 
+                  />
                 </View>
-              </TouchableOpacity>
-            );
-          })}
+                <Text style={[styles.progressText, { color: textSecondary }]}>
+                  {getSpottedCount()}/{totalStates} spotted
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.gameCard, { backgroundColor: cardColor }]}
+            onPress={() => router.push('/car-spotter-game' as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.gameIconContainer, { backgroundColor: Colors.success + '20' }]}>
+              <Car size={32} color={Colors.success} />
+            </View>
+            <View style={styles.gameInfo}>
+              <Text style={[styles.gameName, { color: textColor }]}>Car Spotter</Text>
+              <Text style={[styles.gameDescription, { color: textSecondary }]}>
+                Identify and spot different car makes, models, and years
+              </Text>
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { 
+                        width: `${(getCarSpottedCount() / totalCars) * 100}%`,
+                        backgroundColor: Colors.success 
+                      }
+                    ]} 
+                  />
+                </View>
+                <Text style={[styles.progressText, { color: textSecondary }]}>
+                  {getCarSpottedCount()}/{totalCars} spotted
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.tipCard, { backgroundColor: cardColor }]}>
+          <Text style={[styles.tipTitle, { color: textColor }]}>Safety First! 🚗</Text>
+          <Text style={[styles.tipText, { color: textSecondary }]}>
+            These games are designed for passengers only. Drivers should keep their eyes on the road at all times.
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -150,212 +117,94 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 12,
+    padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 24,
+    paddingTop: 8,
   },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: 'bold' as const,
-    flex: 1,
+    marginTop: 12,
+    marginBottom: 6,
   },
-  resetButton: {
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 16,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold' as const,
-    marginTop: 6,
-  },
-  statLabel: {
-    fontSize: 11,
-    marginTop: 2,
+  subtitle: {
+    fontSize: 15,
     textAlign: 'center',
+    maxWidth: '80%',
   },
-  progressBarContainer: {
-    marginBottom: 14,
+  gamesContainer: {
+    gap: 16,
+    marginBottom: 20,
   },
-  progressBarBackground: {
-    height: 10,
+  gameCard: {
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  gameIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  gameInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  gameName: {
+    fontSize: 18,
+    fontWeight: 'bold' as const,
+    marginBottom: 4,
+  },
+  gameDescription: {
+    fontSize: 13,
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  progressContainer: {
+    gap: 4,
+  },
+  progressBar: {
+    height: 6,
     backgroundColor: '#e0e0e0',
-    borderRadius: 5,
+    borderRadius: 3,
     overflow: 'hidden',
   },
-  progressBarFill: {
+  progressFill: {
     height: '100%',
-    backgroundColor: Colors.success,
-    borderRadius: 5,
+    backgroundColor: Colors.primary,
+    borderRadius: 3,
   },
   progressText: {
     fontSize: 11,
-    textAlign: 'center',
-    marginTop: 6,
+    fontWeight: '600' as const,
   },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700' as const,
+  tipCard: {
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.secondary,
+  },
+  tipTitle: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
     marginBottom: 6,
   },
-  sectionSubtitle: {
+  tipText: {
     fontSize: 13,
-    marginBottom: 12,
-  },
-  statesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  stateCard: {
-    width: '31%',
-    borderRadius: 10,
-    padding: 8,
-    borderWidth: 2,
-    minHeight: 68,
-  },
-  stateCardSpotted: {
-    backgroundColor: Colors.success,
-    borderColor: Colors.success,
-  },
-  stateCardContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stateCode: {
-    fontSize: 16,
-    fontWeight: 'bold' as const,
-    marginBottom: 2,
-  },
-  stateName: {
-    fontSize: 9,
-    textAlign: 'center',
-  },
-  checkmarkContainer: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmark: {
-    fontSize: 16,
-    color: Colors.success,
-    fontWeight: 'bold' as const,
-  },
-  countBadge: {
-    position: 'absolute',
-    bottom: -8,
-    right: -8,
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  countText: {
-    fontSize: 10,
-    color: '#fff',
-    fontWeight: 'bold' as const,
-  },
-  badgeCountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.card,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  badgeCountLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginRight: 4,
-  },
-  badgeCount: {
-    fontSize: 16,
-    fontWeight: 'bold' as const,
-    color: Colors.primary,
-  },
-  badgeList: {
-    paddingBottom: 16,
-  },
-  allBadgesList: {
-    paddingBottom: 24,
-    alignItems: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    color: Colors.text,
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    maxWidth: '80%',
-  },
-  lockedBadgeContainer: {
-    position: 'relative',
-  },
-  lockedOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  newBadgeContainer: {
-    position: 'relative',
-  },
-  newBadgeIndicator: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.secondary,
-    zIndex: 1,
+    lineHeight: 20,
   },
 });

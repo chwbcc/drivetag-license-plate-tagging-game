@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import Colors from "@/constants/colors";
 import { ThemeProvider, useTheme } from "@/store/theme-store";
 import { LicensePlateGameProvider } from "@/store/license-plate-game-store";
+import { CarSpotterGameProvider } from "@/store/car-spotter-game-store";
 import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -57,7 +58,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <LicensePlateGameProvider>
-          <RootLayoutNav />
+          <CarSpotterGameProvider>
+            <RootLayoutNav />
+          </CarSpotterGameProvider>
         </LicensePlateGameProvider>
       </ThemeProvider>
     </QueryClientProvider>
@@ -121,6 +124,20 @@ function RootLayoutNav() {
           options={{ 
             title: "Edit Profile",
             headerBackTitle: "Back",
+          }} 
+        />
+        <Stack.Screen 
+          name="license-plate-game" 
+          options={{ 
+            title: "License Plate Spotter",
+            headerBackTitle: "Games",
+          }} 
+        />
+        <Stack.Screen 
+          name="car-spotter-game" 
+          options={{ 
+            title: "Car Spotter",
+            headerBackTitle: "Games",
           }} 
         />
       </Stack>
