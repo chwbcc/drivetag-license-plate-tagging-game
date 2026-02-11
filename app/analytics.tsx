@@ -29,8 +29,8 @@ interface UserRow {
 interface PelletRow {
   id: string;
   type: string;
-  reason: string | null;
-  createdby: string;
+  notes: string | null;
+  created_by: string;
   created_at: string;
   latitude: number | null;
   longitude: number | null;
@@ -87,7 +87,7 @@ export default function AnalyticsScreen() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('pellets')
-        .select('id, type, reason, createdby, created_at, latitude, longitude', { count: 'exact' })
+        .select('id, type, notes, created_by, created_at, latitude, longitude', { count: 'exact' })
         .order('created_at', { ascending: false });
       if (error) throw error;
       return { pellets: (data || []) as PelletRow[], count: count || 0 };
@@ -139,7 +139,7 @@ export default function AnalyticsScreen() {
 
     const reasonDistribution: Record<string, number> = {};
     pellets.forEach(p => {
-      const reason = p.reason || 'Unknown';
+      const reason = p.notes || 'Unknown';
       reasonDistribution[reason] = (reasonDistribution[reason] || 0) + 1;
     });
     const topReasons = Object.entries(reasonDistribution)
@@ -148,7 +148,7 @@ export default function AnalyticsScreen() {
 
     const pelletCreatorCounts: Record<string, number> = {};
     pellets.forEach(p => {
-      pelletCreatorCounts[p.createdby] = (pelletCreatorCounts[p.createdby] || 0) + 1;
+      pelletCreatorCounts[p.created_by] = (pelletCreatorCounts[p.created_by] || 0) + 1;
     });
     const topCreators = Object.entries(pelletCreatorCounts)
       .sort((a, b) => b[1] - a[1])
