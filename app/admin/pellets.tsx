@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Target, User, MapPin, Calendar } from 'lucide-react-native';
+import { Target, User, MapPin, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronDown, ChevronUp } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
@@ -57,6 +57,38 @@ export default function PelletReportsScreen() {
     refetchOnMount: true,
   });
   
+  const [showPositiveSubs, setShowPositiveSubs] = useState(true);
+  const [showNegativeSubs, setShowNegativeSubs] = useState(true);
+
+  const analytics = useMemo(() => {
+    if (!pelletsQuery.data?.pellets) return null;
+    const pellets = pelletsQuery.data.pellets;
+    const total = pellets.length;
+    const positive = pellets.filter((p: any) => p.type === 'positive');
+    const negative = pellets.filter((p: any) => p.type === 'negative');
+
+    const groupByReason = (items: any[]) => {
+      const map: Record<string, number> = {};
+      items.forEach((p) => {
+        const reason = (p.notes || 'No reason provided').trim();
+        map[reason] = (map[reason] || 0) + 1;
+      });
+      return Object.entries(map)
+        .map(([reason, count]) => ({ reason, count }))
+        .sort((a, b) => b.count - a.count);
+    };
+
+    return {
+      total,
+      positiveCount: positive.length,
+      negativeCount: negative.length,
+      positivePercent: total > 0 ? Math.round((positive.length / total) * 100) : 0,
+      negativePercent: total > 0 ? Math.round((negative.length / total) * 100) : 0,
+      positiveReasons: groupByReason(positive),
+      negativeReasons: groupByReason(negative),
+    };
+  }, [pelletsQuery.data]);
+
   const bgColor = isDark ? darkMode.background : Colors.background;
   const cardColor = isDark ? darkMode.card : Colors.card;
   const textColor = isDark ? darkMode.text : Colors.text;
@@ -99,6 +131,121 @@ export default function PelletReportsScreen() {
           </Text>
         </View>
         
+        {analytics && !pelletsQuery.isLoading && (
+          <View style={styles.analyticsSection}>
+            <View style={[styles.analyticsSummary, { backgroundColor: cardColor, borderColor }]}>
+              <View style={styles.analyticsTitleRow}>
+                <BarChart3 size={20} color={Colors.primary} />
+                <Text style={[styles.analyticsTitle, { color: textColor }]}>Pellet Breakdown</Text>
+              </View>
+
+              <View style={styles.summaryRow}>
+                <View style={[styles.summaryCard, { backgroundColor: '#10B98115' }]}> 
+                  <TrendingUp size={22} color="#10B981" />
+                  <Text style={[styles.summaryCount, { color: '#10B981' }]}>{analytics.positiveCount}</Text>
+                  <Text style={[styles.summaryLabel, { color: textSecondary }]}>Positive</Text>
+                  <Text style={[styles.summaryPercent, { color: '#10B981' }]}>{analytics.positivePercent}%</Text>
+                </View>
+                <View style={[styles.summaryCard, { backgroundColor: '#EF444415' }]}> 
+                  <TrendingDown size={22} color="#EF4444" />
+                  <Text style={[styles.summaryCount, { color: '#EF4444' }]}>{analytics.negativeCount}</Text>
+                  <Text style={[styles.summaryLabel, { color: textSecondary }]}>Negative</Text>
+                  <Text style={[styles.summaryPercent, { color: '#EF4444' }]}>{analytics.negativePercent}%</Text>
+                </View>
+              </View>
+
+              <View style={styles.barContainer}>
+                <View style={[styles.barTrack, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                  <View style={[styles.barFillPositive, { width: `${analytics.positivePercent}%` }]} />
+                  <View style={[styles.barFillNegative, { width: `${analytics.negativePercent}%` }]} />
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.subcategoryCard, { backgroundColor: cardColor, borderColor }]}>
+              <TouchableOpacity
+                style={styles.subcategoryHeader}
+                onPress={() => setShowPositiveSubs(!showPositiveSubs)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.subcategoryTitleRow}>
+                  <View style={[styles.dotIndicator, { backgroundColor: '#10B981' }]} />
+                  <Text style={[styles.subcategoryTitle, { color: textColor }]}>
+                    Positive Reasons ({analytics.positiveReasons.length})
+                  </Text>
+                </View>
+                {showPositiveSubs ? (
+                  <ChevronUp size={18} color={textSecondary} />
+                ) : (
+                  <ChevronDown size={18} color={textSecondary} />
+                )}
+              </TouchableOpacity>
+              {showPositiveSubs && (
+                <View style={styles.subcategoryList}>
+                  {analytics.positiveReasons.length === 0 ? (
+                    <Text style={[styles.emptySubText, { color: textSecondary }]}>No positive pellets yet</Text>
+                  ) : (
+                    analytics.positiveReasons.map((item, idx) => (
+                      <View key={`pos-${idx}`} style={[styles.reasonRow, idx < analytics.positiveReasons.length - 1 && { borderBottomWidth: 1, borderBottomColor: borderColor }]}>
+                        <View style={styles.reasonInfo}>
+                          <Text style={[styles.reasonText, { color: textColor }]} numberOfLines={2}>{item.reason}</Text>
+                        </View>
+                        <View style={styles.reasonCountContainer}>
+                          <Text style={[styles.reasonCount, { color: '#10B981' }]}>{item.count}</Text>
+                          <View style={[styles.reasonBar, { backgroundColor: '#10B98120' }]}>
+                            <View style={[styles.reasonBarFill, { width: `${Math.min(100, (item.count / analytics.positiveCount) * 100)}%`, backgroundColor: '#10B981' }]} />
+                          </View>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+            </View>
+
+            <View style={[styles.subcategoryCard, { backgroundColor: cardColor, borderColor }]}>
+              <TouchableOpacity
+                style={styles.subcategoryHeader}
+                onPress={() => setShowNegativeSubs(!showNegativeSubs)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.subcategoryTitleRow}>
+                  <View style={[styles.dotIndicator, { backgroundColor: '#EF4444' }]} />
+                  <Text style={[styles.subcategoryTitle, { color: textColor }]}>
+                    Negative Reasons ({analytics.negativeReasons.length})
+                  </Text>
+                </View>
+                {showNegativeSubs ? (
+                  <ChevronUp size={18} color={textSecondary} />
+                ) : (
+                  <ChevronDown size={18} color={textSecondary} />
+                )}
+              </TouchableOpacity>
+              {showNegativeSubs && (
+                <View style={styles.subcategoryList}>
+                  {analytics.negativeReasons.length === 0 ? (
+                    <Text style={[styles.emptySubText, { color: textSecondary }]}>No negative pellets yet</Text>
+                  ) : (
+                    analytics.negativeReasons.map((item, idx) => (
+                      <View key={`neg-${idx}`} style={[styles.reasonRow, idx < analytics.negativeReasons.length - 1 && { borderBottomWidth: 1, borderBottomColor: borderColor }]}>
+                        <View style={styles.reasonInfo}>
+                          <Text style={[styles.reasonText, { color: textColor }]} numberOfLines={2}>{item.reason}</Text>
+                        </View>
+                        <View style={styles.reasonCountContainer}>
+                          <Text style={[styles.reasonCount, { color: '#EF4444' }]}>{item.count}</Text>
+                          <View style={[styles.reasonBar, { backgroundColor: '#EF444420' }]}>
+                            <View style={[styles.reasonBarFill, { width: `${Math.min(100, (item.count / analytics.negativeCount) * 100)}%`, backgroundColor: '#EF4444' }]} />
+                          </View>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         {pelletsQuery.isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.success} />
@@ -282,5 +429,135 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     marginTop: 12,
+  },
+  analyticsSection: {
+    padding: 16,
+    gap: 12,
+  },
+  analyticsSummary: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 18,
+  },
+  analyticsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  analyticsTitle: {
+    fontSize: 17,
+    fontWeight: '700' as const,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  summaryCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    gap: 4,
+  },
+  summaryCount: {
+    fontSize: 28,
+    fontWeight: '800' as const,
+    marginTop: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+  },
+  summaryPercent: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    marginTop: 2,
+  },
+  barContainer: {
+    paddingHorizontal: 2,
+  },
+  barTrack: {
+    height: 8,
+    borderRadius: 4,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  barFillPositive: {
+    height: 8,
+    backgroundColor: '#10B981',
+  },
+  barFillNegative: {
+    height: 8,
+    backgroundColor: '#EF4444',
+  },
+  subcategoryCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  subcategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  subcategoryTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dotIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  subcategoryTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+  },
+  subcategoryList: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  reasonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  reasonInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  reasonText: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+    lineHeight: 18,
+  },
+  reasonCountContainer: {
+    alignItems: 'flex-end',
+    minWidth: 70,
+    gap: 4,
+  },
+  reasonCount: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+  },
+  reasonBar: {
+    height: 4,
+    borderRadius: 2,
+    width: 60,
+    overflow: 'hidden',
+  },
+  reasonBarFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  emptySubText: {
+    fontSize: 13,
+    fontStyle: 'italic' as const,
+    paddingVertical: 8,
   },
 });
