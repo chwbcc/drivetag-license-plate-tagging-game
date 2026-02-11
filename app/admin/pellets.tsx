@@ -19,20 +19,39 @@ export default function PelletReportsScreen() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('pellets')
-        .select('*, reporter:created_by(id, license_plate, username, name)', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
       
       if (error) {
         console.error('[AdminPellets] Query error:', error);
-        const { data: fallbackData, error: fallbackError, count: fallbackCount } = await supabase
-          .from('pellets')
-          .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false });
-        
-        if (fallbackError) throw fallbackError;
-        return { pellets: fallbackData || [], count: fallbackCount || 0 };
+        throw error;
       }
-      return { pellets: data || [], count: count || 0 };
+
+      const pellets = data || [];
+      const creatorIds = [...new Set(pellets.map((p: any) => p.created_by).filter(Boolean))];
+      
+      let usersMap: Record<string, any> = {};
+      if (creatorIds.length > 0) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, license_plate, username, name')
+          .in('id', creatorIds);
+        
+        if (!usersError && usersData) {
+          usersData.forEach((u: any) => {
+            usersMap[u.id] = u;
+          });
+        } else {
+          console.warn('[AdminPellets] Could not fetch users:', usersError);
+        }
+      }
+
+      const enrichedPellets = pellets.map((p: any) => ({
+        ...p,
+        reporter: usersMap[p.created_by] || null,
+      }));
+
+      return { pellets: enrichedPellets, count: count || 0 };
     },
     enabled: !!user?.adminRole,
     refetchOnMount: true,
