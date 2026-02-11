@@ -5,9 +5,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Image,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Stack, router } from 'expo-router';
 import { 
   Edit, 
@@ -175,6 +175,7 @@ export default function HomeScreen() {
                     <Image 
                       source={{ uri: user.photo }} 
                       style={{ width: 36, height: 36, borderRadius: 18 }}
+                      contentFit="cover"
                     />
                   ) : (
                     <User size={18} color={accentGreen} />

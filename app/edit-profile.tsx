@@ -7,10 +7,10 @@ import {
   Platform, 
   ScrollView,
   Alert,
-  Image,
   TouchableOpacity,
   Switch
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { Camera, Save, X, Moon, Sun, Lock, Eye, EyeOff } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -164,7 +164,7 @@ export default function EditProfileScreen() {
       
       // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,

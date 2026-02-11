@@ -16,11 +16,6 @@ import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-export const unstable_settings = {
-  initialRouteName: "(auth)",
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {

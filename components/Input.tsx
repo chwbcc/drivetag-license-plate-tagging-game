@@ -35,8 +35,8 @@ export default function Input({
           props.editable === false && styles.inputDisabled
         ]}
         placeholderTextColor={Colors.textSecondary}
-        nativeID={id}
-        accessibilityLabel={name || label}
+        id={id}
+        aria-label={name || label}
         {...props}
       />
       {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}

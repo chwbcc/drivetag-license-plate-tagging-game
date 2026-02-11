@@ -137,10 +137,32 @@ export default function TagDriverScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const currentLocation = await Location.getCurrentPositionAsync({});
-          setLocation(currentLocation);
+        if (Platform.OS === 'web') {
+          if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                setLocation({
+                  coords: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    altitude: position.coords.altitude,
+                    accuracy: position.coords.accuracy,
+                    altitudeAccuracy: position.coords.altitudeAccuracy,
+                    heading: position.coords.heading,
+                    speed: position.coords.speed,
+                  },
+                  timestamp: position.timestamp,
+                } as Location.LocationObject);
+              },
+              (err) => console.log('Web geolocation error:', err)
+            );
+          }
+        } else {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const currentLocation = await Location.getCurrentPositionAsync({});
+            setLocation(currentLocation);
+          }
         }
       } catch (err) {
         console.log('Error getting location:', err);
