@@ -8,6 +8,7 @@ import { useTheme } from '@/store/theme-store';
 import { darkMode } from '@/constants/styles';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
+import { hashLicensePlate } from '@/utils/hash';
 
 export default function PelletReportsScreen() {
   const { user } = useAuthStore();
@@ -18,10 +19,19 @@ export default function PelletReportsScreen() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('pellets')
-        .select('*', { count: 'exact' })
+        .select('*, reporter:created_by(id, license_plate, username, name)', { count: 'exact' })
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('[AdminPellets] Query error:', error);
+        const { data: fallbackData, error: fallbackError, count: fallbackCount } = await supabase
+          .from('pellets')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false });
+        
+        if (fallbackError) throw fallbackError;
+        return { pellets: fallbackData || [], count: fallbackCount || 0 };
+      }
       return { pellets: data || [], count: count || 0 };
     },
     enabled: !!user?.adminRole,
@@ -85,7 +95,7 @@ export default function PelletReportsScreen() {
                   </View>
                   <View style={styles.pelletInfo}>
                     <Text style={[styles.licensePlate, { color: textColor }]}>
-                      {pellet.licenseplate || 'N/A'}
+                      {pellet.license_plate ? hashLicensePlate(pellet.license_plate) : 'N/A'}
                     </Text>
                     <Text style={[styles.pelletDate, { color: textSecondary }]}>
                       {formatDate(new Date(pellet.created_at).getTime())}
@@ -105,7 +115,9 @@ export default function PelletReportsScreen() {
                     <User size={14} color={textSecondary} />
                     <Text style={[styles.detailLabel, { color: textSecondary }]}>Reported by:</Text>
                     <Text style={[styles.detailValue, { color: textColor }]}>
-                      {pellet.created_by || 'Unknown'}
+                      {pellet.reporter && typeof pellet.reporter === 'object' && !Array.isArray(pellet.reporter)
+                        ? hashLicensePlate((pellet.reporter as any).license_plate || (pellet.reporter as any).username || (pellet.reporter as any).name || '')
+                        : pellet.created_by ? hashLicensePlate(pellet.created_by) : 'Unknown'}
                     </Text>
                   </View>
                   
