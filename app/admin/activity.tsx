@@ -301,28 +301,28 @@ export default function UserActivityScreen() {
             <View style={styles.statsGrid}>
               <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
                 <View style={[styles.statIconBg, { backgroundColor: '#3B82F615' }]}>
-                  <Users size={18} color="#3B82F6" />
+                  <Users size={14} color="#3B82F6" />
                 </View>
                 <Text style={[styles.statValue, { color: '#3B82F6' }]}>{analytics?.totalUsers ?? 0}</Text>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Total Users</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
                 <View style={[styles.statIconBg, { backgroundColor: '#10B98115' }]}>
-                  <Zap size={18} color="#10B981" />
+                  <Zap size={14} color="#10B981" />
                 </View>
                 <Text style={[styles.statValue, { color: '#10B981' }]}>{analytics?.activeUsersToday ?? 0}</Text>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Active Today</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
                 <View style={[styles.statIconBg, { backgroundColor: '#F59E0B15' }]}>
-                  <Target size={18} color="#F59E0B" />
+                  <Target size={14} color="#F59E0B" />
                 </View>
                 <Text style={[styles.statValue, { color: '#F59E0B' }]}>{analytics?.pelletsToday ?? 0}</Text>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Pellets Today</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
                 <View style={[styles.statIconBg, { backgroundColor: '#8B5CF615' }]}>
-                  <TrendingUp size={18} color="#8B5CF6" />
+                  <TrendingUp size={14} color="#8B5CF6" />
                 </View>
                 <Text style={[styles.statValue, { color: '#8B5CF6' }]}>{analytics?.activeUsersWeek ?? 0}</Text>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Active 7d</Text>
@@ -636,31 +636,32 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     padding: 12,
-    gap: 10,
+    gap: 8,
   },
   statCard: {
-    width: (SCREEN_WIDTH - 34) / 2 - 5,
-    padding: 14,
-    borderRadius: 14,
+    width: (SCREEN_WIDTH - 46) / 4 - 1,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   statIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   statValue: {
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: '800' as const,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '500' as const,
     textAlign: 'center' as const,
   },
