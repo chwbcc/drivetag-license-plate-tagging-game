@@ -20,7 +20,7 @@ type UserFormData = {
   positivePelletCount: string;
   exp: string;
   level: string;
-  adminRole: 'user' | 'moderator' | 'admin' | 'super_admin';
+  adminRole: 'user' | 'moderator' | 'admin' | 'super_admin' | 'analyst';
 };
 
 export default function UserManagementScreen() {
@@ -431,8 +431,8 @@ export default function UserManagementScreen() {
       return;
     }
     
-    const roles = ['user', 'moderator', 'admin', 'super_admin'];
-    const roleLabels = ['User', 'Moderator', 'Admin', 'Super Admin'];
+    const roles = ['user', 'analyst', 'moderator', 'admin', 'super_admin'];
+    const roleLabels = ['User', 'Analyst', 'Moderator', 'Admin', 'Super Admin'];
     
     const availableRoles = isSuperAdmin ? roles : roles.filter(r => r !== 'super_admin');
     const availableLabels = isSuperAdmin ? roleLabels : roleLabels.filter((_, i) => roles[i] !== 'super_admin');
@@ -446,7 +446,7 @@ export default function UserManagementScreen() {
           onPress: () => {
             updateRoleMutation.mutate({
               userId,
-              adminRole: role === 'user' ? null : role as 'moderator' | 'admin' | 'super_admin',
+              adminRole: role === 'user' ? null : role as 'analyst' | 'moderator' | 'admin' | 'super_admin',
             });
           },
         })),
@@ -563,7 +563,7 @@ export default function UserManagementScreen() {
 
       <Text style={[styles.formLabel, { color: textColor }]}>Role</Text>
       <View style={styles.roleSelector}>
-        {(['user', 'moderator', 'admin', ...(isSuperAdmin ? ['super_admin' as const] : [])] as ('user' | 'moderator' | 'admin' | 'super_admin')[]).map((role) => (
+        {(['user', 'analyst', 'moderator', 'admin', ...(isSuperAdmin ? ['super_admin' as const] : [])] as ('user' | 'analyst' | 'moderator' | 'admin' | 'super_admin')[]).map((role) => (
           <TouchableOpacity
             key={role}
             style={[

@@ -199,6 +199,13 @@ function RootLayoutNav() {
             headerBackTitle: "Games",
           }} 
         />
+        <Stack.Screen 
+          name="analytics" 
+          options={{ 
+            title: "Analytics",
+            headerBackTitle: "Back",
+          }} 
+        />
       </Stack>
     </>
   );

@@ -20,6 +20,7 @@ import {
   Sun,
   Shield,
   Target,
+  BarChart3,
 } from 'lucide-react-native';
 import useAuthStore from '@/store/auth-store';
 import useBadgeStore from '@/store/badge-store';
@@ -215,7 +216,19 @@ export default function HomeScreen() {
             </View>
             
             <View style={{ flexDirection: 'row', gap: 6 }}>
-              {user.adminRole && (
+              {(user.adminRole === 'analyst' || user.adminRole === 'moderator' || user.adminRole === 'admin' || user.adminRole === 'super_admin') && (
+                <TouchableOpacity
+                  onPress={() => router.push('/analytics' as any)}
+                  style={{
+                    backgroundColor: '#2563EB' + '30',
+                    borderRadius: 8,
+                    padding: 7,
+                  }}
+                >
+                  <BarChart3 size={16} color="#2563EB" />
+                </TouchableOpacity>
+              )}
+              {user.adminRole && user.adminRole !== 'analyst' && (
                 <TouchableOpacity
                   onPress={() => router.push('/admin' as any)}
                   style={{
