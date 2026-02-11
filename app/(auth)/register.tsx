@@ -8,12 +8,15 @@ import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { supabase } from '@/utils/supabase';
 import { generateUserId } from '@/utils/generate-id';
+import { hashPassword } from '@/utils/hash';
 
 
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const [licensePlate, setLicensePlate] = useState('');
   const [state, setState] = useState('');
@@ -45,8 +48,18 @@ export default function RegisterScreen() {
     const trimmedLicensePlate = licensePlate.trim();
     const trimmedState = state.trim();
     
-    if (!trimmedEmail || !trimmedLicensePlate) {
+    if (!trimmedEmail || !trimmedLicensePlate || !password) {
       setError('Please fill in all required fields');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
     
@@ -90,6 +103,9 @@ export default function RegisterScreen() {
       console.log('[Register] Creating user in Supabase...');
       const userId = generateUserId();
       
+      console.log('[Register] Hashing password...');
+      const passwordHash = await hashPassword(password);
+      
       console.log('[Register] Inserting into users...');
       const { data, error } = await supabase
         .from('users')
@@ -113,6 +129,7 @@ export default function RegisterScreen() {
           negative_pellets_given_count: 0,
           badges: JSON.stringify([]),
           photo: null,
+          passwordhash: passwordHash,
         }])
         .select()
         .single();
@@ -203,6 +220,28 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+          />
+          
+          <Input
+            id="password"
+            name="password"
+            label="Password *"
+            placeholder="Create a password (min 6 characters)"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="new-password"
+          />
+          
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            label="Confirm Password *"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            autoComplete="new-password"
           />
           
           <Input

@@ -6,12 +6,14 @@ import Button from '@/components/Button';
 import useAuthStore from '@/store/auth-store';
 import { supabase } from '@/utils/supabase';
 import { AdminRole } from '@/types';
+import { hashPassword } from '@/utils/hash';
 
 const SUPER_ADMIN_EMAIL = 'chwbcc@gmail.com';
 const SUPER_ADMIN_ID = 'usr_super_admin_1';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -20,6 +22,11 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!email) {
       setError('Please enter your email');
+      return;
+    }
+    
+    if (!password) {
+      setError('Please enter your password');
       return;
     }
     
@@ -33,6 +40,8 @@ export default function LoginScreen() {
         return;
       }
       
+      const passwordHash = await hashPassword(password);
+      
       if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
         console.log('[Login] Super Admin bypass - checking database first');
         
@@ -44,6 +53,14 @@ export default function LoginScreen() {
         
         if (existingSuperAdmin) {
           console.log('[Login] Super Admin found in database');
+          
+          const storedHash = existingSuperAdmin.passwordhash as string | null;
+          if (storedHash && storedHash !== passwordHash) {
+            setError('Incorrect password');
+            setIsLoading(false);
+            return;
+          }
+          
           const mappedUser = {
             id: existingSuperAdmin.id as string,
             email: existingSuperAdmin.email as string,
@@ -109,6 +126,7 @@ export default function LoginScreen() {
               negative_pellets_given_count: 0,
               badges: JSON.stringify(['first-tag', 'first-positive', 'tag-master']),
               photo: null,
+              passwordhash: passwordHash,
             }]);
           
           login(superAdminUser);
@@ -133,6 +151,21 @@ export default function LoginScreen() {
       if (users && users.length > 0) {
         const user = users[0];
         console.log('[Login] User found:', user.email);
+        
+        const storedHash = user.passwordhash as string | null;
+        if (storedHash && storedHash !== passwordHash) {
+          setError('Incorrect password');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!storedHash) {
+          console.log('[Login] User has no password set - setting password now');
+          await supabase
+            .from('users')
+            .update({ passwordhash: passwordHash })
+            .eq('id', user.id);
+        }
         
         const mappedUser = {
           id: user.id as string,
@@ -160,7 +193,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)/home' as any);
       } else {
         console.log('[Login] User not found:', email);
-        setError('Invalid email - user not found');
+        setError('Invalid email or password');
       }
     } catch (error) {
       console.error('[Login] Error:', error);
@@ -204,11 +237,29 @@ export default function LoginScreen() {
             autoComplete="email"
           />
           
+          <Input
+            id="password"
+            name="password"
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="current-password"
+          />
+          
           <Button
             title="Login"
             onPress={handleLogin}
             loading={isLoading}
             style={styles.button}
+          />
+          
+          <Button
+            title="Forgot Password?"
+            variant="outline"
+            onPress={() => router.push('/(auth)/forgot-password')}
+            style={styles.forgotButton}
           />
           
           <View style={styles.footer}>
@@ -279,6 +330,10 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+  },
+  forgotButton: {
+    marginTop: 12,
+    borderWidth: 0,
   },
   footer: {
     marginTop: 32,

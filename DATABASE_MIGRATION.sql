@@ -28,7 +28,8 @@ CREATE TABLE users (
   pellets_given_count INTEGER DEFAULT 0,
   positive_pellets_given_count INTEGER DEFAULT 0,
   negative_pellets_given_count INTEGER DEFAULT 0,
-  badges TEXT DEFAULT '[]'
+  badges TEXT DEFAULT '[]',
+  passwordhash TEXT
 );
 
 -- Step 3: Create pellets table with correct schema and foreign key
