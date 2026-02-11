@@ -8,6 +8,10 @@ import Colors from "@/constants/colors";
 import { ThemeProvider, useTheme } from "@/store/theme-store";
 import { LicensePlateGameProvider } from "@/store/license-plate-game-store";
 import { CarSpotterGameProvider } from "@/store/car-spotter-game-store";
+import { RoadSignBingoProvider } from "@/store/road-sign-bingo-store";
+import { AnimalSpotterProvider } from "@/store/animal-spotter-store";
+import { TriviaProvider } from "@/store/trivia-store";
+import { ColorCarProvider } from "@/store/color-car-store";
 import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -78,7 +82,15 @@ export default function RootLayout() {
       <ThemeProvider>
         <LicensePlateGameProvider>
           <CarSpotterGameProvider>
-            <RootLayoutNav />
+            <RoadSignBingoProvider>
+              <AnimalSpotterProvider>
+                <TriviaProvider>
+                  <ColorCarProvider>
+                    <RootLayoutNav />
+                  </ColorCarProvider>
+                </TriviaProvider>
+              </AnimalSpotterProvider>
+            </RoadSignBingoProvider>
           </CarSpotterGameProvider>
         </LicensePlateGameProvider>
       </ThemeProvider>
@@ -156,6 +168,34 @@ function RootLayoutNav() {
           name="car-spotter-game" 
           options={{ 
             title: "Car Spotter",
+            headerBackTitle: "Games",
+          }} 
+        />
+        <Stack.Screen 
+          name="road-sign-bingo" 
+          options={{ 
+            title: "Road Sign Bingo",
+            headerBackTitle: "Games",
+          }} 
+        />
+        <Stack.Screen 
+          name="animal-spotter" 
+          options={{ 
+            title: "Animal Spotter",
+            headerBackTitle: "Games",
+          }} 
+        />
+        <Stack.Screen 
+          name="trivia-game" 
+          options={{ 
+            title: "Road Trip Trivia",
+            headerBackTitle: "Games",
+          }} 
+        />
+        <Stack.Screen 
+          name="color-car-game" 
+          options={{ 
+            title: "Color Car Count",
             headerBackTitle: "Games",
           }} 
         />
