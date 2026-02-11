@@ -287,10 +287,7 @@ const styles = StyleSheet.create({
   gameCard: {
     borderRadius: 16,
     padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    boxShadow: '0px 1px 3px 0px rgba(0, 0, 0, 0.06)',
     elevation: 2,
   },
   gameCardTop: {
