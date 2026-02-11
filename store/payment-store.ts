@@ -107,6 +107,8 @@ type PaymentStore = PaymentState & {
   getPurchasesByUser: (userId: string) => any[];
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  updateItem: (itemId: string, updates: Partial<Pick<PaymentItem, 'price' | 'pelletCount' | 'name' | 'description'>>) => void;
+  resetToDefaults: () => void;
 };
 
 const usePaymentStore = create<PaymentStore>()(
@@ -165,6 +167,16 @@ const usePaymentStore = create<PaymentStore>()(
       },
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
+      updateItem: (itemId, updates) => {
+        set(state => ({
+          items: state.items.map(item =>
+            item.id === itemId ? { ...item, ...updates } : item
+          ),
+        }));
+      },
+      resetToDefaults: () => {
+        set({ items: DEFAULT_ITEMS });
+      },
     }),
     {
       name: 'payment-storage',
