@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Users, Shield, Mail, Calendar, ChevronRight, Plus, Edit, Car, Hash, Trash2 } from 'lucide-react-native';
+import { Users, Shield, Mail, Calendar, ChevronRight, Plus, Edit, Car, Hash, Trash2, Lock } from 'lucide-react-native';
+import { hashPassword } from '@/utils/hash';
 import Colors from '@/constants/colors';
 import useAuthStore from '@/store/auth-store';
 import { useTheme } from '@/store/theme-store';
@@ -28,6 +29,10 @@ export default function UserManagementScreen() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordUser, setPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
@@ -220,6 +225,35 @@ export default function UserManagementScreen() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      console.log('[ResetPassword] Hashing new password for user:', userId);
+      const passwordHash = await hashPassword(password);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ passwordhash: passwordHash })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('[ResetPassword] Error:', JSON.stringify(error, null, 2));
+        throw new Error(error.message || 'Failed to reset password');
+      }
+      
+      console.log('[ResetPassword] Password reset successfully for user:', userId);
+    },
+    onSuccess: () => {
+      setShowPasswordModal(false);
+      setPasswordUser(null);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      Alert.alert('Success', 'Password has been reset successfully');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to reset password');
+    },
+  });
+
   const deleteUserMutation = useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
       console.log('[DeleteUser] Hard deleting user:', userId);
@@ -347,6 +381,30 @@ export default function UserManagementScreen() {
         },
       ]
     );
+  };
+
+  const openPasswordModal = (u: User) => {
+    setPasswordUser(u);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setShowPasswordModal(true);
+  };
+
+  const handleResetPassword = () => {
+    if (!passwordUser) return;
+    if (!newPassword) {
+      Alert.alert('Error', 'Please enter a new password');
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    resetPasswordMutation.mutate({ userId: passwordUser.id, password: newPassword });
   };
 
   const handleUpdateUser = () => {
@@ -722,6 +780,15 @@ export default function UserManagementScreen() {
                           </TouchableOpacity>
                         )}
                         
+                        {isSuperAdmin && (
+                          <TouchableOpacity
+                            style={[styles.passwordButton, { backgroundColor: '#FF9500', borderColor: '#FF9500' }]}
+                            onPress={() => openPasswordModal(u)}
+                          >
+                            <Lock size={16} color="#fff" />
+                          </TouchableOpacity>
+                        )}
+
                         {isSuperAdmin && u.id !== user.id && (
                           <TouchableOpacity
                             style={[styles.deleteButton, { backgroundColor: '#FF3B30', borderColor: '#FF3B30' }]}
@@ -762,6 +829,80 @@ export default function UserManagementScreen() {
             <ScrollView style={styles.modalScroll}>
               {renderUserForm(false)}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showPasswordModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: bgColor }]}>
+            <Text style={[styles.modalTitle, { color: textColor }]}>Reset Password</Text>
+            <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+              <View style={[styles.passwordUserInfo, { backgroundColor: cardColor, borderColor }]}>
+                <Lock size={20} color="#FF9500" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.passwordUserName, { color: textColor }]}>
+                    {passwordUser?.name || 'No name'}
+                  </Text>
+                  <Text style={[styles.passwordUserEmail, { color: textSecondary }]}>
+                    {passwordUser?.email}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.formLabel, { color: textColor }]}>New Password</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Min 6 characters"
+                placeholderTextColor={textSecondary}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+
+              <Text style={[styles.formLabel, { color: textColor }]}>Confirm Password</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: cardColor, color: textColor, borderColor }]}
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+                placeholder="Re-enter password"
+                placeholderTextColor={textSecondary}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+
+              <View style={styles.formButtons}>
+                <TouchableOpacity
+                  style={[styles.cancelButton, { backgroundColor: cardColor, borderColor }]}
+                  onPress={() => {
+                    setShowPasswordModal(false);
+                    setPasswordUser(null);
+                    setNewPassword('');
+                    setConfirmNewPassword('');
+                  }}
+                >
+                  <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.submitButton, { backgroundColor: '#FF9500' }]}
+                  onPress={handleResetPassword}
+                  disabled={resetPasswordMutation.isPending}
+                >
+                  {resetPasswordMutation.isPending ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Reset Password</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -942,6 +1083,31 @@ const styles = StyleSheet.create({
   changeRoleButtonText: {
     fontSize: 14,
     fontWeight: '600' as const,
+  },
+  passwordButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  passwordUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  passwordUserName: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+  },
+  passwordUserEmail: {
+    fontSize: 13,
+    marginTop: 2,
   },
   deleteButton: {
     width: 44,
