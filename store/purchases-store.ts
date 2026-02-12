@@ -7,7 +7,7 @@ import Purchases, {
 } from 'react-native-purchases';
 
 function getRCApiKey(): string | undefined {
-  if (__DEV__ || Platform.OS === 'web') {
+  if (Platform.OS === 'web') {
     return process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
   }
   return Platform.select({
