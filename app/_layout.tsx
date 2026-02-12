@@ -4,6 +4,7 @@ import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
+import Head from "expo-router/head";
 import Colors from "@/constants/colors";
 import { ThemeProvider, useTheme } from "@/store/theme-store";
 import { LicensePlateGameProvider } from "@/store/license-plate-game-store";
@@ -73,23 +74,33 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <LicensePlateGameProvider>
-          <CarSpotterGameProvider>
-            <RoadSignBingoProvider>
-              <AnimalSpotterProvider>
-                <TriviaProvider>
-                  <ColorCarProvider>
-                    <RootLayoutNav />
-                  </ColorCarProvider>
-                </TriviaProvider>
-              </AnimalSpotterProvider>
-            </RoadSignBingoProvider>
-          </CarSpotterGameProvider>
-        </LicensePlateGameProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <>
+      <Head>
+        <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/icon.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icon.png" />
+        <meta name="theme-color" content="#ffffff" />
+      </Head>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <LicensePlateGameProvider>
+            <CarSpotterGameProvider>
+              <RoadSignBingoProvider>
+                <AnimalSpotterProvider>
+                  <TriviaProvider>
+                    <ColorCarProvider>
+                      <RootLayoutNav />
+                    </ColorCarProvider>
+                  </TriviaProvider>
+                </AnimalSpotterProvider>
+              </RoadSignBingoProvider>
+            </CarSpotterGameProvider>
+          </LicensePlateGameProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </>
   );
 }
 
