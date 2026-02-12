@@ -16,8 +16,12 @@ import { ColorCarProvider } from "@/store/color-car-store";
 import { darkMode } from "@/constants/styles";
 import useAuthStore from "@/store/auth-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { configureRevenueCat } from "@/store/purchases-store";
+
+configureRevenueCat();
 
 SplashScreen.preventAutoHideAsync();
+
 
 export default function RootLayout() {
   const [queryClient] = useState(() => {
