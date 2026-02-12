@@ -6,8 +6,18 @@ import Purchases, {
   LOG_LEVEL,
 } from 'react-native-purchases';
 
+function isExpoGo(): boolean {
+  try {
+    const Constants = require('expo-constants').default;
+    return Constants.appOwnership === 'expo';
+  } catch {
+    return false;
+  }
+}
+
 function getRCApiKey(): string | undefined {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' || isExpoGo()) {
+    console.log('[RevenueCat] Using Web Billing API key (Expo Go or web)');
     return process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
   }
   return Platform.select({
