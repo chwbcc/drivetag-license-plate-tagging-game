@@ -121,7 +121,8 @@ const useAuthStore = create<AuthStore>()(
         });
       },
       login: (user) => {
-        const adminRole: AdminRole = user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
+        const userEmail = user.email || '';
+        const adminRole: AdminRole = userEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
           ? 'super_admin' 
           : user.adminRole || null;
         
@@ -139,7 +140,8 @@ const useAuthStore = create<AuthStore>()(
       syncAdminRole: () => {
         const currentUser = get().user;
         if (currentUser) {
-          const adminRole: AdminRole = currentUser.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
+          const currentEmail = currentUser.email || '';
+          const adminRole: AdminRole = currentEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
             ? 'super_admin' 
             : currentUser.adminRole || null;
           
@@ -162,7 +164,8 @@ const useAuthStore = create<AuthStore>()(
         }
       },
       register: (user) => {
-        const adminRole: AdminRole = user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
+        const userEmail = user.email || '';
+        const adminRole: AdminRole = userEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() 
           ? 'super_admin' 
           : null;
         
@@ -174,7 +177,7 @@ const useAuthStore = create<AuthStore>()(
         };
         
         const registeredUsers = get().registeredUsers;
-        const existingUserIndex = registeredUsers.findIndex(u => u.email === newUser.email);
+        const existingUserIndex = registeredUsers.findIndex(u => u.email && u.email === newUser.email);
         
         if (existingUserIndex >= 0) {
           registeredUsers[existingUserIndex] = newUser;
@@ -395,7 +398,7 @@ const useAuthStore = create<AuthStore>()(
       },
       findUserByEmail: (email) => {
         const registeredUsers = get().registeredUsers;
-        return registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+        return registeredUsers.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
       },
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
