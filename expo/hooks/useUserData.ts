@@ -179,7 +179,7 @@ export const useLeaderboardPellets = (sortOrder: 'asc' | 'desc', pelletType: 'ne
         }
         
         const plateMap = new Map<string, number>();
-        (data || []).forEach((item: any) => {
+        Array.isArray(data) && data.forEach((item: any) => {
           const plate = item.license_plate || item.targetlicenseplate || item.targetLicensePlate;
           if (plate) {
             plateMap.set(plate, (plateMap.get(plate) || 0) + 1);
@@ -231,13 +231,12 @@ export const useLeaderboardExperience = (sortOrder: 'asc' | 'desc') => {
           return [];
         }
         
-        const parsedData = (data || []).map((row: any) => ({
+        const parsedData = Array.isArray(data) ? data.map((row: any) => ({
           id: row.id,
           name: row.name || 'Anonymous',
           exp: row.experience || 0,
           level: row.level || 1,
-        }));
-        
+        })) : [];        
         console.log('[useLeaderboardExperience] Found', parsedData.length, 'users');
         
         return parsedData;
@@ -272,11 +271,11 @@ export const useAllPelletsForStats = () => {
           return [];
         }
         
-        const pellets = (data || []).map((item: any) => ({
+        const pellets = Array.isArray(data) ? data.map((item: any) => ({
           type: item.type,
           notes: item.notes || item.reason || '',
           created_at: item.created_at || item.createdAt || item.createdat
-        }));
+        })) : [];
         
         return pellets;
       } catch (err: any) {
